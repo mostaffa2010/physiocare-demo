@@ -318,14 +318,15 @@ export class SessionsManager {
     const label = document.getElementById('sessions-table-date-label');
     if (!label) return;
     if (this.currentSessionDate === this.todayDateStr) {
-      label.textContent = 'اليوم';
+      label.innerHTML = 'اليوم';
     } else {
       const yest = new Date();
       yest.setDate(yest.getDate() - 1);
-      if (this.currentSessionDate === yest.toISOString().split('T')[0]) {
-        label.textContent = `أمس (${this.currentSessionDate})`;
+      const yestStr = yest.toISOString().split('T')[0];
+      if (this.currentSessionDate === yestStr) {
+        label.innerHTML = `أمس • <bdi dir="ltr">${this.currentSessionDate}</bdi>`;
       } else {
-        label.textContent = this.currentSessionDate;
+        label.innerHTML = `<bdi dir="ltr">${this.currentSessionDate}</bdi>`;
       }
     }
   }
