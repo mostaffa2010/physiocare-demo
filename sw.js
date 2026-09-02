@@ -1,5 +1,5 @@
 // sw.js - Service Worker لتطبيق ASCPT (نفس معمارية لَو تِعرَف المتوافقة مع آيفون)
-const CACHE_NAME = 'ascpt-demo-v4';
+const CACHE_NAME = 'physioflow-demo-v1';
 
 self.addEventListener('install', () => self.skipWaiting());
 

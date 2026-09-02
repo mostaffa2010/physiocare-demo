@@ -219,7 +219,7 @@ class App {
         // 3. وصل إلى الشاشة الرئيسية (Dashboard) ويريد الخروج من التطبيق
         if (this.currentView === 'dashboard') {
           const wantExit = await this.showConfirm(
-            'هل ترغب في الخروج من تطبيق ASCPT وإغلاقه؟',
+            'هل ترغب في الخروج من تطبيق PhysioFlow وإغلاقه؟',
             'تأكيد الخروج'
           );
           if (wantExit) {
@@ -444,7 +444,7 @@ class App {
       const a = document.createElement('a');
       const dateStr = new Date().toISOString().split('T')[0];
       a.href = url;
-      a.download = `نسخة_احتياطية_ASCPT_${dateStr}.json`;
+      a.download = `نسخة_احتياطية_PhysioFlow_${dateStr}.json`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);

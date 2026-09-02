@@ -19,7 +19,7 @@
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="ASCPT">
+    <meta name="apple-mobile-web-app-title" content="PhysioFlow">
 
   <!-- Google Fonts: Cairo -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -45,8 +45,8 @@
 
   <!-- Printable Clinic Report Header (Visible only when printing) -->
   <div class="print-header">
-    <h1><i class="fa-solid fa-hospital"></i> Alexandria Specialist Center for Physical Therapy (ASCPT)</h1>
-    <p style="font-size: 9pt; color: #475569; font-weight: bold;" id="print-report-subtitle">مركز الإسكندرية التخصصي للعلاج الطبيعي والتأهيل</p>
+    <h1><i class="fa-solid fa-notes-medical"></i> PhysioFlow - Clinic Management System</h1>
+    <p style="font-size: 9pt; color: #475569; font-weight: bold;" id="print-report-subtitle">نظام فيزيو فلو الذكي لإدارة مراكز العلاج الطبيعي والتأهيل</p>
     <p>تقرير إيرادات وحركات الجلسات اليومية</p>
     <p id="print-report-meta">التاريخ: 2026-09-02 | وقت الطباعة: 10:00 ص</p>
   </div>
@@ -55,7 +55,7 @@
   <div class="demo-showcase-bar no-print">
     <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
       <span class="badge" style="background-color: #f59e0b; color: #ffffff; font-weight: 800; font-size: 0.76rem; padding: 3px 8px; border-radius: 9999px;">نسخة عرض تفاعلية Demo</span>
-      <span style="font-size: 0.85rem; font-weight: 700; color: #0c4a6e;">محملة بـ 185 مريض وسجلات شهرين كاملين (يوليو وأغسطس) مع شيتات العلاج الطبيعي</span>
+      <span style="font-size: 0.85rem; font-weight: 700; color: #0c4a6e;">نظام PhysioFlow لإدارة مراكز العلاج الطبيعي • 185 مريض وسجلات شهرين كاملين</span>
     </div>
     <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
       <button type="button" class="btn btn-outline btn-sm" style="background-color: #ffffff; color: #0284c7; border-color: #bae6fd; font-weight: 700; padding: 4px 10px; font-size: 0.78rem;" onclick="app.resetDemoData()" title="استعادة الـ 185 مريض وسجلات الشهرين">
@@ -126,8 +126,8 @@
       <div class="brand-section">
         <i class="fa-solid fa-notes-medical" style="font-size: 1.8rem; color: var(--primary);"></i>
         <div>
-          <h2 style="font-size: 1.2rem; color: var(--primary); font-weight: 800;">ASCPT</h2>
-          <p style="font-size: 0.72rem; color: var(--text-muted); font-weight: 600;">Alexandria Specialist Center</p>
+          <h2 style="font-size: 1.25rem; color: var(--primary); font-weight: 800;">PhysioFlow</h2>
+          <p style="font-size: 0.72rem; color: var(--text-muted); font-weight: 600;">نظام إدارة العلاج الطبيعي</p>
         </div>
       </div>
 
@@ -631,7 +631,7 @@
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 12px;">
           <div>
             <h2 style="font-size: 1.35rem; font-weight: 800;" id="finance-header-title">الحسابات والتقارير المالية</h2>
-            <p style="font-size: 0.85rem; color: var(--text-muted);" id="finance-header-sub">متابعة الإيرادات والمصروفات والتقارير اليومية والشهرية لـ ASCPT</p>
+            <p style="font-size: 0.85rem; color: var(--text-muted);" id="finance-header-sub">متابعة الإيرادات والمصروفات والتقارير اليومية والشهرية الذكية</p>
           </div>
           <!-- Action Buttons -->
           <div class="no-print" style="display: flex; gap: 8px; flex-wrap: wrap;">
@@ -1152,7 +1152,7 @@
       <form id="form-login">
         <div class="modal-body">
           <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 15px;">
-            قم بتسجيل الدخول بحسابك في مركز الإسكندرية التخصصي للعلاج الطبيعي (ASCPT) للمتابعة بحسب صلاحياتك.
+            قم بتسجيل الدخول بحسابك في نظام PhysioFlow للمتابعة بحسب صلاحياتك.
           </p>
 
           <div class="form-group" style="margin-bottom: 12px;">
@@ -1244,7 +1244,7 @@
   <!-- Printable Patient Clinical Sheet (Visible only when printing sheet) -->
   <div id="printable-patient-sheet" style="display: none;">
     <div class="sheet-print-header" style="text-align: center; border-bottom: 2px solid #0284c7; padding-bottom: 3px; margin-bottom: 6px;">
-      <h1 style="font-size: 14pt; margin: 0; color: #0284c7;"><i class="fa-solid fa-hospital"></i> Alexandria Specialist Center for Physical Therapy (ASCPT)</h1>
+      <h1 style="font-size: 14pt; margin: 0; color: #0284c7;"><i class="fa-solid fa-notes-medical"></i> PhysioFlow - Physical Therapy Clinical Record</h1>
       <p class="sheet-sub">استمارة تقييم وخطة العلاج الطبيعي للمريض - Physical Therapy Clinical Record</p>
       <p class="sheet-meta" id="print-sheet-meta">تاريخ الطباعة: 2026-09-02</p>
     </div>
