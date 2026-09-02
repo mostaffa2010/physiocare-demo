@@ -387,10 +387,10 @@ export class PatientsManager {
     const btn = document.getElementById(`btn-toggle-chips-${category}`);
     if (btn) {
       if (isEdit) {
-        btn.className = 'btn btn-success btn-sm btn-edit-chips';
+        btn.className = 'btn-edit-chips active';
         btn.innerHTML = '<i class="fa-solid fa-check"></i> <span class="edit-text">تم الانتهاء</span>';
       } else {
-        btn.className = 'btn btn-outline btn-sm btn-edit-chips';
+        btn.className = 'btn-edit-chips';
         btn.innerHTML = '<i class="fa-solid fa-pen-to-square"></i> <span class="edit-text">تعديل الأزرار</span>';
       }
     }
@@ -413,7 +413,7 @@ export class PatientsManager {
     ['modality', 'procedure', 'exercise'].forEach(cat => {
       const btn = document.getElementById(`btn-toggle-chips-${cat}`);
       if (btn) {
-        btn.className = 'btn btn-outline btn-sm btn-edit-chips';
+        btn.className = 'btn-edit-chips';
         btn.innerHTML = '<i class="fa-solid fa-pen-to-square"></i> <span class="edit-text">تعديل الأزرار</span>';
       }
     });
