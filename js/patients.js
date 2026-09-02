@@ -11,6 +11,11 @@ export class PatientsManager {
     this.app = app;
     this.patients = [];
     this.currentSheetPatient = null;
+    this.chipsEditMode = {
+      modality: false,
+      procedure: false,
+      exercise: false
+    };
   }
 
   async init() {
@@ -369,7 +374,50 @@ export class PatientsManager {
   }
 
   // ================= Dynamic Clinical Chips (Manager Controlled) =================
+  toggleChipsEditMode(category) {
+    const user = auth.getCurrentUser();
+    if (!RolesManager.canManageUsers(user)) {
+      this.app.showAlert('تعديل وحذف الأزرار متاح لمدير المركز فقط.', 'صلاحية المدير');
+      return;
+    }
+
+    this.chipsEditMode[category] = !this.chipsEditMode[category];
+    const isEdit = this.chipsEditMode[category];
+
+    const btn = document.getElementById(`btn-toggle-chips-${category}`);
+    if (btn) {
+      if (isEdit) {
+        btn.className = 'btn btn-success btn-sm btn-edit-chips';
+        btn.innerHTML = '<i class="fa-solid fa-check"></i> <span class="edit-text">تم الانتهاء</span>';
+      } else {
+        btn.className = 'btn btn-outline btn-sm btn-edit-chips';
+        btn.innerHTML = '<i class="fa-solid fa-pen-to-square"></i> <span class="edit-text">تعديل الأزرار</span>';
+      }
+    }
+
+    const containerMap = {
+      modality: 'sheet-modalities-container',
+      procedure: 'sheet-procedures-container',
+      exercise: 'sheet-exercises-container'
+    };
+
+    const curSelected = Array.from(document.querySelectorAll(`#${containerMap[category]} .sheet-chip.selected`))
+      .map(b => b.getAttribute('data-val'));
+
+    this.renderCategoryChips(category, containerMap[category], curSelected);
+  }
+
   renderAllClinicalChips(sheet = {}) {
+    // Reset edit modes on sheet open
+    this.chipsEditMode = { modality: false, procedure: false, exercise: false };
+    ['modality', 'procedure', 'exercise'].forEach(cat => {
+      const btn = document.getElementById(`btn-toggle-chips-${cat}`);
+      if (btn) {
+        btn.className = 'btn btn-outline btn-sm btn-edit-chips';
+        btn.innerHTML = '<i class="fa-solid fa-pen-to-square"></i> <span class="edit-text">تعديل الأزرار</span>';
+      }
+    });
+
     this.renderCategoryChips('modality', 'sheet-modalities-container', sheet.modalities || []);
     this.renderCategoryChips('procedure', 'sheet-procedures-container', sheet.procedures || []);
     this.renderCategoryChips('exercise', 'sheet-exercises-container', sheet.exercises || []);
@@ -386,35 +434,85 @@ export class PatientsManager {
       exercise: 'fa-solid fa-person-running'
     };
     const defaultIcon = iconMap[category] || 'fa-solid fa-circle-check';
+    const isEdit = Boolean(this.chipsEditMode[category]);
 
-    container.innerHTML = options.map(opt => {
+    let html = options.map(opt => {
       const isSelected = selectedList.includes(opt);
+      const editClass = isEdit ? 'in-edit-mode' : '';
+      const safeOpt = opt.replace(/'/g, "\\'");
+      const deleteIconHtml = isEdit
+        ? `<span class="chip-delete-tag" onclick="event.stopPropagation(); patientsManager.deleteOptionDirect('${category}', '${safeOpt}')" title="حذف هذا الزر"><i class="fa-solid fa-circle-xmark"></i></span>`
+        : '';
+
       return `
-        <button type="button" class="chip-choice sheet-chip ${isSelected ? 'selected' : ''}" data-group="${category}" data-val="${opt}">
-          <i class="${defaultIcon}"></i> ${opt}
+        <button type="button" class="chip-choice sheet-chip ${isSelected ? 'selected' : ''} ${editClass}" data-group="${category}" data-val="${opt}">
+          <i class="${defaultIcon}"></i> <span>${opt}</span>
+          ${deleteIconHtml}
         </button>
       `;
     }).join('');
 
-    // Re-bind chip selection click listener
+    if (isEdit) {
+      const addLabels = {
+        modality: 'إضافة جهاز جديد',
+        procedure: 'إضافة إجراء جديد',
+        exercise: 'إضافة تمرين جديد'
+      };
+      html += `
+        <button type="button" class="chip-add-new-btn" onclick="patientsManager.openAddOptionModal('${category}')">
+          <i class="fa-solid fa-plus"></i> <span>${addLabels[category] || 'إضافة جديد'}</span>
+        </button>
+      `;
+    }
+
+    container.innerHTML = html;
+
+    // Bind selection click listener (only toggles selection in normal mode)
     container.querySelectorAll('.chip-choice').forEach(btn => {
       btn.addEventListener('click', () => {
-        btn.classList.toggle('selected');
+        if (!this.chipsEditMode[category]) {
+          btn.classList.toggle('selected');
+        }
       });
     });
+  }
+
+  async deleteOptionDirect(category, optionName) {
+    const user = auth.getCurrentUser();
+    if (!RolesManager.canManageUsers(user)) return;
+
+    const confirmed = await this.app.showConfirm(
+      `هل أنت متأكد من حذف زر "${optionName}" نهائياً من قائمة الأطباء؟`,
+      'حذف زر دائم'
+    );
+    if (confirmed) {
+      await db.deleteClinicalOption(category, optionName);
+      const containerMap = {
+        modality: 'sheet-modalities-container',
+        procedure: 'sheet-procedures-container',
+        exercise: 'sheet-exercises-container'
+      };
+      const curSelected = Array.from(document.querySelectorAll(`#${containerMap[category]} .sheet-chip.selected`))
+        .map(b => b.getAttribute('data-val'))
+        .filter(v => v !== optionName);
+
+      this.renderCategoryChips(category, containerMap[category], curSelected);
+      this.app.showToast(`تم حذف زر "${optionName}" بنجاح`);
+      await db.logAudit('حذف زر سريري', `حذف زر ${optionName} من قسم ${category}`, user);
+    }
   }
 
   openAddOptionModal(category) {
     const user = auth.getCurrentUser();
     if (!RolesManager.canManageUsers(user)) {
-      this.app.showAlert('إضافة وحذف الأزرار الدائمة متاح لمدير المركز فقط. يمكن للأطباء تدوين أي ملاحظات إضافية في خانة الملاحظات بالأسفل.', 'صلاحية المدير');
+      this.app.showAlert('إضافة الأزرار الدائمة متاح لمدير المركز فقط.', 'صلاحية المدير');
       return;
     }
 
     const titles = {
-      modality: 'إضافة جهاز فيزيائي دائم',
-      procedure: 'إضافة إجراء / علاج يدوي دائم',
-      exercise: 'إضافة تمرين علاجي دائم'
+      modality: 'إضافة جهاز فيزيائي جديد',
+      procedure: 'إضافة إجراء / علاج يدوي جديد',
+      exercise: 'إضافة تمرين علاجي جديد'
     };
 
     document.getElementById('opt-target-category').value = category;
@@ -438,56 +536,13 @@ export class PatientsManager {
       exercise: 'sheet-exercises-container'
     };
 
-    // Preserve currently selected chips
     const curSelected = Array.from(document.querySelectorAll(`#${containerMap[category]} .sheet-chip.selected`)).map(b => b.getAttribute('data-val'));
-    curSelected.push(name); // select newly added option
+    curSelected.push(name);
     this.renderCategoryChips(category, containerMap[category], curSelected);
 
     this.app.closeModal('modal-add-clinical-option');
-    this.app.showToast(`تمت إضافة زر "${name}" لجميع أطباء المركز بنجاح`);
+    this.app.showToast(`تمت إضافة زر "${name}" بنجاح`);
     await db.logAudit('إضافة زر سريري', `إضافة زر ${name} في قسم ${category}`, auth.getCurrentUser());
-  }
-
-  async openDeleteOptionModal(category) {
-    const user = auth.getCurrentUser();
-    if (!RolesManager.canManageUsers(user)) {
-      this.app.showAlert('إضافة وحذف الأزرار الدائمة متاح لمدير المركز فقط.', 'صلاحية المدير');
-      return;
-    }
-
-    const options = db.getClinicalOptions(category);
-    if (!options || options.length === 0) {
-      this.app.showAlert('لا توجد أزرار مضافة لحذفها في هذا القسم.', 'تنبيه');
-      return;
-    }
-
-    // Prompt manager with selection
-    const optListText = options.map((o, idx) => `${idx + 1}. ${o}`).join('\n');
-    const inputNum = window.prompt(`أدخل رقم الزر الذي ترغب في حذفه نهائياً من قائمة الأطباء:\n\n${optListText}`);
-    
-    if (inputNum) {
-      const idx = parseInt(inputNum) - 1;
-      if (idx >= 0 && idx < options.length) {
-        const toDelete = options[idx];
-        const confirmed = await this.app.showConfirm(`هل أنت متأكد من حذف زر "${toDelete}" نهائياً؟`, 'تأكيد الحذف');
-        if (confirmed) {
-          await db.deleteClinicalOption(category, toDelete);
-          const containerMap = {
-            modality: 'sheet-modalities-container',
-            procedure: 'sheet-procedures-container',
-            exercise: 'sheet-exercises-container'
-          };
-          const curSelected = Array.from(document.querySelectorAll(`#${containerMap[category]} .sheet-chip.selected`))
-            .map(b => b.getAttribute('data-val'))
-            .filter(v => v !== toDelete);
-          this.renderCategoryChips(category, containerMap[category], curSelected);
-          this.app.showToast(`تم حذف زر "${toDelete}"`);
-          await db.logAudit('حذف زر سريري', `حذف زر ${toDelete} من قسم ${category}`, auth.getCurrentUser());
-        }
-      } else {
-        this.app.showAlert('رقم الاختيار غير صحيح', 'خطأ');
-      }
-    }
   }
 
   printCurrentSheet() {
