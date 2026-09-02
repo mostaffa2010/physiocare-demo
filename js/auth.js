@@ -55,6 +55,12 @@ class DemoAuthService {
       role: role
     };
 
+        // Update role capsule active buttons
+    ['admin', 'doctor', 'receptionist'].forEach(r => {
+      const btn = document.getElementById(`r-opt-${r}`);
+      if (btn) btn.classList.toggle('active', r === role);
+    });
+
     localStorage.setItem('pc_demo_active_user', JSON.stringify(this.currentUser));
     this.hideLoginModal();
     this.updateUI();
@@ -70,6 +76,12 @@ class DemoAuthService {
       email: email || 'admin@physiocare.demo',
       role: 'admin'
     };
+        // Update role capsule active buttons
+    ['admin', 'doctor', 'receptionist'].forEach(r => {
+      const btn = document.getElementById(`r-opt-${r}`);
+      if (btn) btn.classList.toggle('active', r === role);
+    });
+
     localStorage.setItem('pc_demo_active_user', JSON.stringify(this.currentUser));
     this.hideLoginModal();
     this.updateUI();

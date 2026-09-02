@@ -76,8 +76,8 @@ export class FinanceManager {
     // Toggle button styles
     const btnToday = document.getElementById('btn-quick-fin-today');
     const btnYest = document.getElementById('btn-quick-fin-yesterday');
-    if (btnToday) btnToday.className = type === 'today' ? 'btn btn-primary btn-sm' : 'btn btn-outline btn-sm';
-    if (btnYest) btnYest.className = type === 'yesterday' ? 'btn btn-primary btn-sm' : 'btn btn-outline btn-sm';
+    if (btnToday) btnToday.classList.toggle('active', type === 'today');
+    if (btnYest) btnYest.classList.toggle('active', type === 'yesterday');
 
     this.loadDailyReport();
   }
