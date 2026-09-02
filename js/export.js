@@ -243,11 +243,11 @@ export class ExportManager {
       const meta = this.financeManager.getDataForExport();
       const metaEl = document.getElementById('print-report-meta');
       const subEl = document.getElementById('print-report-subtitle');
-      const now = new Date().toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' });
+      const now = new Date().toLocaleTimeString('ar-EG-u-nu-latn', { hour: '2-digit', minute: '2-digit' });
 
       if (meta.mode === 'monthly') {
         if (subEl) subEl.textContent = `التقرير المالي والإحصائي الشهري - شهر (${meta.month})`;
-        if (metaEl) metaEl.textContent = `شهر: ${meta.month} | تاريخ ووقت الطباعة: ${new Date().toLocaleDateString('ar-EG')} ${now}`;
+        if (metaEl) metaEl.textContent = `شهر: ${meta.month} | تاريخ ووقت الطباعة: ${new Date().toLocaleDateString('ar-EG-u-nu-latn')} ${now}`;
       } else {
         if (subEl) subEl.textContent = 'تقرير إيرادات وحركات الجلسات اليومية';
         if (metaEl) metaEl.textContent = `تاريخ اليوم: ${meta.date} | وقت الطباعة: ${now}`;

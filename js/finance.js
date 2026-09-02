@@ -187,12 +187,12 @@ export class FinanceManager {
 
     // Update KPI UI
     document.getElementById('rep-total-patients').textContent = totalPatients;
-    document.getElementById('rep-total-cash').textContent = `${totalCash.toLocaleString('ar-EG')} ج.م`;
-    document.getElementById('rep-total-expenses').textContent = `${totalExpenses.toLocaleString('ar-EG')} ج.م`;
+    document.getElementById('rep-total-cash').textContent = `${totalCash.toLocaleString('en-US')} ج.م`;
+    document.getElementById('rep-total-expenses').textContent = `${totalExpenses.toLocaleString('en-US')} ج.م`;
     
     const netCashEl = document.getElementById('rep-net-cash');
     if (netCashEl) {
-      netCashEl.textContent = `${netCash.toLocaleString('ar-EG')} ج.م`;
+      netCashEl.textContent = `${netCash.toLocaleString('en-US')} ج.م`;
       netCashEl.style.color = netCash >= 0 ? 'var(--success)' : 'var(--danger)';
     }
 
@@ -301,9 +301,9 @@ export class FinanceManager {
     const dashExpenses = document.getElementById('stat-expenses-today');
 
     if (dashPatients) dashPatients.textContent = allSessions.length;
-    if (dashCash) dashCash.textContent = `${totalCash.toLocaleString('ar-EG')} ج.م`;
+    if (dashCash) dashCash.textContent = `${totalCash.toLocaleString('en-US')} ج.م`;
     if (dashInsurance) dashInsurance.textContent = `${allSessions.filter(s => s.payType === 'insurance').length} حالات`;
-    if (dashExpenses) dashExpenses.textContent = `${totalExpenses.toLocaleString('ar-EG')} ج.م`;
+    if (dashExpenses) dashExpenses.textContent = `${totalExpenses.toLocaleString('en-US')} ج.م`;
 
     const dashTbody = document.querySelector('#dashboard-recent-table tbody');
     if (dashTbody) {
@@ -338,12 +338,12 @@ export class FinanceManager {
 
     // Update KPI UI
     document.getElementById('rep-total-patients').textContent = totalPatients;
-    document.getElementById('rep-total-cash').textContent = `${totalCash.toLocaleString('ar-EG')} ج.م`;
-    document.getElementById('rep-total-expenses').textContent = `${totalExpenses.toLocaleString('ar-EG')} ج.م`;
+    document.getElementById('rep-total-cash').textContent = `${totalCash.toLocaleString('en-US')} ج.م`;
+    document.getElementById('rep-total-expenses').textContent = `${totalExpenses.toLocaleString('en-US')} ج.م`;
     
     const netCashEl = document.getElementById('rep-net-cash');
     if (netCashEl) {
-      netCashEl.textContent = `${netCash.toLocaleString('ar-EG')} ج.م`;
+      netCashEl.textContent = `${netCash.toLocaleString('en-US')} ج.م`;
       netCashEl.style.color = netCash >= 0 ? 'var(--success)' : 'var(--danger)';
     }
 

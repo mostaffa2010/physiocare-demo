@@ -27,7 +27,7 @@ class DemoDatabaseService {
           userRole: 'النظام',
           actionType: 'تجهيز العرض التجريبي',
           description: 'تم تحميل 185 مريض و 635 جلسة ومصروفات شهرين كاملين بنجاح',
-          timestamp: new Date().toLocaleString('ar-EG'),
+          timestamp: new Date().toLocaleString('en-US'),
           timestampRaw: Date.now()
         }
       ]));
@@ -105,7 +105,7 @@ class DemoDatabaseService {
           ...sessions[idx],
           ...sessionData,
           lastEditedBy: currentUser?.name || 'مستخدم الديمو',
-          lastEditedAt: new Date().toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' })
+          lastEditedAt: new Date().toLocaleTimeString('ar-EG-u-nu-latn', { hour: '2-digit', minute: '2-digit' })
         };
         res = sessions[idx];
       }
@@ -113,7 +113,7 @@ class DemoDatabaseService {
       const newSession = {
         ...sessionData,
         id: 'demo-sess-' + Date.now(),
-        recordedAt: new Date().toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' }),
+        recordedAt: new Date().toLocaleTimeString('ar-EG-u-nu-latn', { hour: '2-digit', minute: '2-digit' }),
         recordedBy: currentUser?.name || 'استقبال الديمو'
       };
       sessions.unshift(newSession);
@@ -149,7 +149,7 @@ class DemoDatabaseService {
     const newExp = {
       ...expenseData,
       id: 'demo-exp-' + Date.now(),
-      time: new Date().toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' }),
+      time: new Date().toLocaleTimeString('ar-EG-u-nu-latn', { hour: '2-digit', minute: '2-digit' }),
       recordedBy: currentUser?.name || 'مدير الديمو'
     };
     expenses.unshift(newExp);
@@ -205,7 +205,7 @@ class DemoDatabaseService {
       userRole: user?.role || 'طبيب',
       actionType,
       description,
-      timestamp: new Date().toLocaleString('ar-EG'),
+      timestamp: new Date().toLocaleString('en-US'),
       timestampRaw: Date.now()
     };
     logs.unshift(newLog);
