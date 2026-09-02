@@ -251,13 +251,23 @@ export class FinanceManager {
         tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; color: var(--text-muted); padding: 25px;">لا توجد حركات جلسات مسجلة في هذا التاريخ.</td></tr>`;
       } else {
         tbody.innerHTML = filteredSessions.map(s => {
-          const payBadge = s.payType === 'cash'
-            ? `<span class="badge badge-cash">نقدي</span>`
-            : `<span class="badge badge-direct">شركة</span>`;
-          
-          const contractLabel = s.payType === 'insurance'
-            ? (s.contractType === 'direct' ? 'مباشر' : 'غير مباشر')
-            : '-';
+          let payBadge = '';
+          if (s.payType === 'cash') {
+            payBadge = `<span class="badge badge-cash"><i class="fa-solid fa-money-bill"></i> نقدي</span>`;
+          } else if (s.contractType === 'direct') {
+            payBadge = `<span class="badge badge-direct"><i class="fa-solid fa-file-contract"></i> ${s.insuranceName || 'شركة'} (مباشر)</span>`;
+          } else {
+            payBadge = `<span class="badge badge-indirect"><i class="fa-solid fa-handshake"></i> ${s.insuranceName || 'شركة'} (غير مباشر)</span>`;
+          }
+
+          let contractLabel = '-';
+          if (s.payType === 'insurance') {
+            if (s.contractType === 'direct') {
+              contractLabel = `<span class="badge badge-direct"><i class="fa-solid fa-file-contract"></i> مباشر</span>`;
+            } else {
+              contractLabel = `<span class="badge badge-indirect"><i class="fa-solid fa-handshake"></i> غير مباشر</span>`;
+            }
+          }
 
           const parts = Array.isArray(s.bodyParts) ? s.bodyParts.join('، ') : (s.bodyParts || '');
           const count = s.bodyPartsCount || (Array.isArray(s.bodyParts) ? s.bodyParts.length : 1);
@@ -335,7 +345,13 @@ export class FinanceManager {
           <tr>
             <td style="font-weight: 700;">${s.patientName}</td>
             <td>${s.doctor}</td>
-            <td>${s.payType === 'cash' ? 'نقدي' : (s.insuranceName || 'شركة')}</td>
+            <td>
+              ${s.payType === 'cash' 
+                ? '<span class="badge badge-cash"><i class="fa-solid fa-money-bill"></i> نقدي</span>' 
+                : (s.contractType === 'direct' 
+                  ? `<span class="badge badge-direct"><i class="fa-solid fa-file-contract"></i> ${s.insuranceName || 'تأمين'}</span>` 
+                  : `<span class="badge badge-indirect"><i class="fa-solid fa-handshake"></i> ${s.insuranceName || 'تأمين'}</span>`)}
+            </td>
             <td>${s.bodyPartsCount || 1} أعضاء</td>
             <td style="font-weight: 700; color: var(--success);">${s.amountPaid} ج.م</td>
             <td style="font-size: 0.8rem; color: var(--text-muted);">${s.recordedAt}</td>
@@ -426,7 +442,7 @@ export class FinanceManager {
           return `
             <tr>
               <td style="font-weight: 700;">${item.name}</td>
-              <td><span class="badge ${item.type.includes('مباشر') ? 'badge-direct' : (item.type.includes('نقدي') ? 'badge-cash' : 'badge-indirect')}">${item.type}</span></td>
+              <td><span class="badge ${item.type.includes('نقدي') ? 'badge-cash' : (item.type.includes('غير مباشر') ? 'badge-indirect' : 'badge-direct')}"><i class="fa-solid ${item.type.includes('نقدي') ? 'fa-money-bill' : (item.type.includes('غير مباشر') ? 'fa-handshake' : 'fa-file-contract')}"></i> ${item.type}</span></td>
               <td style="font-weight: 800; color: var(--primary); font-size: 0.95rem;">${item.count} حالة</td>
               <td style="font-weight: 700;">${pct}%</td>
             </tr>

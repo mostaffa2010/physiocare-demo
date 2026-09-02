@@ -427,10 +427,11 @@ export class SessionsManager {
     tbody.innerHTML = sessions.map(s => {
       let payBadge = '';
       if (s.payType === 'cash') {
-        payBadge = `<span class="badge badge-cash">نقدي</span>`;
+        payBadge = `<span class="badge badge-cash"><i class="fa-solid fa-money-bill"></i> نقدي</span>`;
+      } else if (s.contractType === 'direct') {
+        payBadge = `<span class="badge badge-direct"><i class="fa-solid fa-file-contract"></i> ${s.insuranceName || 'تأمين'} (مباشر)</span>`;
       } else {
-        const cType = s.contractType === 'direct' ? 'مباشر' : 'غير مباشر';
-        payBadge = `<span class="badge badge-direct">${s.insuranceName || 'تأمين'} (${cType})</span>`;
+        payBadge = `<span class="badge badge-indirect"><i class="fa-solid fa-handshake"></i> ${s.insuranceName || 'تأمين'} (غير مباشر)</span>`;
       }
 
       return `
