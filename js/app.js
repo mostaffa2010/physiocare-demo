@@ -70,7 +70,7 @@ class App {
     await this.auditManager.init();
 
     // مزامنة أزرار القوائم المخصصة
-    ['patient-filter-type', 'session-doctor-select', 'finance-doctor-filter', 'newuser-role', 'p-doctor'].forEach(id => {
+    ['demo-role-select', 'patient-filter-type', 'session-doctor-select', 'finance-doctor-filter', 'newuser-role', 'p-doctor'].forEach(id => {
       this.updateCustomSelectDisplay(id);
     });
 
@@ -546,8 +546,14 @@ class App {
 
     const textSpan = btn.querySelector('.btn-text');
     if (textSpan) {
-      const selectedOpt = select.options[select.selectedIndex];
-      textSpan.textContent = selectedOpt ? selectedOpt.text : '-- اختر --';
+      if (selectId === 'demo-role-select') {
+        const val = select.value;
+        const labels = { admin: '👑 مدير', doctor: '🩺 طبيب', receptionist: '📋 استقبال' };
+        textSpan.textContent = labels[val] || '👑 مدير';
+      } else {
+        const selectedOpt = select.options[select.selectedIndex];
+        textSpan.textContent = selectedOpt ? selectedOpt.text : '-- اختر --';
+      }
     }
   }
 

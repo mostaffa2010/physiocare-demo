@@ -74,11 +74,17 @@
       <span>PhysioCare</span>
     </a>
     <div class="header-actions-group">
-      <!-- Role Capsule Switcher for Demo -->
-      <div class="demo-role-capsule">
-        <button type="button" class="role-opt active" id="r-opt-admin" onclick="auth.switchRole('admin')" title="صلاحيات مدير المركز">مدير</button>
-        <button type="button" class="role-opt" id="r-opt-doctor" onclick="auth.switchRole('doctor')" title="صلاحيات طبيب معالج">طبيب</button>
-        <button type="button" class="role-opt" id="r-opt-receptionist" onclick="auth.switchRole('receptionist')" title="صلاحيات الاستقبال">استقبال</button>
+      <!-- Sleek Role Dropdown for Demo -->
+      <div class="custom-select-wrapper" style="width: auto;">
+        <select id="demo-role-select" style="display: none;" onchange="auth.switchRole(this.value)">
+          <option value="admin">👑 مدير المركز (د. مصطفى)</option>
+          <option value="doctor">🩺 طبيب معالج (د. أحمد)</option>
+          <option value="receptionist">📋 استقبال العيادة (أ. منار)</option>
+        </select>
+        <button type="button" class="custom-select-btn" id="btn-select-demo-role-select" style="width: auto; padding: 4px 10px; font-size: 0.78rem; font-weight: 700; background-color: var(--primary-light); color: var(--primary); border-color: #bae6fd; white-space: nowrap;" onclick="app.openCustomPicker('demo-role-select', 'اختر دور المعاينة التجريبية')">
+          <span class="btn-text">👑 مدير</span>
+          <i class="fa-solid fa-chevron-down" style="font-size: 0.68rem; margin-right: 4px;"></i>
+        </button>
       </div>
 
       <!-- Doctor Name Badge -->

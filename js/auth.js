@@ -41,30 +41,36 @@ class DemoAuthService {
     if (modal) modal.classList.remove('active');
   }
 
-  async switchRole(role) {
-    const roleNames = {
-      admin: 'د. مصطفى محمود (مدير المركز)',
-      doctor: 'د. أحمد خليل (طبيب معالج)',
-      receptionist: 'أ. منار خالد (استقبال العيادة)'
+    async switchRole(role) {
+    const roleProfiles = {
+      admin: { name: 'د. مصطفى محمود', role: 'admin', label: '👑 مدير' },
+      doctor: { name: 'د. أحمد خليل', role: 'doctor', label: '🩺 طبيب' },
+      receptionist: { name: 'أ. منار خالد', role: 'receptionist', label: '📋 استقبال' }
     };
 
+    const prof = roleProfiles[role] || roleProfiles.admin;
     this.currentUser = {
       id: 'u-demo-' + role,
-      name: roleNames[role] || 'مستخدم الديمو',
+      name: prof.name,
       email: `${role}@physiocare.demo`,
-      role: role
+      role: prof.role
     };
 
-        // Update role capsule active buttons
-    ['admin', 'doctor', 'receptionist'].forEach(r => {
-      const btn = document.getElementById(`r-opt-${r}`);
-      if (btn) btn.classList.toggle('active', r === role);
-    });
-
     localStorage.setItem('pc_demo_active_user', JSON.stringify(this.currentUser));
+    
+    // Sync dropdown select and button label
+    const sel = document.getElementById('demo-role-select');
+    if (sel) sel.value = role;
+    
+    const btn = document.getElementById('btn-select-demo-role-select');
+    if (btn) {
+      const textSpan = btn.querySelector('.btn-text');
+      if (textSpan) textSpan.textContent = prof.label;
+    }
+
     this.hideLoginModal();
     this.updateUI();
-    await db.logAudit('تبديل صلاحية العرض', `تم تبديل الواجهة لعرض دور: ${RolesManager.getRoleLabel(role)}`, this.currentUser);
+    await db.logAudit('تبديل صلاحية العرض', `تم تبديل واجهة العرض لدور: ${RolesManager.getRoleLabel(role)}`, this.currentUser);
     if (this.onUserChanged) this.onUserChanged(this.currentUser);
   }
 
@@ -100,7 +106,7 @@ class DemoAuthService {
 
     if (this.currentUser) {
       const roleText = RolesManager.getRoleLabel(this.currentUser.role);
-      if (headerDisplay) headerDisplay.textContent = `${this.currentUser.name} (${roleText})`;
+      if (headerDisplay) headerDisplay.textContent = this.currentUser.name;
       if (sidebarName) sidebarName.textContent = this.currentUser.name;
       if (sidebarRole) {
         sidebarRole.textContent = roleText;
