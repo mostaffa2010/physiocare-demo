@@ -1,6 +1,6 @@
 {
-  "name": "PhysioCare Demo - نظام إدارة مراكز العلاج الطبيعي والتأهيل",
-  "short_name": "PhysioCare Demo",
+  "name": "PhysioFlow Demo - نظام إدارة مراكز العلاج الطبيعي والتأهيل",
+  "short_name": "PhysioFlow Demo",
   "description": "نسخة تجريبية تفاعلية شاملة لبرنامج إدارة مراكز وعيادات العلاج الطبيعي والتأهيل",
   "start_url": "./index.html",
   "scope": "./",

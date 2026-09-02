@@ -1,5 +1,5 @@
 // ========================================================
-// PhysioCare Demo - Instant Showcase Authentication
+// PhysioFlow Demo - Instant Showcase Authentication
 // ========================================================
 
 import { db } from './db.js';

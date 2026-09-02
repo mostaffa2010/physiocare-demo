@@ -1,5 +1,5 @@
 // ========================================================
-// PhysioCare - Patients Management Module
+// PhysioFlow - Patients Management Module
 // ========================================================
 
 import { db } from './db.js';

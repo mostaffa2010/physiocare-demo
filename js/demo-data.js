@@ -1,5 +1,5 @@
 // ========================================================
-// PhysioCare Demo - Preloaded Showcase Data (185 Patients & 2 Months History)
+// PhysioFlow Demo - Preloaded Showcase Data (185 Patients & 2 Months History)
 // ========================================================
 
 export const DEMO_PATIENTS = [

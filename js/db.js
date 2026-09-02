@@ -1,5 +1,5 @@
 // ========================================================
-// PhysioCare Demo - Isolated Showcase Database Engine
+// PhysioFlow Demo - Isolated Showcase Database Engine
 // ========================================================
 
 import { DEMO_PATIENTS, DEMO_SESSIONS, DEMO_EXPENSES, DEMO_USERS } from './demo-data.js';
@@ -217,7 +217,7 @@ class DemoDatabaseService {
   async createFullBackup() {
     return {
       timestamp: new Date().toISOString(),
-      center: 'PhysioCare Clinic Management Demo',
+      center: 'PhysioFlow Clinic Management Demo',
       patients: await this.getPatients(),
       sessions: await this.getSessions(),
       expenses: await this.getExpenses(),

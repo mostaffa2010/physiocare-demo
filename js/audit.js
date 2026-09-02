@@ -1,5 +1,5 @@
 // ========================================================
-// PhysioCare - Audit Trail & Staff Admin Management
+// PhysioFlow - Audit Trail & Staff Admin Management
 // ========================================================
 
 import { db } from './db.js';

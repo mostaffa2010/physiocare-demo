@@ -1,5 +1,5 @@
 // ========================================================
-// PhysioCare - Daily Sessions & Check-in Module
+// PhysioFlow - Daily Sessions & Check-in Module
 // ========================================================
 
 import { db } from './db.js';
