@@ -33,6 +33,7 @@ export class FinanceManager {
     if (datePicker) {
       datePicker.addEventListener('change', (e) => {
         this.currentDate = e.target.value;
+        this.syncQuickDateButtons(this.currentDate);
         this.loadDailyReport();
       });
     }
@@ -73,13 +74,32 @@ export class FinanceManager {
     const datePicker = document.getElementById('finance-date-picker');
     if (datePicker) datePicker.value = this.currentDate;
 
-    // Toggle button styles
+    this.syncQuickDateButtons(this.currentDate);
+    this.loadDailyReport();
+  }
+
+  syncQuickDateButtons(dateStr) {
     const btnToday = document.getElementById('btn-quick-fin-today');
     const btnYest = document.getElementById('btn-quick-fin-yesterday');
-    if (btnToday) btnToday.classList.toggle('active', type === 'today');
-    if (btnYest) btnYest.classList.toggle('active', type === 'yesterday');
+    const today = new Date().toISOString().split('T')[0];
+    const d = new Date();
+    d.setDate(d.getDate() - 1);
+    const yesterday = d.toISOString().split('T')[0];
 
-    this.loadDailyReport();
+    if (btnToday) {
+      if (dateStr === today) {
+        btnToday.classList.add('active');
+      } else {
+        btnToday.classList.remove('active');
+      }
+    }
+    if (btnYest) {
+      if (dateStr === yesterday) {
+        btnYest.classList.add('active');
+      } else {
+        btnYest.classList.remove('active');
+      }
+    }
   }
 
   async deleteExpense(expenseId) {

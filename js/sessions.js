@@ -29,6 +29,7 @@ export class SessionsManager {
     if (dateInput) {
       dateInput.addEventListener('change', (e) => {
         this.currentSessionDate = e.target.value;
+        this.syncQuickDateButtons(this.currentSessionDate);
         this.updateDateLabel();
         this.loadTodaySessions();
       });
@@ -284,14 +285,33 @@ export class SessionsManager {
     const dateInput = document.getElementById('session-date');
     if (dateInput) dateInput.value = this.currentSessionDate;
 
-    // Toggle button styles
-    const btnToday = document.getElementById('btn-quick-sess-today');
-    const btnYest = document.getElementById('btn-quick-sess-yesterday');
-    if (btnToday) btnToday.classList.toggle('active', type === 'today');
-    if (btnYest) btnYest.classList.toggle('active', type === 'yesterday');
-
+    this.syncQuickDateButtons(this.currentSessionDate);
     this.updateDateLabel();
     this.loadTodaySessions();
+  }
+
+  syncQuickDateButtons(dateStr) {
+    const btnToday = document.getElementById('btn-quick-sess-today');
+    const btnYest = document.getElementById('btn-quick-sess-yesterday');
+    const today = this.todayDateStr;
+    const d = new Date();
+    d.setDate(d.getDate() - 1);
+    const yesterday = d.toISOString().split('T')[0];
+
+    if (btnToday) {
+      if (dateStr === today) {
+        btnToday.classList.add('active');
+      } else {
+        btnToday.classList.remove('active');
+      }
+    }
+    if (btnYest) {
+      if (dateStr === yesterday) {
+        btnYest.classList.add('active');
+      } else {
+        btnYest.classList.remove('active');
+      }
+    }
   }
 
   updateDateLabel() {

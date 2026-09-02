@@ -493,8 +493,8 @@
                       <i class="fa-solid fa-calendar-day"></i> تاريخ الجلسة *
                     </label>
                     <div style="display: flex; gap: 6px;">
-                      <button type="button" class="btn btn-primary btn-sm" id="btn-quick-sess-today" class="btn-quick-date active" onclick="sessionsManager.setDateQuick('today')">اليوم</button>
-                      <button type="button" class="btn btn-outline btn-sm" id="btn-quick-sess-yesterday" class="btn-quick-date" onclick="sessionsManager.setDateQuick('yesterday')">أمس</button>
+                      <button type="button" id="btn-quick-sess-today" class="btn-quick-date active" onclick="sessionsManager.setDateQuick('today')">اليوم</button>
+                      <button type="button" id="btn-quick-sess-yesterday" class="btn-quick-date" onclick="sessionsManager.setDateQuick('yesterday')">أمس</button>
                     </div>
                   </div>
                   <div style="position: relative;">
@@ -667,8 +667,8 @@
                 <input type="text" id="finance-date-picker" readonly class="form-control date-picker-clickable" style="width: 145px; font-weight: 700;" onclick="app.openCalendarPicker('finance-date-picker')" placeholder="اختر التاريخ...">
                 <i class="fa-solid fa-calendar-days" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--primary); pointer-events: none;"></i>
               </div>
-              <button type="button" class="btn btn-outline btn-sm" id="btn-quick-fin-today" class="btn-quick-date active" onclick="financeManager.setDateQuick('today')">اليوم</button>
-              <button type="button" class="btn btn-outline btn-sm" id="btn-quick-fin-yesterday" class="btn-quick-date" onclick="financeManager.setDateQuick('yesterday')">أمس</button>
+              <button type="button" id="btn-quick-fin-today" class="btn-quick-date active" onclick="financeManager.setDateQuick('today')">اليوم</button>
+              <button type="button" id="btn-quick-fin-yesterday" class="btn-quick-date" onclick="financeManager.setDateQuick('yesterday')">أمس</button>
             </div>
             <div style="display: flex; align-items: center; gap: 8px;">
               <label style="font-size: 0.85rem; font-weight: bold;">تصفية بالطبيب:</label>
