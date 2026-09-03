@@ -93,18 +93,75 @@ export class SessionsManager {
     }
   }
 
+  // ================= Smart Arabic Search & Relevance Ranking =================
+  normalizeArabic(text) {
+    if (!text) return '';
+    return text.toString().trim().toLowerCase()
+      .replace(/[أإآٱ]/g, 'ا')
+      .replace(/ة/g, 'ه')
+      .replace(/ى/g, 'ي')
+      .replace(/[\u064B-\u065F\u0670]/g, '');
+  }
+
+  getPatientSearchScore(p, rawQuery) {
+    const q = this.normalizeArabic(rawQuery);
+    if (!q) return 1;
+
+    const name = this.normalizeArabic(p.name);
+    const phone = (p.phone || '').replace(/[^0-9]/g, '');
+    const cleanDigits = rawQuery.replace(/[^0-9]/g, '');
+
+    if (name.startsWith(q)) {
+      return 1000 - name.length;
+    }
+
+    const words = name.split(/\s+/);
+    for (let i = 1; i < words.length; i++) {
+      if (words[i].startsWith(q)) {
+        return 500 - (i * 20);
+      }
+    }
+
+    if (name.includes(q)) {
+      return 200;
+    }
+
+    if (cleanDigits && phone.includes(cleanDigits)) {
+      return phone.startsWith(cleanDigits) ? 150 : 100;
+    }
+
+    if (p.insuranceCompany && this.normalizeArabic(p.insuranceCompany).includes(q)) {
+      return 50;
+    }
+
+    return -1;
+  }
+
   async renderPickerPatients() {
     const container = document.getElementById('picker-patients-list');
     if (!container) return;
 
-    const searchTerm = document.getElementById('picker-search-input')?.value.trim().toLowerCase() || '';
+    const rawSearch = document.getElementById('picker-search-input')?.value.trim() || '';
     const patients = await db.getPatients();
 
-    const filtered = patients.filter(p => {
-      return p.name.toLowerCase().includes(searchTerm) ||
-        p.phone.includes(searchTerm) ||
-        (p.insuranceCompany && p.insuranceCompany.toLowerCase().includes(searchTerm));
+    let scored = [];
+    for (const p of patients) {
+      if (!rawSearch) {
+        scored.push({ patient: p, score: 0 });
+      } else {
+        const score = this.getPatientSearchScore(p, rawSearch);
+        if (score > 0) {
+          scored.push({ patient: p, score });
+        }
+      }
+    }
+
+    scored.sort((a, b) => {
+      if (b.score !== a.score) return b.score - a.score;
+      return a.patient.name.localeCompare(b.patient.name, 'ar');
     });
+
+    const filtered = scored.map(item => item.patient);
 
     if (filtered.length === 0) {
       container.innerHTML = `

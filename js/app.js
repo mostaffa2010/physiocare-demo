@@ -52,6 +52,7 @@ class App {
     this.bindNavigation();
     this.bindHardwareBackButton();
     this.disablePullToRefresh();
+    this.disableBrowserContextMenu();
     // Prevent native long-press text selection context menu
     window.addEventListener('contextmenu', (e) => {
       const tag = e.target.tagName;
@@ -196,6 +197,15 @@ class App {
   }
 
   // ================= Disable Pull-To-Refresh on Mobile =================
+  disableBrowserContextMenu() {
+    window.addEventListener('contextmenu', (e) => {
+      const tag = e.target.tagName;
+      if (tag !== 'INPUT' && tag !== 'TEXTAREA') {
+        e.preventDefault();
+      }
+    });
+  }
+
   disablePullToRefresh() {
     // منع سحب المتصفح عبر معايير CSS القياسية دون حظر لمسات iOS
     document.documentElement.style.overscrollBehaviorY = 'none';

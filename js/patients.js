@@ -71,6 +71,55 @@ export class PatientsManager {
     this.populateSessionsDropdown();
   }
 
+  // ================= Smart Arabic Search & Relevance Ranking =================
+  normalizeArabic(text) {
+    if (!text) return '';
+    return text.toString().trim().toLowerCase()
+      .replace(/[أإآٱ]/g, 'ا')
+      .replace(/ة/g, 'ه')
+      .replace(/ى/g, 'ي')
+      .replace(/[\u064B-\u065F\u0670]/g, '');
+  }
+
+  getPatientSearchScore(p, rawQuery) {
+    const q = this.normalizeArabic(rawQuery);
+    if (!q) return 1;
+
+    const name = this.normalizeArabic(p.name);
+    const phone = (p.phone || '').replace(/[^0-9]/g, '');
+    const cleanDigits = rawQuery.replace(/[^0-9]/g, '');
+
+    // 1. First name starts directly with query (Top Priority)
+    if (name.startsWith(q)) {
+      return 1000 - name.length;
+    }
+
+    // 2. Any subsequent word in the full name starts with query
+    const words = name.split(/\s+/);
+    for (let i = 1; i < words.length; i++) {
+      if (words[i].startsWith(q)) {
+        return 500 - (i * 20);
+      }
+    }
+
+    // 3. Name contains query substring
+    if (name.includes(q)) {
+      return 200;
+    }
+
+    // 4. Phone match
+    if (cleanDigits && phone.includes(cleanDigits)) {
+      return phone.startsWith(cleanDigits) ? 150 : 100;
+    }
+
+    // 5. Insurance company match
+    if (p.insuranceCompany && this.normalizeArabic(p.insuranceCompany).includes(q)) {
+      return 50;
+    }
+
+    return -1;
+  }
+
   renderPatients() {
     const tbody = document.getElementById('patients-tbody');
     if (!tbody) return;

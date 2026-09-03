@@ -1241,3 +1241,22 @@ table.data-table tr:hover {
 .btn-edit-chips.active i {
   font-size: 0.85rem !important;
 }
+
+/* ================= Native App Experience: Disable Text Selection & Callouts ================= */
+html, body, .app-container, .card, table, button, header, nav, .view-section {
+  -webkit-user-select: none !important;
+  -moz-user-select: none !important;
+  -ms-user-select: none !important;
+  user-select: none !important;
+  -webkit-touch-callout: none !important;
+  -webkit-tap-highlight-color: transparent !important;
+}
+
+/* Allow selection inside typing inputs strictly */
+input, textarea, select, [contenteditable="true"] {
+  -webkit-user-select: text !important;
+  -moz-user-select: text !important;
+  -ms-user-select: text !important;
+  user-select: text !important;
+  -webkit-touch-callout: default !important;
+}
