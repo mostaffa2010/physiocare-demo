@@ -55,10 +55,10 @@
       <span style="font-size: 0.85rem; font-weight: 700; color: #0c4a6e;">نظام PhysioFlow لإدارة مراكز العلاج الطبيعي • 185 مريض وسجلات شهرين كاملين</span>
     </div>
     <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
-      <button type="button" class="btn btn-outline btn-sm" id="btn-open-demo-guide" style="background-color: #ffffff; color: #0369a1; border-color: #bae6fd; font-weight: 700; padding: 4px 10px; font-size: 0.78rem;" title="دليل تجربة الديمو">
+      <button type="button" class="btn btn-outline btn-sm" id="btn-open-demo-guide" onclick="app.openDemoOnboarding()" style="background-color: #ffffff; color: #0369a1; border-color: #bae6fd; font-weight: 700; padding: 4px 10px; font-size: 0.78rem;" title="دليل تجربة الديمو">
         <i class="fa-solid fa-circle-question"></i> كيف تستخدم الـ Demo؟
       </button>
-      <button type="button" class="btn btn-outline btn-sm" style="background-color: #ffffff; color: #0284c7; border-color: #bae6fd; font-weight: 700; padding: 4px 10px; font-size: 0.78rem;" id="btn-reset-demo-data" title="استعادة الـ 185 مريض وسجلات الشهرين">
+      <button type="button" class="btn btn-outline btn-sm" style="background-color: #ffffff; color: #0284c7; border-color: #bae6fd; font-weight: 700; padding: 4px 10px; font-size: 0.78rem;" id="btn-reset-demo-data" onclick="app.resetDemoData()" title="استعادة الـ 185 مريض وسجلات الشهرين">
         <i class="fa-solid fa-rotate-left"></i> إعادة تعيين بيانات الديمو
       </button>
       <a href="https://wa.me/201098164067?text=مرحباً%20دكتور%20مصطفى،%20أنا%20جربت%20الديمو%20ومهتم%20بطلب%20البرنامج%20لمركزي" target="_blank" class="btn btn-sm btn-success" style="font-weight: 800; font-size: 0.78rem; padding: 4px 12px; text-decoration: none;">
@@ -152,7 +152,7 @@
           <i class="fa-solid fa-user-shield"></i>
           <span>لوحة المدير والصلاحيات</span>
         </button>
-        <button type="button" class="nav-link" id="sidebar-btn-demo-guide" style="color: var(--primary); font-weight: 700; border-top: 1px dashed var(--border-color); margin-top: 6px; padding-top: 10px;">
+        <button type="button" class="nav-link" id="sidebar-btn-demo-guide" onclick="app.openDemoOnboarding()" style="color: var(--primary); font-weight: 700; border-top: 1px dashed var(--border-color); margin-top: 6px; padding-top: 10px;">
           <i class="fa-solid fa-circle-question"></i>
           <span>كيف تستخدم الـ Demo؟</span>
         </button>
@@ -677,13 +677,13 @@
           </div>
           <!-- Action Buttons -->
           <div class="no-print" id="finance-top-actions" style="display: flex; gap: 8px; flex-wrap: wrap;">
-            <button type="button" class="btn btn-outline" id="btn-add-expense">
+            <button type="button" class="btn btn-outline" id="btn-add-expense" onclick="app.openAddExpenseModal()">
               <i class="fa-solid fa-minus-circle" style="color: var(--danger);"></i> تسجيل مصروف
             </button>
-            <button type="button" class="btn btn-success" id="btn-export-excel">
+            <button type="button" class="btn btn-success" id="btn-export-excel" onclick="app.exportToExcel()">
               <i class="fa-solid fa-file-excel"></i> تصدير Excel
             </button>
-            <button type="button" class="btn btn-primary" id="btn-print-report">
+            <button type="button" class="btn btn-primary" id="btn-print-report" onclick="app.printReport()">
               <i class="fa-solid fa-print"></i> طباعة عبر Wi-Fi
             </button>
           </div>
@@ -691,13 +691,13 @@
 
         <!-- Mode Toggle Tabs (Daily vs Monthly vs Claims) -->
         <div class="no-print" style="display: flex; gap: 8px; margin-bottom: 14px; flex-wrap: wrap;">
-          <button type="button" class="btn btn-primary btn-sm" id="btn-mode-daily">
+          <button type="button" class="btn btn-primary btn-sm" id="btn-mode-daily" onclick="financeManager.setReportMode('daily')">
             <i class="fa-solid fa-calendar-day"></i> التقرير اليومي
           </button>
-          <button type="button" class="btn btn-outline btn-sm" id="btn-mode-monthly">
+          <button type="button" class="btn btn-outline btn-sm" id="btn-mode-monthly" onclick="financeManager.setReportMode('monthly')">
             <i class="fa-solid fa-calendar-days"></i> التقرير الشهري الإحصائي
           </button>
-          <button type="button" class="btn btn-outline btn-sm" id="btn-mode-claims">
+          <button type="button" class="btn btn-outline btn-sm" id="btn-mode-claims" onclick="financeManager.setReportMode('claims')">
             <i class="fa-solid fa-file-invoice-dollar"></i> مطالبات التأمين وبطاقات التردد
           </button>
         </div>
@@ -709,11 +709,11 @@
             <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
               <label style="font-size: 0.85rem; font-weight: bold;">تاريخ التقرير:</label>
               <div style="position: relative; display: inline-block;">
-                <input type="text" id="finance-date-picker" readonly class="form-control date-picker-clickable" style="width: 145px; font-weight: 700;" data-open-calendar="finance-date-picker" placeholder="اختر التاريخ...">
+                <input type="text" id="finance-date-picker" readonly class="form-control date-picker-clickable" style="width: 145px; font-weight: 700;" onclick="app.openCalendarPicker('finance-date-picker')" data-open-calendar="finance-date-picker" placeholder="اختر التاريخ...">
                 <i class="fa-solid fa-calendar-days" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--primary); pointer-events: none;"></i>
               </div>
-              <button type="button" id="btn-quick-fin-today" class="btn-quick-date active">اليوم</button>
-              <button type="button" id="btn-quick-fin-yesterday" class="btn-quick-date">أمس</button>
+              <button type="button" id="btn-quick-fin-today" class="btn-quick-date active" onclick="financeManager.setDateQuick('today')">اليوم</button>
+              <button type="button" id="btn-quick-fin-yesterday" class="btn-quick-date" onclick="financeManager.setDateQuick('yesterday')">أمس</button>
             </div>
             <div style="display: flex; align-items: center; gap: 8px;">
               <label style="font-size: 0.85rem; font-weight: bold;">تصفية بالطبيب:</label>
@@ -721,7 +721,7 @@
                 <select id="finance-doctor-filter" class="form-control" style="display: none;">
                   <option value="all">كل الأطباء</option>
                 </select>
-                <button type="button" class="custom-select-btn" id="btn-select-finance-doctor-filter" data-open-picker="finance-doctor-filter" data-picker-title="تصفية التقرير بالطبيب">
+                <button type="button" class="custom-select-btn" id="btn-select-finance-doctor-filter" onclick="app.openCustomPicker('finance-doctor-filter', 'تصفية التقرير بالطبيب')" data-open-picker="finance-doctor-filter" data-picker-title="تصفية التقرير بالطبيب">
                   <span class="btn-text">كل الأطباء</span>
                   <i class="fa-solid fa-chevron-down"></i>
                 </button>

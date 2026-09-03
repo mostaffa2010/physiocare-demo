@@ -14,8 +14,8 @@ class DemoDatabaseService {
   }
 
   initDemoStorage(force = false) {
-    if (!localStorage.getItem('pc_demo_v1_init') || force) {
-      localStorage.setItem('pc_demo_v1_init', 'true');
+    if (!localStorage.getItem('pc_demo_v2_init') || force) {
+      localStorage.setItem('pc_demo_v2_init', 'true');
       localStorage.setItem('pc_demo_patients', JSON.stringify(DEMO_PATIENTS));
       localStorage.setItem('pc_demo_sessions', JSON.stringify(DEMO_SESSIONS));
       localStorage.setItem('pc_demo_expenses', JSON.stringify(DEMO_EXPENSES));
@@ -36,7 +36,7 @@ class DemoDatabaseService {
 
   resetDemo() {
     // 1. إعادة ضبط المجموعات الرئيسية بالكامل لنسخ أصلية جديدة
-    localStorage.setItem('pc_demo_v1_init', 'true');
+    localStorage.setItem('pc_demo_v2_init', 'true');
     localStorage.setItem('pc_demo_patients', JSON.stringify(DEMO_PATIENTS));
     localStorage.setItem('pc_demo_sessions', JSON.stringify(DEMO_SESSIONS));
     localStorage.setItem('pc_demo_expenses', JSON.stringify(DEMO_EXPENSES));
@@ -74,7 +74,7 @@ class DemoDatabaseService {
     // 6. مسح أي مفاتيح مؤقتة أخرى خاصة بالنظام مع الإبقاء على تفضيل النافذة التعريفية
     for (let i = localStorage.length - 1; i >= 0; i--) {
       const k = localStorage.key(i);
-      if (k && k.startsWith('pc_') && !['pc_demo_v1_init', 'pc_demo_patients', 'pc_demo_sessions', 'pc_demo_expenses', 'pc_demo_users', 'pc_demo_audit', 'pc_demo_active_user', 'pc_demo_onboarding_seen'].includes(k)) {
+      if (k && k.startsWith('pc_') && !['pc_demo_v2_init', 'pc_demo_patients', 'pc_demo_sessions', 'pc_demo_expenses', 'pc_demo_users', 'pc_demo_audit', 'pc_demo_active_user', 'pc_demo_onboarding_seen'].includes(k)) {
         localStorage.removeItem(k);
       }
     }

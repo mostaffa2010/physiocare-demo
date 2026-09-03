@@ -1,9 +1,9 @@
 // ========================================================
 // PhysioFlow Demo - Service Worker & Offline PWA Cache
-// Version: 1.2.0 (Cache: physioflow-demo-v13)
+// Version: 1.2.0 (Cache: physioflow-demo-v14)
 // ========================================================
 
-const CACHE_NAME = 'physioflow-demo-v13';
+const CACHE_NAME = 'physioflow-demo-v14';
 
 const APP_SHELL_ASSETS = [
   './',

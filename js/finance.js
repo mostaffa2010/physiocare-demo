@@ -151,6 +151,10 @@ export class FinanceManager {
     }
   }
 
+  openAddExpenseModal() {
+    this.app.openAddExpenseModal();
+  }
+
   async deleteExpense(expenseId) {
     const confirmed = await this.app.showConfirm('هل أنت متأكد من حذف هذا المصروف؟', 'تأكيد الحذف');
     if (confirmed) {
@@ -240,9 +244,7 @@ export class FinanceManager {
       if (title) title.innerHTML = '<i class="fa-solid fa-file-invoice-dollar" style="color: var(--primary);"></i> مطالبات شركات التأمين وبطاقات التردد';
       if (sub) sub.textContent = 'إعداد وتجهيز مطالبات مستحقات المركز لدى شركات التأمين وبطاقات التردد الرسمية';
 
-      if (window.claimsManager) {
-        window.claimsManager.loadCompanyPatients();
-      }
+      // Mode switched to claims cleanly without premature alert
     }
   }
 

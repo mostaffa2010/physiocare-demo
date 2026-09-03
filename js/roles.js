@@ -68,6 +68,11 @@ export class RolesManager {
     }
   }
 
+  // صلاحية الحذف العامة (للجلسات والحسابات)
+  static canDelete(currentUser) {
+    return currentUser && (currentUser.role === ROLES.ADMIN || currentUser.role === ROLES.RECEPTIONIST);
+  }
+
   // حذف المرضى متاح للمدير والاستقبال (ممنوع تماماً على الطبيب المعالج)
   static canDeletePatient(currentUser) {
     return currentUser && (currentUser.role === ROLES.ADMIN || currentUser.role === ROLES.RECEPTIONIST);

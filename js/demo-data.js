@@ -4864,6 +4864,154 @@ export const DEMO_PATIENTS = [
 ];
 
 export const DEMO_SESSIONS = [
+
+  {
+    "id": "demo-sess-today-1",
+    "date": "2026-09-03",
+    "patientId": "demo-p-1",
+    "patientName": "أحمد محمود العطار",
+    "doctor": "د. مصطفى محمود",
+    "bodyParts": [
+      "الفقرات القطنية / أسفل الظهر",
+      "الركبة"
+    ],
+    "bodyPartsCount": 2,
+    "payType": "cash",
+    "insuranceName": "",
+    "contractType": "",
+    "amountPaid": 350,
+    "notes": "تحسن كبير في المدى الحركي وانخفاض الألم",
+    "recordedAt": "09:30 ص",
+    "recordedBy": "أ. منار خالد (استقبال)"
+  },
+  {
+    "id": "demo-sess-today-2",
+    "date": "2026-09-03",
+    "patientId": "demo-p-2",
+    "patientName": "سارة إبراهيم الشناوي",
+    "doctor": "د. أحمد خليل",
+    "bodyParts": [
+      "الكتف"
+    ],
+    "bodyPartsCount": 1,
+    "payType": "insurance",
+    "insuranceName": "أكسا (AXA)",
+    "contractType": "direct",
+    "amountPaid": 50,
+    "notes": "جلسة ليزر وموجات صوتية للكتف",
+    "recordedAt": "10:15 ص",
+    "recordedBy": "أ. منار خالد (استقبال)"
+  },
+  {
+    "id": "demo-sess-today-3",
+    "date": "2026-09-03",
+    "patientId": "demo-p-3",
+    "patientName": "كريم حسن الصاوي",
+    "doctor": "د. سارة عادل",
+    "bodyParts": [
+      "الرقبة",
+      "الكتف"
+    ],
+    "bodyPartsCount": 2,
+    "payType": "cash",
+    "insuranceName": "",
+    "contractType": "",
+    "amountPaid": 400,
+    "notes": "علاج يدوي وإطالات عضلية",
+    "recordedAt": "11:00 ص",
+    "recordedBy": "أ. منار خالد (استقبال)"
+  },
+  {
+    "id": "demo-sess-today-4",
+    "date": "2026-09-03",
+    "patientId": "demo-p-4",
+    "patientName": "منار علي النجار",
+    "doctor": "د. كريم إبراهيم",
+    "bodyParts": [
+      "الركبة"
+    ],
+    "bodyPartsCount": 1,
+    "payType": "insurance",
+    "insuranceName": "نكست كير (NextCare)",
+    "contractType": "indirect",
+    "amountPaid": 30,
+    "notes": "برنامج تمارين تقوية عضلات الفخذ",
+    "recordedAt": "11:45 ص",
+    "recordedBy": "أ. منار خالد (استقبال)"
+  },
+  {
+    "id": "demo-sess-today-5",
+    "date": "2026-09-03",
+    "patientId": "demo-p-5",
+    "patientName": "محمد عثمان البنا",
+    "doctor": "د. مصطفى محمود",
+    "bodyParts": [
+      "أسفل الظهر / الفقرات القطنية"
+    ],
+    "bodyPartsCount": 1,
+    "payType": "cash",
+    "insuranceName": "",
+    "contractType": "",
+    "amountPaid": 250,
+    "notes": "شد فقري وكمادات ساخنة",
+    "recordedAt": "12:30 م",
+    "recordedBy": "أ. منار خالد (استقبال)"
+  },
+  {
+    "id": "demo-sess-today-6",
+    "date": "2026-09-03",
+    "patientId": "demo-p-6",
+    "patientName": "ياسمين خالد زهران",
+    "doctor": "د. سارة عادل",
+    "bodyParts": [
+      "الكاحل والقدم"
+    ],
+    "bodyPartsCount": 1,
+    "payType": "insurance",
+    "insuranceName": "أليانز (Allianz)",
+    "contractType": "direct",
+    "amountPaid": 70,
+    "notes": "اتزان وتأهيل التواء الكاحل",
+    "recordedAt": "01:15 م",
+    "recordedBy": "أ. منار خالد (استقبال)"
+  },
+  {
+    "id": "demo-sess-today-7",
+    "date": "2026-09-03",
+    "patientId": "demo-p-7",
+    "patientName": "طارق يوسف الشافعي",
+    "doctor": "د. أحمد خليل",
+    "bodyParts": [
+      "الركبة"
+    ],
+    "bodyPartsCount": 1,
+    "payType": "cash",
+    "insuranceName": "",
+    "contractType": "",
+    "amountPaid": 300,
+    "notes": "جلسة كهرومغناطيسية وتمارين علاجية",
+    "recordedAt": "02:00 م",
+    "recordedBy": "أ. منار خالد (استقبال)"
+  },
+  {
+    "id": "demo-sess-today-8",
+    "date": "2026-09-03",
+    "patientId": "demo-p-8",
+    "patientName": "دينا عمرو رضوان",
+    "doctor": "د. كريم إبراهيم",
+    "bodyParts": [
+      "الكتف"
+    ],
+    "bodyPartsCount": 1,
+    "payType": "insurance",
+    "insuranceName": "ميتلايف (MetLife)",
+    "contractType": "direct",
+    "amountPaid": 50,
+    "notes": "تأهيل الكتف المتجمد والموجات التصادمية",
+    "recordedAt": "02:45 م",
+    "recordedBy": "أ. منار خالد (استقبال)"
+  }
+,
   {
     "id": "demo-sess-1",
     "date": "2026-07-01",
@@ -16650,6 +16798,24 @@ export const DEMO_SESSIONS = [
 ];
 
 export const DEMO_EXPENSES = [
+
+  {
+    "id": "demo-exp-today-1",
+    "date": "2026-09-03",
+    "title": "شراء عبوات جل التراساوند وأشرطة لاصقة",
+    "amount": 350,
+    "recordedBy": "أ. منار خالد (استقبال)",
+    "time": "10:30 ص"
+  },
+  {
+    "id": "demo-exp-today-2",
+    "date": "2026-09-03",
+    "title": "ضيافة وعصائر ومياه للعيادة",
+    "amount": 120,
+    "recordedBy": "د. مصطفى محمود",
+    "time": "01:00 م"
+  }
+,
   {
     "id": "demo-exp-1",
     "date": "2026-07-02",

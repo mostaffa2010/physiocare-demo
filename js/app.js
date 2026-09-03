@@ -68,21 +68,21 @@ class App {
     this.bindModalsAndAuth();
     this.bindCustomDialog();
 
-    // 4. تهيئة المصادقة
-    await this.claimsManager.init();
-
-    // 4. تهيئة المصادقة
-    await auth.init(async (user) => {
-      await this.refreshAll();
-    });
+    // 4. تهيئة المصادقة والوحدات بأمان تام (Fault-Tolerant)
+    try { await this.claimsManager.init(); } catch (e) { console.warn('claimsManager init notice:', e); }
+    try {
+      await auth.init(async (user) => {
+        await this.refreshAll();
+      });
+    } catch (e) { console.warn('auth init notice:', e); }
 
     // 5. تحميل الوحدات
-    await this.populateDoctorDropdowns();
-    await this.patientsManager.init();
-    await this.sessionsManager.init();
-    await this.financeManager.init();
-    this.exportManager.init();
-    await this.auditManager.init();
+    try { await this.populateDoctorDropdowns(); } catch (e) { console.warn('populateDoctorDropdowns notice:', e); }
+    try { await this.patientsManager.init(); } catch (e) { console.warn('patientsManager init notice:', e); }
+    try { await this.sessionsManager.init(); } catch (e) { console.warn('sessionsManager init notice:', e); }
+    try { await this.financeManager.init(); } catch (e) { console.warn('financeManager init notice:', e); }
+    try { this.exportManager.init(); } catch (e) { console.warn('exportManager init notice:', e); }
+    try { await this.auditManager.init(); } catch (e) { console.warn('auditManager init notice:', e); }
 
     // مزامنة أزرار القوائم المخصصة
     ['demo-role-select', 'claim-company-select', 'patient-filter-type', 'session-doctor-select', 'finance-doctor-filter', 'newuser-role', 'p-doctor'].forEach(id => {
@@ -670,7 +670,13 @@ class App {
   }
 
   openAddExpenseModal() {
-    if (this.financeManager) this.financeManager.openAddExpenseModal();
+    const form = document.getElementById('form-expense');
+    if (form && typeof form.reset === "function") form.reset();
+    const titleEl = document.getElementById('expense-title');
+    const amountEl = document.getElementById('expense-amount');
+    if (titleEl) titleEl.value = '';
+    if (amountEl) amountEl.value = '';
+    this.openModal('modal-expense');
   }
 
   openAddPatientModal() {
