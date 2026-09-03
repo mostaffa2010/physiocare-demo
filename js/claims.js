@@ -262,6 +262,10 @@ export class ClaimsManager {
 
     tbody.innerHTML = filtered.map((item, idx) => {
       const p = item.patient;
+      const safeId = escapeHTML(p.id);
+      const safeName = escapeHTML(p.name);
+      const safePhone = escapeHTML(p.phone);
+      const safeDoc = escapeHTML(p.doctor);
       const rowChecked = item.isChecked ? 'checked' : '';
       const rowTotal = (item.sessionCount * item.sessionRate) + item.evalFee;
       item.total = rowTotal;
@@ -269,33 +273,32 @@ export class ClaimsManager {
       return `
         <tr style="${!item.isChecked ? 'opacity: 0.55; background-color: #f8fafc;' : ''}">
           <td style="text-align: center;">
-            <input type="checkbox" style="width: 18px; height: 18px; cursor: pointer;" ${rowChecked} onchange="claimsManager.togglePatientCheck('${p.id}', this.checked)">
+            <input type="checkbox" style="width: 18px; height: 18px; cursor: pointer;" ${rowChecked} onchange="claimsManager.togglePatientCheck('${safeId}', this.checked)">
           </td>
           <td style="text-align: center; font-weight: 700;">${idx + 1}</td>
           <td>
-            <div style="font-weight: 800; color: var(--text-main); font-size: 0.92rem;">${p.name}</div>
-            <small style="color: var(--text-muted); font-size: 0.76rem;"><i class="fa-solid fa-phone"></i> ${p.phone} • ${p.doctor}</small>
+            <div style="font-weight: 800; color: var(--text-main); font-size: 0.92rem;">${safeName}</div>
+            <small style="color: var(--text-muted); font-size: 0.76rem;"><i class="fa-solid fa-phone"></i> ${safePhone} • ${safeDoc}</small>
           </td>
           <td>
-            <input type="number" class="form-control" style="width: 80px; padding: 4px 6px; font-weight: 700; text-align: center;" value="${item.evalFee}" onchange="claimsManager.updatePatientNumber('${p.id}', 'evalFee', this.value)">
+            <input type="number" class="form-control" style="width: 80px; padding: 4px 6px; font-weight: 700; text-align: center;" value="${item.evalFee}" onchange="claimsManager.updatePatientNumber('${safeId}', 'evalFee', this.value)">
           </td>
           <td>
-            <input type="number" class="form-control" style="width: 70px; padding: 4px 6px; font-weight: 700; text-align: center;" value="${item.sessionCount}" onchange="claimsManager.updatePatientNumber('${p.id}', 'sessionCount', this.value)">
+            <input type="number" class="form-control" style="width: 70px; padding: 4px 6px; font-weight: 700; text-align: center;" value="${item.sessionCount}" onchange="claimsManager.updatePatientNumber('${safeId}', 'sessionCount', this.value)">
           </td>
           <td>
-            <input type="number" class="form-control" style="width: 75px; padding: 4px 6px; font-weight: 700; text-align: center;" value="${item.sessionRate}" onchange="claimsManager.updatePatientNumber('${p.id}', 'sessionRate', this.value)">
+            <input type="number" class="form-control" style="width: 75px; padding: 4px 6px; font-weight: 700; text-align: center;" value="${item.sessionRate}" onchange="claimsManager.updatePatientNumber('${safeId}', 'sessionRate', this.value)">
           </td>
-          <td style="font-weight: 800; color: var="--success"; font-size: 0.95rem; text-align: center;">
-            <span id="claim-row-total-${p.id}">${rowTotal.toLocaleString('en-US')}</span> ج.م
+          <td style="font-weight: 800; color: var(--success); font-size: 0.95rem; text-align: center;">
+            <span id="claim-row-total-${safeId}">${rowTotal.toLocaleString('en-US')}</span> ج.م
           </td>
           <td style="text-align: center;">
-            <button type="button" class="btn btn-outline btn-sm" onclick="claimsManager.openAttendanceCardModal('${p.id}')" style="padding: 4px 10px; font-size: 0.78rem; font-weight: 700; color: #0369a1; border-color: #bae6fd; background-color: #f0f9ff;" title="تخصيص وطباعة بطاقة التردد">
+            <button type="button" class="btn btn-outline btn-sm" onclick="claimsManager.openAttendanceCardModal('${safeId}')" style="padding: 4px 10px; font-size: 0.78rem; font-weight: 700; color: #0369a1; border-color: #bae6fd; background-color: #f0f9ff;" title="تخصيص وطباعة بطاقة التردد">
               <i class="fa-solid fa-id-card"></i> بطاقة التردد
             </button>
           </td>
         </tr>
-      `;
-    }).join('');
+      `;    }).join('');
   }
 
   togglePatientCheck(patientId, checked) {
@@ -439,11 +442,11 @@ export class ClaimsManager {
       return `
         <tr>
           <td style="text-align: center; font-weight: bold;">${idx + 1}</td>
-          <td style="font-weight: bold; padding-right: 8px;">${item.patient.name}</td>
-          <td style="text-align: center; font-weight: bold;">${item.evalFee}</td>
-          <td style="text-align: center; font-weight: bold;">${item.sessionCount}</td>
-          <td style="text-align: center; font-weight: bold;">${item.sessionRate}</td>
-          <td style="text-align: center; font-weight: 800;">${item.total}</td>
+          <td style="font-weight: bold; padding-right: 8px;">${escapeHTML(item.patient.name)}</td>
+          <td style="text-align: center; font-weight: bold;">${escapeHTML(item.evalFee)}</td>
+          <td style="text-align: center; font-weight: bold;">${escapeHTML(item.sessionCount)}</td>
+          <td style="text-align: center; font-weight: bold;">${escapeHTML(item.sessionRate)}</td>
+          <td style="text-align: center; font-weight: 800;">${escapeHTML(item.total)}</td>
         </tr>
       `;
     }).join('');
@@ -498,20 +501,20 @@ export class ClaimsManager {
 
           <!-- Top Line: Name on the RIGHT, Company on the LEFT (No 'Referred from') -->
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; font-size: 11.5pt; font-weight: bold; border-bottom: 1.5px dashed #777; padding-bottom: 10px; direction: rtl;">
-            <div style="text-align: right;">الاسم: <span style="font-size: 12.5pt; font-weight: 800; color: #0f172a;">${p.name}</span></div>
-            <div style="text-align: left;">شركة: <span style="font-weight: 800; color: #0f172a;">${companyName}</span></div>
+            <div style="text-align: right;">الاسم: <span style="font-size: 12.5pt; font-weight: 800; color: #0f172a;">${escapeHTML(p.name)}</span></div>
+            <div style="text-align: left;">شركة: <span style="font-weight: 800; color: #0f172a;">${escapeHTML(companyName)}</span></div>
           </div>
 
           <!-- Content Block: strictly LTR, left-aligned, with bullet points underneath -->
           <div style="direction: ltr; text-align: left; line-height: 1.8; margin-bottom: 30px; font-size: 11pt;">
             <div style="margin-bottom: 20px;">
               <strong style="font-size: 12pt; display: block; color: #000; text-decoration: underline; margin-bottom: 6px;">Referred diagnosis:</strong>
-              <div style="padding-left: 14px; font-weight: 700; color: #0f172a;">• ${diag}</div>
+              <div style="padding-left: 14px; font-weight: 700; color: #0f172a;">• ${escapeHTML(diag)}</div>
             </div>
 
             <div style="margin-bottom: 20px;">
               <strong style="font-size: 12pt; display: block; color: #000; text-decoration: underline; margin-bottom: 6px;">P.T. Evaluation:</strong>
-              <div style="padding-left: 14px; color: #334155;">• ${evaluation}</div>
+              <div style="padding-left: 14px; color: #334155;">• ${escapeHTML(evaluation)}</div>
             </div>
 
             <div style="margin-bottom: 20px;">

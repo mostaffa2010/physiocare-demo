@@ -271,13 +271,20 @@ export class FinanceManager {
         tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; color: var(--text-muted); padding: 25px;">لا توجد حركات جلسات مسجلة في هذا التاريخ.</td></tr>`;
       } else {
         tbody.innerHTML = filteredSessions.map(s => {
+          const safeId = escapeHTML(s.id);
+          const safePatient = escapeHTML(s.patientName);
+          const safeDoc = escapeHTML(s.doctor);
+          const safeIns = escapeHTML(s.insuranceName || 'شركة');
+          const safeAmount = escapeHTML(s.amountPaid);
+          const safeRecBy = escapeHTML(s.recordedBy);
+
           let payBadge = '';
           if (s.payType === 'cash') {
             payBadge = `<span class="badge badge-cash"><i class="fa-solid fa-money-bill"></i> نقدي</span>`;
           } else if (s.contractType === 'direct') {
-            payBadge = `<span class="badge badge-direct"><i class="fa-solid fa-file-contract"></i> ${s.insuranceName || 'شركة'} (مباشر)</span>`;
+            payBadge = `<span class="badge badge-direct"><i class="fa-solid fa-file-contract"></i> ${safeIns} (مباشر)</span>`;
           } else {
-            payBadge = `<span class="badge badge-indirect"><i class="fa-solid fa-handshake"></i> ${s.insuranceName || 'شركة'} (غير مباشر)</span>`;
+            payBadge = `<span class="badge badge-indirect"><i class="fa-solid fa-handshake"></i> ${safeIns} (غير مباشر)</span>`;
           }
 
           let contractLabel = '-';
@@ -289,34 +296,34 @@ export class FinanceManager {
             }
           }
 
-          const parts = Array.isArray(s.bodyParts) ? s.bodyParts.join('، ') : (s.bodyParts || '');
-          const count = s.bodyPartsCount || (Array.isArray(s.bodyParts) ? s.bodyParts.length : 1);
+          const rawParts = Array.isArray(s.bodyParts) ? s.bodyParts.join('، ') : (s.bodyParts || '');
+          const parts = escapeHTML(rawParts);
+          const count = escapeHTML(s.bodyPartsCount || (Array.isArray(s.bodyParts) ? s.bodyParts.length : 1));
 
           return `
             <tr>
-              <td style="font-weight: 700;">${s.patientName}</td>
-              <td>${s.doctor}</td>
+              <td style="font-weight: 700;">${safePatient}</td>
+              <td>${safeDoc}</td>
               <td>${payBadge}</td>
-              <td>${s.insuranceName || '-'}</td>
+              <td>${safeIns === 'شركة' && s.payType === 'cash' ? '-' : safeIns}</td>
               <td>${contractLabel}</td>
               <td><span class="badge badge-role-doctor">${count} أعضاء (${parts})</span></td>
-              <td style="font-weight: 700; color: var(--success);">${s.amountPaid} ج.م</td>
-              <td style="font-size: 0.8rem; color: var(--text-muted);">${s.recordedBy}</td>
+              <td style="font-weight: 700; color: var(--success);">${safeAmount} ج.م</td>
+              <td style="font-size: 0.8rem; color: var(--text-muted);">${safeRecBy}</td>
               <td class="no-print">
                 <div style="display: flex; gap: 4px;">
-                  <button class="btn btn-outline btn-sm" onclick="sessionsManager.editSession('${s.id}')" title="تعديل بيانات الجلسة">
+                  <button class="btn btn-outline btn-sm" onclick="sessionsManager.editSession('${safeId}')" title="تعديل بيانات الجلسة">
                     <i class="fa-solid fa-pen-to-square"></i>
                   </button>
                   ${RolesManager.canDelete(auth.getCurrentUser()) ? `
-                    <button class="btn btn-outline btn-sm btn-delete-record" style="color: var(--danger);" onclick="sessionsManager.deleteSession('${s.id}')" title="حذف">
+                    <button class="btn btn-outline btn-sm btn-delete-record" style="color: var(--danger);" onclick="sessionsManager.deleteSession('${safeId}')" title="حذف">
                       <i class="fa-solid fa-trash"></i>
                     </button>
                   ` : ''}
                 </div>
               </td>
             </tr>
-          `;
-        }).join('');
+          `;        }).join('');
       }
     }
 
@@ -361,22 +368,31 @@ export class FinanceManager {
       if (recent.length === 0) {
         dashTbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: var(--text-muted); padding: 15px;">لا توجد جلسات مسجلة اليوم.</td></tr>`;
       } else {
-        dashTbody.innerHTML = recent.map(s => `
-          <tr>
-            <td style="font-weight: 700;">${s.patientName}</td>
-            <td>${s.doctor}</td>
-            <td>
-              ${s.payType === 'cash' 
-                ? '<span class="badge badge-cash"><i class="fa-solid fa-money-bill"></i> نقدي</span>' 
-                : (s.contractType === 'direct' 
-                  ? `<span class="badge badge-direct"><i class="fa-solid fa-file-contract"></i> ${s.insuranceName || 'تأمين'}</span>` 
-                  : `<span class="badge badge-indirect"><i class="fa-solid fa-handshake"></i> ${s.insuranceName || 'تأمين'}</span>`)}
-            </td>
-            <td>${s.bodyPartsCount || 1} أعضاء</td>
-            <td style="font-weight: 700; color: var(--success);">${s.amountPaid} ج.م</td>
-            <td style="font-size: 0.8rem; color: var(--text-muted);">${s.recordedAt}</td>
-          </tr>
-        `).join('');
+        dashTbody.innerHTML = recent.map(s => {
+          const safePatient = escapeHTML(s.patientName);
+          const safeDoc = escapeHTML(s.doctor);
+          const safeIns = escapeHTML(s.insuranceName || 'تأمين');
+          const safeAmount = escapeHTML(s.amountPaid);
+          const safeRecAt = escapeHTML(s.recordedAt);
+          const safeCount = escapeHTML(s.bodyPartsCount || 1);
+
+          return `
+            <tr>
+              <td style="font-weight: 700;">${safePatient}</td>
+              <td>${safeDoc}</td>
+              <td>
+                ${s.payType === 'cash' 
+                  ? '<span class="badge badge-cash"><i class="fa-solid fa-money-bill"></i> نقدي</span>' 
+                  : (s.contractType === 'direct' 
+                    ? `<span class="badge badge-direct"><i class="fa-solid fa-file-contract"></i> ${safeIns}</span>` 
+                    : `<span class="badge badge-indirect"><i class="fa-solid fa-handshake"></i> ${safeIns}</span>`)}
+              </td>
+              <td>${safeCount} أعضاء</td>
+              <td style="font-weight: 700; color: var(--success);">${safeAmount} ج.م</td>
+              <td style="font-size: 0.8rem; color: var(--text-muted);">${safeRecAt}</td>
+            </tr>
+          `;
+        }).join('');
       }
     }
   }
@@ -416,9 +432,10 @@ export class FinanceManager {
           const total = docSessions.length;
           const pct = totalPatients > 0 ? ((total / totalPatients) * 100).toFixed(1) : 0;
 
+          const safeDoc = escapeHTML(doc);
           return `
             <tr>
-              <td style="font-weight: 700;"><i class="fa-solid fa-user-doctor" style="color: var(--primary); margin-left: 6px;"></i> ${doc}</td>
+              <td style="font-weight: 700;"><i class="fa-solid fa-user-doctor" style="color: var(--primary); margin-left: 6px;"></i> ${safeDoc}</td>
               <td style="color: var(--success); font-weight: 700;">${cashCount} مريض</td>
               <td style="color: var(--primary); font-weight: 700;">${insCount} مريض</td>
               <td style="font-weight: 800; font-size: 0.95rem;">${total} مريض</td>
@@ -459,10 +476,12 @@ export class FinanceManager {
 
         insTbody.innerHTML = Object.values(categories).map(item => {
           const pct = ((item.count / totalPatients) * 100).toFixed(1);
+          const safeName = escapeHTML(item.name);
+          const safeType = escapeHTML(item.type);
           return `
             <tr>
-              <td style="font-weight: 700;">${item.name}</td>
-              <td><span class="badge ${item.type.includes('نقدي') ? 'badge-cash' : (item.type.includes('غير مباشر') ? 'badge-indirect' : 'badge-direct')}"><i class="fa-solid ${item.type.includes('نقدي') ? 'fa-money-bill' : (item.type.includes('غير مباشر') ? 'fa-handshake' : 'fa-file-contract')}"></i> ${item.type}</span></td>
+              <td style="font-weight: 700;">${safeName}</td>
+              <td><span class="badge ${item.type.includes('نقدي') ? 'badge-cash' : (item.type.includes('غير مباشر') ? 'badge-indirect' : 'badge-direct')}"><i class="fa-solid ${item.type.includes('نقدي') ? 'fa-money-bill' : (item.type.includes('غير مباشر') ? 'fa-handshake' : 'fa-file-contract')}"></i> ${safeType}</span></td>
               <td style="font-weight: 800; color: var(--primary); font-size: 0.95rem;">${item.count} حالة</td>
               <td style="font-weight: 700;">${pct}%</td>
             </tr>
@@ -477,14 +496,20 @@ export class FinanceManager {
       if (allExpenses.length === 0) {
         mExpTbody.innerHTML = `<tr><td colspan="4" style="text-align: center; color: var(--text-muted); padding: 20px;">لا توجد مصروفات مسجلة لهذا الشهر.</td></tr>`;
       } else {
-        mExpTbody.innerHTML = allExpenses.map(e => `
-          <tr>
-            <td>${e.date || '-'}</td>
-            <td style="font-weight: 600;">${e.title}</td>
-            <td style="font-weight: 700; color: var(--danger);">${e.amount} ج.م</td>
-            <td style="font-size: 0.8rem; color: var(--text-muted);">${e.recordedBy || '-'}</td>
-          </tr>
-        `).join('');
+        mExpTbody.innerHTML = allExpenses.map(e => {
+          const safeDate = escapeHTML(e.date || '-');
+          const safeTitle = escapeHTML(e.title);
+          const safeAmount = escapeHTML(e.amount);
+          const safeRecBy = escapeHTML(e.recordedBy || '-');
+          return `
+            <tr>
+              <td>${safeDate}</td>
+              <td style="font-weight: 600;">${safeTitle}</td>
+              <td style="font-weight: 700; color: var(--danger);">${safeAmount} ج.م</td>
+              <td style="font-size: 0.8rem; color: var(--text-muted);">${safeRecBy}</td>
+            </tr>
+          `;
+        }).join('');
       }
     }
   }

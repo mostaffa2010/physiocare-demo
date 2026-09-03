@@ -190,48 +190,58 @@ export class PatientsManager {
 
     tbody.innerHTML = filtered.map(p => {
       let billingBadge = '';
+      const safeComp = escapeHTML(p.insuranceCompany || 'تأمين');
       if (p.billing === 'cash') {
         billingBadge = `<span class="badge badge-cash"><i class="fa-solid fa-money-bill"></i> نقدي</span>`;
       } else if (p.contractType === 'direct') {
-        billingBadge = `<span class="badge badge-direct"><i class="fa-solid fa-file-contract"></i> ${p.insuranceCompany || 'تأمين'} (مباشر)</span>`;
+        billingBadge = `<span class="badge badge-direct"><i class="fa-solid fa-file-contract"></i> ${safeComp} (مباشر)</span>`;
       } else {
-        billingBadge = `<span class="badge badge-indirect"><i class="fa-solid fa-handshake"></i> ${p.insuranceCompany || 'تأمين'} (غير مباشر)</span>`;
+        billingBadge = `<span class="badge badge-indirect"><i class="fa-solid fa-handshake"></i> ${safeComp} (غير مباشر)</span>`;
       }
+
+      const safeId = escapeHTML(p.id);
+      const safeName = escapeHTML(p.name);
+      const safeAge = escapeHTML(p.age);
+      const safePhone = escapeHTML(p.phone);
+      const safeAddress = escapeHTML(p.address || '-');
+      const safeDoctor = escapeHTML(p.doctor);
+      const safeEditor = escapeHTML(p.lastUpdatedBy || p.createdBy || '-');
+      const cleanWaPhone = (p.phone || '').replace(/[^0-9]/g, '').replace(/^0/, '20');
 
       return `
         <tr>
-          <td style="font-weight: 800; color: var(--primary); cursor: ${canAccessSheet ? 'pointer' : 'default'}; white-space: nowrap;" 
-              onclick="${canAccessSheet ? `patientsManager.openPatientSheet('${p.id}')` : `patientsManager.openEditModal('${p.id}')`}" 
+          <td style="font-weight: 800; color: var(--primary); cursor: ${canAccessSheet ? 'pointer' : 'default'}; white-space: nowrap;"
+              onclick="${canAccessSheet ? `patientsManager.openPatientSheet('${safeId}')` : `patientsManager.openEditModal('${safeId}')`}"
               title="${canAccessSheet ? 'اضغط لفتح الشيت الطبي' : 'تعديل بيانات المريض'}">
-            <i class="fa-solid ${canAccessSheet ? 'fa-file-waveform' : 'fa-user'}" style="margin-left: 6px;"></i> ${p.name}
+            <i class="fa-solid ${canAccessSheet ? 'fa-file-waveform' : 'fa-user'}" style="margin-left: 6px;"></i> ${safeName}
           </td>
-          <td style="white-space: nowrap;">${p.age} سنة</td>
+          <td style="white-space: nowrap;">${safeAge} سنة</td>
           <td style="white-space: nowrap;">
-            <a href="tel:${p.phone}" style="color: var(--primary); text-decoration: none; white-space: nowrap; direction: ltr; display: inline-flex; align-items: center; gap: 4px;">
-              <i class="fa-solid fa-phone" style="font-size: 0.75rem;"></i> <bdi dir="ltr">${p.phone}</bdi>
+            <a href="tel:${safePhone}" style="color: var(--primary); text-decoration: none; white-space: nowrap; direction: ltr; display: inline-flex; align-items: center; gap: 4px;">
+              <i class="fa-solid fa-phone" style="font-size: 0.75rem;"></i> <bdi dir="ltr">${safePhone}</bdi>
             </a>
           </td>
-          <td style="white-space: nowrap;">${p.address || '-'}</td>
-          <td style="white-space: nowrap;"><span style="font-weight: 600; color: #1e293b;">${p.doctor}</span></td>
+          <td style="white-space: nowrap;">${safeAddress}</td>
+          <td style="white-space: nowrap;"><span style="font-weight: 600; color: #1e293b;">${safeDoctor}</span></td>
           <td style="white-space: nowrap;">${billingBadge}</td>
-          <td style="font-size: 0.8rem; color: var(--text-muted); white-space: nowrap;">${p.lastUpdatedBy || p.createdBy || '-'}</td>
+          <td style="font-size: 0.8rem; color: var(--text-muted); white-space: nowrap;">${safeEditor}</td>
           <td style="white-space: nowrap;">
             <div style="display: flex; gap: 6px; align-items: center; flex-wrap: nowrap;">
               ${canAccessSheet ? `
-                <button class="btn btn-primary btn-sm btn-patient-sheet-action" onclick="patientsManager.openPatientSheet('${p.id}')" title="شيت العلاج الطبيعي">
+                <button class="btn btn-primary btn-sm btn-patient-sheet-action" onclick="patientsManager.openPatientSheet('${safeId}')" title="شيت العلاج الطبيعي">
                   <i class="fa-solid fa-file-waveform"></i> الشيت الطبي
                 </button>
               ` : ''}
-              <a href="https://wa.me/${(p.phone || '').replace(/[^0-9]/g, '').replace(/^0/, '20')}" target="_blank" class="btn btn-outline btn-sm" style="color: #10b981; border-color: #10b981;" title="محادثة واتساب">
+              <a href="https://wa.me/${cleanWaPhone}" target="_blank" class="btn btn-outline btn-sm" style="color: #10b981; border-color: #10b981;" title="محادثة واتساب">
                 <i class="fa-brands fa-whatsapp"></i>
               </a>
               ${!isDoctor ? `
-                <button class="btn btn-outline btn-sm" onclick="patientsManager.openEditModal('${p.id}')" title="تعديل بيانات المريض">
+                <button class="btn btn-outline btn-sm" onclick="patientsManager.openEditModal('${safeId}')" title="تعديل بيانات المريض">
                   <i class="fa-solid fa-pen-to-square"></i>
                 </button>
               ` : ''}
               ${canDeletePatient ? `
-                <button class="btn btn-outline btn-sm btn-delete-patient" style="color: var(--danger);" onclick="patientsManager.confirmDelete('${p.id}')" title="حذف المريض">
+                <button class="btn btn-outline btn-sm btn-delete-patient" style="color: var(--danger);" onclick="patientsManager.confirmDelete('${safeId}')" title="حذف المريض">
                   <i class="fa-solid fa-trash"></i>
                 </button>
               ` : ''}
@@ -350,8 +360,8 @@ export class PatientsManager {
 
     select.innerHTML = '<option value="">-- اختر المريض من السجل --</option>' + 
       this.patients.map(p => {
-        const info = p.billing === 'cash' ? 'نقدي' : `تأمين: ${p.insuranceCompany || 'شركة'}`;
-        return `<option value="${p.id}">${p.name} (${p.doctor}) - [${info}]</option>`;
+        const info = p.billing === 'cash' ? 'نقدي' : `تأمين: ${escapeHTML(p.insuranceCompany || 'شركة')}`;
+        return `<option value="${escapeHTML(p.id)}">${escapeHTML(p.name)} (${escapeHTML(p.doctor)}) - [${info}]</option>`;
       }).join('');
   }
 
@@ -501,7 +511,7 @@ export class PatientsManager {
         badgeEl.innerHTML = '<span class="badge badge-cash" style="font-size: 0.82rem; padding: 4px 12px; font-weight: 700; white-space: nowrap; display: inline-flex; align-items: center; gap: 5px;"><i class="fa-solid fa-money-bill-wave"></i> نقدي</span>';
       } else {
         const cType = p.contractType === 'direct' ? 'مباشر' : 'غير مباشر';
-        badgeEl.innerHTML = `<span class="badge badge-direct" style="font-size: 0.82rem; padding: 4px 12px; font-weight: 700; white-space: nowrap; display: inline-flex; align-items: center; gap: 5px;"><i class="fa-solid fa-shield-halved"></i> ${p.insuranceCompany || 'تأمين'} (${cType})</span>`;
+        badgeEl.innerHTML = `<span class="badge badge-direct" style="font-size: 0.82rem; padding: 4px 12px; font-weight: 700; white-space: nowrap; display: inline-flex; align-items: center; gap: 5px;"><i class="fa-solid fa-shield-halved"></i> ${escapeHTML(p.insuranceCompany || 'تأمين')} (${cType})</span>`;
       }
     }
 

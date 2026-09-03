@@ -191,21 +191,27 @@ export class SessionsManager {
 
     container.innerHTML = filtered.map(p => {
       let badge = '';
+      const safeComp = escapeHTML(p.insuranceCompany || 'تأمين');
       if (p.billing === 'cash') {
         badge = `<span class="badge badge-cash">نقدي</span>`;
       } else {
         const cType = p.contractType === 'direct' ? 'مباشر' : 'غير مباشر';
-        badge = `<span class="badge badge-direct">${p.insuranceCompany || 'تأمين'} (${cType})</span>`;
+        badge = `<span class="badge badge-direct">${safeComp} (${cType})</span>`;
       }
 
+      const safeId = escapeHTML(p.id);
+      const safeName = escapeHTML(p.name);
+      const safePhone = escapeHTML(p.phone);
+      const safeDoctor = escapeHTML(p.doctor);
+
       return `
-        <div class="picker-item" onclick="sessionsManager.selectPatient('${p.id}')">
+        <div class="picker-item" onclick="sessionsManager.selectPatient('${safeId}')">
           <div>
             <div style="font-weight: 700; color: var(--text-main); font-size: 0.95rem;">
-              <i class="fa-solid fa-user" style="color: var(--primary); margin-left: 6px;"></i> ${p.name}
+              <i class="fa-solid fa-user" style="color: var(--primary); margin-left: 6px;"></i> ${safeName}
             </div>
             <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 3px;">
-              <i class="fa-solid fa-phone" style="font-size: 0.75rem;"></i> ${p.phone} | <span style="color: #1e293b; font-weight: 600;">${p.doctor}</span>
+              <i class="fa-solid fa-phone" style="font-size: 0.75rem;"></i> ${safePhone} | <span style="color: #1e293b; font-weight: 600;">${safeDoctor}</span>
             </div>
           </div>
           <div>${badge}</div>
@@ -647,42 +653,51 @@ export class SessionsManager {
     const canDelete = RolesManager.canDelete(currentUser);
 
     tbody.innerHTML = sessions.map(s => {
+      const safeId = escapeHTML(s.id);
+      const safePatient = escapeHTML(s.patientName);
+      const safeDoc = escapeHTML(s.doctor);
+      const safeIns = escapeHTML(s.insuranceName || 'تأمين');
+      const safeAmount = escapeHTML(s.amountPaid);
+      const safeRecBy = escapeHTML(s.recordedBy);
+      const safeRecAt = escapeHTML(s.recordedAt);
+      const safeParts = Array.isArray(s.bodyParts) ? s.bodyParts.map(b => escapeHTML(b)).join('، ') : escapeHTML(s.bodyParts || '');
+      const safePartsShort = Array.isArray(s.bodyParts) ? s.bodyParts.slice(0, 2).map(b => escapeHTML(b)).join('، ') : escapeHTML(s.bodyParts || '');
+
       let payBadge = '';
       if (s.payType === 'cash') {
         payBadge = `<span class="badge badge-cash"><i class="fa-solid fa-money-bill"></i> نقدي</span>`;
       } else if (s.contractType === 'direct') {
-        payBadge = `<span class="badge badge-direct"><i class="fa-solid fa-file-contract"></i> ${s.insuranceName || 'تأمين'} (مباشر)</span>`;
+        payBadge = `<span class="badge badge-direct"><i class="fa-solid fa-file-contract"></i> ${safeIns} (مباشر)</span>`;
       } else {
-        payBadge = `<span class="badge badge-indirect"><i class="fa-solid fa-handshake"></i> ${s.insuranceName || 'تأمين'} (غير مباشر)</span>`;
+        payBadge = `<span class="badge badge-indirect"><i class="fa-solid fa-handshake"></i> ${safeIns} (غير مباشر)</span>`;
       }
 
       return `
         <tr>
-          <td style="font-weight: 700;">${s.patientName}</td>
-          <td>${s.doctor}</td>
+          <td style="font-weight: 700;">${safePatient}</td>
+          <td>${safeDoc}</td>
           <td>${payBadge}</td>
           <td>
-            <span class="badge badge-role-doctor" title="${s.bodyParts.join('، ')}">
-              ${s.bodyPartsCount} أعضاء (${s.bodyParts.slice(0, 2).join('، ')}${s.bodyParts.length > 2 ? '...' : ''})
+            <span class="badge badge-role-doctor" title="${safeParts}">
+              ${escapeHTML(s.bodyPartsCount)} أعضاء (${safePartsShort}${s.bodyParts && s.bodyParts.length > 2 ? '...' : ''})
             </span>
           </td>
-          <td style="font-weight: 700; color: var(--success);">${s.amountPaid} ج.م</td>
-          <td style="font-size: 0.8rem; color: var(--text-muted);">${s.recordedBy} (${s.recordedAt})</td>
+          <td style="font-weight: 700; color: var(--success);">${safeAmount} ج.م</td>
+          <td style="font-size: 0.8rem; color: var(--text-muted);">${safeRecBy} (${safeRecAt})</td>
           <td>
             <div style="display: flex; gap: 4px;">
-              <button class="btn btn-outline btn-sm" onclick="sessionsManager.editSession('${s.id}')" title="تعديل بيانات الجلسة">
+              <button class="btn btn-outline btn-sm" onclick="sessionsManager.editSession('${safeId}')" title="تعديل بيانات الجلسة">
                 <i class="fa-solid fa-pen-to-square"></i>
               </button>
               ${canDelete ? `
-                <button class="btn btn-outline btn-sm btn-delete-record" style="color: var(--danger);" onclick="sessionsManager.deleteSession('${s.id}')" title="حذف">
+                <button class="btn btn-outline btn-sm btn-delete-record" style="color: var(--danger);" onclick="sessionsManager.deleteSession('${safeId}')" title="حذف">
                   <i class="fa-solid fa-trash"></i>
                 </button>
               ` : ''}
             </div>
           </td>
         </tr>
-      `;
-    }).join('');
+      `;    }).join('');
   }
 
   async deleteSession(sessionId) {
