@@ -23,6 +23,18 @@ export class AuditAndAdminManager {
     if (formAddUser) {
       formAddUser.addEventListener('submit', (e) => this.handleAddUser(e));
     }
+
+    const usersTbody = document.getElementById('users-table-tbody');
+    if (usersTbody) {
+      usersTbody.addEventListener('click', (e) => {
+        const btn = e.target.closest('.btn-delete-user');
+        if (btn) {
+          const userId = btn.getAttribute('data-user-id');
+          const userName = btn.getAttribute('data-user-name');
+          this.deleteUser(userId, userName);
+        }
+      });
+    }
   }
 
   async handleAddUser(e) {
@@ -83,7 +95,7 @@ export class AuditAndAdminManager {
           <td><span class="badge badge-role-${safeRole}">${roleLabel}</span></td>
           <td>
             ${!isSelf ? `
-              <button class="btn btn-outline btn-sm" style="color: var(--danger);" onclick="auditManager.deleteUser('${escapeHTML(u.id)}', '${safeName}')" title="حذف المستخدم">
+              <button type="button" class="btn btn-outline btn-sm btn-delete-user" style="color: var(--danger);" data-user-id="${escapeHTML(u.id)}" data-user-name="${safeName}" title="حذف المستخدم">
                 <i class="fa-solid fa-trash"></i>
               </button>
             ` : '<span style="font-size: 0.8rem; color: var(--text-muted); font-weight: 600;">حسابك الحالي</span>'}

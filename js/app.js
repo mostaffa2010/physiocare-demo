@@ -54,6 +54,14 @@ class App {
 
     // 3. ربط أحداث التنقل والحوارات
     this.bindNavigation();
+        // Disable browser long-press floating context menu / copy-share popup on non-input elements
+    window.addEventListener('contextmenu', (e) => {
+      const tag = e.target.tagName;
+      if (tag !== 'INPUT' && tag !== 'TEXTAREA' && !e.target.isContentEditable) {
+        e.preventDefault();
+      }
+    });
+
     this.bindHardwareBackButton();
     this.disablePullToRefresh();
     this.disableBrowserContextMenu();
@@ -186,6 +194,100 @@ class App {
         }
       });
     });
+
+    // Universal Modal Close Event Delegation ([data-close-modal])
+    document.addEventListener('click', (e) => {
+      const closeBtn = e.target.closest('[data-close-modal]');
+      if (closeBtn) {
+        const modalId = closeBtn.getAttribute('data-close-modal');
+        if (modalId) this.closeModal(modalId);
+      }
+    });
+
+    // Universal View Switch Event Delegation ([data-view-target])
+    document.addEventListener('click', (e) => {
+      const viewBtn = e.target.closest('[data-view-target]');
+      if (viewBtn) {
+        const targetView = viewBtn.getAttribute('data-view-target');
+        if (targetView) this.switchView(targetView);
+      }
+    });
+
+    // Universal Custom Picker Trigger Delegation ([data-open-picker])
+    document.addEventListener('click', (e) => {
+      const pickerBtn = e.target.closest('[data-open-picker]');
+      if (pickerBtn) {
+        const selId = pickerBtn.getAttribute('data-open-picker');
+        const title = pickerBtn.getAttribute('data-picker-title') || 'اختر من القائمة';
+        this.openCustomPicker(selId, title);
+      }
+    });
+
+    // Universal Calendar Picker Trigger Delegation ([data-open-calendar])
+    document.addEventListener('click', (e) => {
+      const calInp = e.target.closest('[data-open-calendar]');
+      if (calInp) {
+        const inpId = calInp.getAttribute('data-open-calendar');
+        this.openCalendarPicker(inpId);
+      }
+    });
+
+    // Event Delegation: Custom Picker Options List
+    const customPickerList = document.getElementById('custom-picker-list');
+    if (customPickerList) {
+      customPickerList.addEventListener('click', (e) => {
+        const row = e.target.closest('[data-select-id]');
+        if (row) {
+          const selectId = row.getAttribute('data-select-id');
+          const val = row.getAttribute('data-select-value');
+          this.selectCustomOption(selectId, val);
+        }
+      });
+    }
+
+    // Event Delegation: Calendar Days Grid
+    const calDaysContainer = document.getElementById('cal-days-container');
+    if (calDaysContainer) {
+      calDaysContainer.addEventListener('click', (e) => {
+        const cell = e.target.closest('[data-cal-d]');
+        if (cell) {
+          const y = parseInt(cell.dataset.calY);
+          const m = parseInt(cell.dataset.calM);
+          const d = parseInt(cell.dataset.calD);
+          this.calendarSelectDay(y, m, d);
+        }
+      });
+    }
+
+    // Calendar Modal Controls
+    document.getElementById('cal-btn-prev')?.addEventListener('click', () => this.calendarNavigate(-1));
+    document.getElementById('cal-btn-next')?.addEventListener('click', () => this.calendarNavigate(1));
+    document.getElementById('cal-btn-confirm')?.addEventListener('click', () => this.calendarConfirmSelection());
+    document.querySelectorAll('[data-cal-quick]').forEach(btn => {
+      btn.addEventListener('click', () => this.calendarSelectQuick(btn.getAttribute('data-cal-quick')));
+    });
+
+    // Sales Banner, Demo & Training Buttons
+    document.getElementById('btn-reset-demo-data')?.addEventListener('click', () => this.resetDemoData());
+    document.getElementById('demo-role-select')?.addEventListener('change', (e) => auth.switchRole(e.target.value));
+    document.getElementById('btn-reset-training-data')?.addEventListener('click', () => this.resetTrainingData());
+    document.getElementById('btn-exit-training-data')?.addEventListener('click', () => this.toggleTrainingMode(false));
+    document.getElementById('btn-toggle-training-desktop')?.addEventListener('click', () => this.toggleTrainingMode());
+    document.getElementById('btn-auth-demo-mode')?.addEventListener('click', () => {
+      this.toggleTrainingMode(true);
+      this.closeModal('modal-auth');
+    });
+
+    // Patient Picker Modal: Add New Patient Action
+    document.getElementById('btn-picker-add-new-patient')?.addEventListener('click', () => {
+      this.closeModal('modal-patient-picker');
+      this.patientsManager.openAddModal();
+    });
+
+    // Admin Backup Controls
+    document.getElementById('btn-download-backup')?.addEventListener('click', () => this.downloadBackup());
+    document.getElementById('btn-restore-backup')?.addEventListener('click', () => this.triggerRestoreBackup());
+    document.getElementById('backup-file-input')?.addEventListener('change', (e) => this.handleFileRestore(e));
   }
 
   bindCustomDialog() {
@@ -405,7 +507,7 @@ class App {
       if (isToday) cls += ' today';
 
       cellsHtml += `
-        <button type="button" class="${cls}" onclick="app.calendarSelectDay(${y}, ${m}, ${d})">
+        <button type="button" class="${cls}" data-cal-y="${y}" data-cal-m="${m}" data-cal-d="${d}">
           ${d}
         </button>
       `;
@@ -547,7 +649,7 @@ class App {
     container.innerHTML = options.map((opt) => {
       const isSelected = opt.value === currentVal;
       return `
-        <div class="custom-picker-row ${isSelected ? 'active-choice' : ''}" onclick="app.selectCustomOption('${selectId}', '${opt.value.replace(/'/g, "\'")}')">
+        <div class="custom-picker-row ${isSelected ? 'active-choice' : ''}" data-select-id="${selectId}" data-select-value="${escapeHTML(opt.value)}">
           <span>${opt.text}</span>
           ${isSelected ? '<i class="fa-solid fa-check check-icon"></i>' : ''}
         </div>

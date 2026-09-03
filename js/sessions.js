@@ -39,6 +39,10 @@ export class SessionsManager {
       });
     }
 
+    // Quick Date Buttons
+    document.getElementById('btn-quick-sess-today')?.addEventListener('click', () => this.setDateQuick('today'));
+    document.getElementById('btn-quick-sess-yesterday')?.addEventListener('click', () => this.setDateQuick('yesterday'));
+
     // 1. Body parts buttons toggle (100% bug-free click handling)
     const chipsContainer = document.getElementById('body-parts-container');
     if (chipsContainer) {
@@ -51,10 +55,31 @@ export class SessionsManager {
       });
     }
 
-    // 2. Patient Picker Search Filter
+    // 2. Patient Picker Search Filter & Triggers
+    document.getElementById('patient-picker-trigger')?.addEventListener('click', () => this.openPatientPicker());
+    document.getElementById('btn-change-patient-picker')?.addEventListener('click', () => this.openPatientPicker());
+
     const pickerSearch = document.getElementById('picker-search-input');
     if (pickerSearch) {
       pickerSearch.addEventListener('input', () => this.renderPickerPatients());
+    }
+
+    // Event Delegation: Patient Picker List
+    const pickerList = document.getElementById('picker-patients-list');
+    if (pickerList) {
+      pickerList.addEventListener('click', (e) => {
+        const addBtn = e.target.closest('.btn-picker-add-patient');
+        if (addBtn) {
+          this.app.closeModal('modal-patient-picker');
+          this.app.patientsManager.openAddModal();
+          return;
+        }
+        const item = e.target.closest('.picker-item');
+        if (item) {
+          const pid = item.getAttribute('data-patient-id');
+          if (pid) this.selectPatient(pid);
+        }
+      });
     }
 
     // 3. Toggle Insurance fields on radio change
@@ -66,10 +91,74 @@ export class SessionsManager {
       });
     });
 
+    // Contract Type Radios in Session Form
+    document.querySelectorAll('input[name="session-contract-type"]').forEach(r => {
+      r.addEventListener('change', (e) => this.onContractTypeChanged(e.target.value));
+    });
+
+    // Toggle Insurance Edit Mode
+    document.getElementById('btn-toggle-chips-ins-session')?.addEventListener('click', () => this.toggleInsuranceEditMode('session'));
+
+    // Event Delegation: Session Insurance Chips Containers
+    ['session-ins-direct-container', 'session-ins-indirect-container'].forEach(id => {
+      const container = document.getElementById(id);
+      if (container) {
+        container.addEventListener('click', (e) => {
+          const delTag = e.target.closest('[data-action="delete-insurance"]');
+          if (delTag) {
+            e.stopPropagation();
+            this.deleteInsuranceDirect(delTag.dataset.contract, delTag.dataset.company);
+            return;
+          }
+          const addBtn = e.target.closest('[data-action="add-insurance"]');
+          if (addBtn) {
+            e.stopPropagation();
+            this.openAddInsuranceModal(addBtn.dataset.contract, addBtn.dataset.source || 'session');
+            return;
+          }
+          const chip = e.target.closest('[data-action="select-insurance"]');
+          if (chip) {
+            this.selectInsuranceCompany(chip.dataset.contract, chip.dataset.company);
+          }
+        });
+      }
+    });
+
+    // Modal Add Insurance Company Form & Radio sync
+    const formAddCompany = document.getElementById('form-add-insurance-company');
+    if (formAddCompany) {
+      formAddCompany.addEventListener('submit', (e) => this.handleSaveNewCompany(e));
+    }
+    const updateTargetContract = (val) => {
+      const targetInput = document.getElementById('ins-target-contract');
+      if (targetInput) targetInput.value = val;
+    };
+    document.getElementById('new-ins-type-direct')?.addEventListener('change', (e) => updateTargetContract(e.target.value));
+    document.getElementById('new-ins-type-indirect')?.addEventListener('change', (e) => updateTargetContract(e.target.value));
+
     // 4. Form Submit
     const form = document.getElementById('form-log-session');
     if (form) {
       form.addEventListener('submit', (e) => this.handleSaveSession(e));
+    }
+
+    // Event Delegation: Sessions Table Body
+    const sessionsTbody = document.getElementById('sessions-today-table-body');
+    if (sessionsTbody) {
+      sessionsTbody.addEventListener('click', (e) => {
+        const editBtn = e.target.closest('.btn-edit-session');
+        if (editBtn) {
+          const sid = editBtn.getAttribute('data-session-id');
+          if (sid) this.editSession(sid);
+          return;
+        }
+        const delBtn = e.target.closest('.btn-delete-session');
+        if (delBtn) {
+          const sid = delBtn.getAttribute('data-session-id');
+          if (sid) this.deleteSession(sid);
+          return;
+        }
+      });
     }
   }
 
@@ -181,7 +270,7 @@ export class SessionsManager {
       container.innerHTML = `
         <div style="text-align: center; padding: 24px; color: var(--text-muted); font-size: 0.9rem;">
           لا يوجد مريض بهذا الاسم أو الرقم.<br>
-          <button type="button" class="btn btn-primary btn-sm" style="margin-top: 10px;" onclick="app.closeModal('modal-patient-picker'); app.patientsManager.openAddModal();">
+          <button type="button" class="btn btn-primary btn-sm btn-picker-add-patient" style="margin-top: 10px;">
             <i class="fa-solid fa-user-plus"></i> تسجيل مريض جديد الآن
           </button>
         </div>
@@ -205,7 +294,7 @@ export class SessionsManager {
       const safeDoctor = escapeHTML(p.doctor);
 
       return `
-        <div class="picker-item" onclick="sessionsManager.selectPatient('${safeId}')">
+        <div class="picker-item" data-patient-id="${safeId}">
           <div>
             <div style="font-weight: 700; color: var(--text-main); font-size: 0.95rem;">
               <i class="fa-solid fa-user" style="color: var(--primary); margin-left: 6px;"></i> ${safeName}
@@ -372,11 +461,11 @@ export class SessionsManager {
       const safeComp = comp.replace(/'/g, "\\'");
       const editClass = isEdit ? 'in-edit-mode' : '';
       const deleteIconHtml = isEdit
-        ? `<span class="chip-delete-tag" onclick="event.stopPropagation(); sessionsManager.deleteInsuranceDirect('${contractType}', '${safeComp}')" title="حذف الشركة"><i class="fa-solid fa-circle-xmark"></i></span>`
+        ? `<span class="chip-delete-tag" data-action="delete-insurance" data-contract="${contractType}" data-company="${safeComp}" title="حذف الشركة"><i class="fa-solid fa-circle-xmark"></i></span>`
         : '';
 
       return `
-        <button type="button" class="chip-choice sheet-chip chip-${contractType} ${isSelected ? 'selected' : ''} ${editClass}" onclick="sessionsManager.selectInsuranceCompany('${contractType}', '${safeComp}')">
+        <button type="button" class="chip-choice sheet-chip chip-${contractType} ${isSelected ? 'selected' : ''} ${editClass}" data-action="select-insurance" data-contract="${contractType}" data-company="${safeComp}">
           <i class="${icon}"></i> <span>${comp}</span>
           ${deleteIconHtml}
         </button>
@@ -385,7 +474,7 @@ export class SessionsManager {
 
     if (isEdit) {
       html += `
-        <button type="button" class="chip-add-new-btn" onclick="sessionsManager.openAddInsuranceModal('${contractType}', 'session')">
+        <button type="button" class="chip-add-new-btn" data-action="add-insurance" data-contract="${contractType}" data-source="session">
           <i class="fa-solid fa-plus"></i> <span>إضافة شركة جديدة</span>
         </button>
       `;
@@ -686,11 +775,11 @@ export class SessionsManager {
           <td style="font-size: 0.8rem; color: var(--text-muted);">${safeRecBy} (${safeRecAt})</td>
           <td>
             <div style="display: flex; gap: 4px;">
-              <button class="btn btn-outline btn-sm" onclick="sessionsManager.editSession('${safeId}')" title="تعديل بيانات الجلسة">
+              <button type="button" class="btn btn-outline btn-sm btn-edit-session" data-session-id="${safeId}" title="تعديل بيانات الجلسة">
                 <i class="fa-solid fa-pen-to-square"></i>
               </button>
               ${canDelete ? `
-                <button class="btn btn-outline btn-sm btn-delete-record" style="color: var(--danger);" onclick="sessionsManager.deleteSession('${safeId}')" title="حذف">
+                <button type="button" class="btn btn-outline btn-sm btn-delete-record btn-delete-session" style="color: var(--danger);" data-session-id="${safeId}" title="حذف">
                   <i class="fa-solid fa-trash"></i>
                 </button>
               ` : ''}

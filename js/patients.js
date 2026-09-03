@@ -54,18 +54,116 @@ export class PatientsManager {
       });
     });
 
-    // Bind Sheet Chips toggle
-    document.querySelectorAll('.sheet-chip').forEach(btn => {
-      btn.addEventListener('click', (e) => {
-        e.preventDefault();
-        btn.classList.toggle('selected');
-      });
+    // Contract Type Radios in Patient Form
+    document.querySelectorAll('input[name="p-contract-type"]').forEach(r => {
+      r.addEventListener('change', (e) => this.onContractTypeChanged(e.target.value));
     });
 
-    // Form Submission
+    // Toggle Insurance Edit Mode in Patient Form
+    document.getElementById('btn-toggle-chips-ins-patient')?.addEventListener('click', () => this.toggleInsuranceEditMode('patient'));
+
+    // Event Delegation: Patient Modal Insurance Chips Containers
+    ['p-ins-direct-container', 'p-ins-indirect-container'].forEach(id => {
+      const container = document.getElementById(id);
+      if (container) {
+        container.addEventListener('click', (e) => {
+          const delTag = e.target.closest('[data-action="delete-insurance"]');
+          if (delTag) {
+            e.stopPropagation();
+            this.deleteInsuranceDirect(delTag.dataset.contract, delTag.dataset.company);
+            return;
+          }
+          const addBtn = e.target.closest('[data-action="add-insurance"]');
+          if (addBtn) {
+            e.stopPropagation();
+            this.app.sessionsManager.openAddInsuranceModal(addBtn.dataset.contract, addBtn.dataset.source || 'patient');
+            return;
+          }
+          const chip = e.target.closest('[data-action="select-insurance"]');
+          if (chip) {
+            this.selectInsuranceCompany(chip.dataset.contract, chip.dataset.company);
+          }
+        });
+      }
+    });
+
+    // Patient Sheet Navigation & Print Buttons
+    document.getElementById('btn-back-to-patients-top')?.addEventListener('click', () => this.app.switchView('patients'));
+    document.getElementById('btn-back-to-patients-bottom')?.addEventListener('click', () => this.app.switchView('patients'));
+    document.getElementById('btn-print-sheet-top')?.addEventListener('click', () => this.printCurrentSheet());
+    document.getElementById('btn-print-sheet-bottom')?.addEventListener('click', () => this.printCurrentSheet());
+
+    // Patient Sheet Form Submit
+    const formSheet = document.getElementById('form-patient-sheet');
+    if (formSheet) {
+      formSheet.addEventListener('submit', (e) => this.handleSaveSheet(e));
+    }
+
+    // Toggle Chips Edit Mode Buttons in Clinical Sheet
+    document.getElementById('btn-toggle-chips-modality')?.addEventListener('click', () => this.toggleChipsEditMode('modality'));
+    document.getElementById('btn-toggle-chips-procedure')?.addEventListener('click', () => this.toggleChipsEditMode('procedure'));
+    document.getElementById('btn-toggle-chips-exercise')?.addEventListener('click', () => this.toggleChipsEditMode('exercise'));
+
+    // Modal Add Clinical Option Form Submit
+    const formAddOption = document.getElementById('form-add-clinical-option');
+    if (formAddOption) {
+      formAddOption.addEventListener('submit', (e) => this.handleSaveNewOption(e));
+    }
+
+    // Event Delegation: Clinical Sheet Chips Containers (Modalities, Procedures, Exercises)
+    ['sheet-modalities-container', 'sheet-procedures-container', 'sheet-exercises-container'].forEach(id => {
+      const container = document.getElementById(id);
+      if (container) {
+        container.addEventListener('click', (e) => {
+          const delTag = e.target.closest('[data-action="delete-option"]');
+          if (delTag) {
+            e.stopPropagation();
+            this.deleteOptionDirect(delTag.dataset.category, delTag.dataset.option);
+            return;
+          }
+          const addBtn = e.target.closest('[data-action="add-option"]');
+          if (addBtn) {
+            e.stopPropagation();
+            this.openAddOptionModal(addBtn.dataset.category);
+            return;
+          }
+          const chip = e.target.closest('.chip-choice');
+          if (chip && !chip.classList.contains('in-edit-mode')) {
+            chip.classList.toggle('selected');
+          }
+        });
+      }
+    });
+
+    // Form Submission for Patient
     const form = document.getElementById('form-patient');
     if (form) {
       form.addEventListener('submit', (e) => this.handleSavePatient(e));
+    }
+
+    // Event Delegation: Patients Directory Table (sheet, edit, delete)
+    const tbody = document.getElementById('patients-table-tbody');
+    if (tbody) {
+      tbody.addEventListener('click', (e) => {
+        const sheetAction = e.target.closest('.btn-patient-sheet-action, .patient-sheet-link');
+        if (sheetAction) {
+          const pid = sheetAction.getAttribute('data-patient-id');
+          if (pid) this.openPatientSheet(pid);
+          return;
+        }
+        const editBtn = e.target.closest('.btn-edit-patient');
+        if (editBtn) {
+          const pid = editBtn.getAttribute('data-patient-id');
+          if (pid) this.openEditModal(pid);
+          return;
+        }
+        const delBtn = e.target.closest('.btn-delete-patient');
+        if (delBtn) {
+          const pid = delBtn.getAttribute('data-patient-id');
+          if (pid) this.confirmDelete(pid);
+          return;
+        }
+      });
     }
   }
 
@@ -211,7 +309,8 @@ export class PatientsManager {
       return `
         <tr>
           <td style="font-weight: 800; color: var(--primary); cursor: ${canAccessSheet ? 'pointer' : 'default'}; white-space: nowrap;"
-              onclick="${canAccessSheet ? `patientsManager.openPatientSheet('${safeId}')` : `patientsManager.openEditModal('${safeId}')`}"
+              class="${canAccessSheet ? 'patient-sheet-link' : 'btn-edit-patient'}"
+              data-patient-id="${safeId}"
               title="${canAccessSheet ? 'اضغط لفتح الشيت الطبي' : 'تعديل بيانات المريض'}">
             <i class="fa-solid ${canAccessSheet ? 'fa-file-waveform' : 'fa-user'}" style="margin-left: 6px;"></i> ${safeName}
           </td>
@@ -228,7 +327,7 @@ export class PatientsManager {
           <td style="white-space: nowrap;">
             <div style="display: flex; gap: 6px; align-items: center; flex-wrap: nowrap;">
               ${canAccessSheet ? `
-                <button class="btn btn-primary btn-sm btn-patient-sheet-action" onclick="patientsManager.openPatientSheet('${safeId}')" title="شيت العلاج الطبيعي">
+                <button type="button" class="btn btn-primary btn-sm btn-patient-sheet-action" data-patient-id="${safeId}" title="شيت العلاج الطبيعي">
                   <i class="fa-solid fa-file-waveform"></i> الشيت الطبي
                 </button>
               ` : ''}
@@ -236,12 +335,12 @@ export class PatientsManager {
                 <i class="fa-brands fa-whatsapp"></i>
               </a>
               ${!isDoctor ? `
-                <button class="btn btn-outline btn-sm btn-edit-patient" onclick="patientsManager.openEditModal('${safeId}')" title="تعديل بيانات المريض">
+                <button type="button" class="btn btn-outline btn-sm btn-edit-patient" data-patient-id="${safeId}" title="تعديل بيانات المريض">
                   <i class="fa-solid fa-pen-to-square"></i>
                 </button>
               ` : ''}
               ${!isDoctor && canDeletePatient ? `
-                <button class="btn btn-outline btn-sm btn-delete-patient" style="color: var(--danger);" onclick="patientsManager.confirmDelete('${safeId}')" title="حذف المريض">
+                <button type="button" class="btn btn-outline btn-sm btn-delete-patient" style="color: var(--danger);" data-patient-id="${safeId}" title="حذف المريض">
                   <i class="fa-solid fa-trash"></i>
                 </button>
               ` : ''}
@@ -272,11 +371,11 @@ export class PatientsManager {
       const safeComp = comp.replace(/'/g, "\\'");
       const editClass = isEdit ? 'in-edit-mode' : '';
       const deleteIconHtml = isEdit
-        ? `<span class="chip-delete-tag" onclick="event.stopPropagation(); patientsManager.deleteInsuranceDirect('${contractType}', '${safeComp}')" title="حذف الشركة"><i class="fa-solid fa-circle-xmark"></i></span>`
+        ? `<span class="chip-delete-tag" data-action="delete-insurance" data-contract="${contractType}" data-company="${safeComp}" title="حذف الشركة"><i class="fa-solid fa-circle-xmark"></i></span>`
         : '';
 
       return `
-        <button type="button" class="chip-choice sheet-chip chip-${contractType} ${isSelected ? 'selected' : ''} ${editClass}" onclick="patientsManager.selectInsuranceCompany('${contractType}', '${safeComp}')">
+        <button type="button" class="chip-choice sheet-chip chip-${contractType} ${isSelected ? 'selected' : ''} ${editClass}" data-action="select-insurance" data-contract="${contractType}" data-company="${safeComp}">
           <i class="${icon}"></i> <span>${comp}</span>
           ${deleteIconHtml}
         </button>
@@ -285,7 +384,7 @@ export class PatientsManager {
 
     if (isEdit) {
       html += `
-        <button type="button" class="chip-add-new-btn" onclick="sessionsManager.openAddInsuranceModal('${contractType}', 'patient')">
+        <button type="button" class="chip-add-new-btn" data-action="add-insurance" data-contract="${contractType}" data-source="patient">
           <i class="fa-solid fa-plus"></i> <span>إضافة شركة جديدة</span>
         </button>
       `;
@@ -668,7 +767,7 @@ export class PatientsManager {
       const editClass = isEdit ? 'in-edit-mode' : '';
       const safeOpt = opt.replace(/'/g, "\\'");
       const deleteIconHtml = isEdit
-        ? `<span class="chip-delete-tag" onclick="event.stopPropagation(); patientsManager.deleteOptionDirect('${category}', '${safeOpt}')" title="حذف هذا الزر"><i class="fa-solid fa-circle-xmark"></i></span>`
+        ? `<span class="chip-delete-tag" data-action="delete-option" data-category="${category}" data-option="${safeOpt}" title="حذف هذا الزر"><i class="fa-solid fa-circle-xmark"></i></span>`
         : '';
 
       return `
@@ -686,7 +785,7 @@ export class PatientsManager {
         exercise: 'إضافة تمرين جديد'
       };
       html += `
-        <button type="button" class="chip-add-new-btn" onclick="patientsManager.openAddOptionModal('${category}')">
+        <button type="button" class="chip-add-new-btn" data-action="add-option" data-category="${category}">
           <i class="fa-solid fa-plus"></i> <span>${addLabels[category] || 'إضافة جديد'}</span>
         </button>
       `;

@@ -13,12 +13,12 @@ export class ExportManager {
   init() {
     const btnExcel = document.getElementById('btn-export-excel');
     if (btnExcel) {
-      btnExcel.onclick = () => this.exportToExcel();
+      btnExcel.addEventListener('click', () => this.exportToExcel());
     }
 
     const btnPrint = document.getElementById('btn-print-report');
     if (btnPrint) {
-      btnPrint.onclick = () => this.printReport();
+      btnPrint.addEventListener('click', () => this.printReport());
     }
   }
 

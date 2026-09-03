@@ -62,6 +62,54 @@ export class FinanceManager {
     if (formExpense) {
       formExpense.addEventListener('submit', (e) => this.handleAddExpense(e));
     }
+
+    // Mode Buttons
+    document.getElementById('btn-mode-daily')?.addEventListener('click', () => this.setReportMode('daily'));
+    document.getElementById('btn-mode-monthly')?.addEventListener('click', () => this.setReportMode('monthly'));
+    document.getElementById('btn-mode-claims')?.addEventListener('click', () => this.setReportMode('claims'));
+
+    // Quick Date Buttons
+    document.getElementById('btn-quick-fin-today')?.addEventListener('click', () => this.setDateQuick('today'));
+    document.getElementById('btn-quick-fin-yesterday')?.addEventListener('click', () => this.setDateQuick('yesterday'));
+
+    // Add Expense Button
+    document.getElementById('btn-add-expense')?.addEventListener('click', () => this.app.openAddExpenseModal());
+
+    // Export & Print Buttons
+    document.getElementById('btn-export-excel')?.addEventListener('click', () => this.app.exportToExcel());
+    document.getElementById('btn-print-report')?.addEventListener('click', () => this.app.printReport());
+
+    // Event Delegation: Finance Daily Report Sessions Table
+    const reportTbody = document.getElementById('finance-report-tbody');
+    if (reportTbody) {
+      reportTbody.addEventListener('click', (e) => {
+        const editBtn = e.target.closest('.btn-edit-session');
+        if (editBtn) {
+          const sid = editBtn.getAttribute('data-session-id');
+          if (sid) this.app.sessionsManager.editSession(sid);
+          return;
+        }
+
+        const delBtn = e.target.closest('.btn-delete-session');
+        if (delBtn) {
+          const sid = delBtn.getAttribute('data-session-id');
+          if (sid) this.app.sessionsManager.deleteSession(sid);
+          return;
+        }
+      });
+    }
+
+    // Event Delegation: Daily Expenses Table
+    const expensesTbody = document.getElementById('finance-expenses-tbody');
+    if (expensesTbody) {
+      expensesTbody.addEventListener('click', (e) => {
+        const delBtn = e.target.closest('.btn-delete-expense');
+        if (delBtn) {
+          const eid = delBtn.getAttribute('data-expense-id');
+          if (eid) this.deleteExpense(eid);
+        }
+      });
+    }
   }
 
   setDateQuick(type) {
@@ -312,11 +360,11 @@ export class FinanceManager {
               <td style="font-size: 0.8rem; color: var(--text-muted);">${safeRecBy}</td>
               <td class="no-print">
                 <div style="display: flex; gap: 4px;">
-                  <button class="btn btn-outline btn-sm" onclick="sessionsManager.editSession('${safeId}')" title="تعديل بيانات الجلسة">
+                  <button type="button" class="btn btn-outline btn-sm btn-edit-session" data-session-id="${safeId}" title="تعديل بيانات الجلسة">
                     <i class="fa-solid fa-pen-to-square"></i>
                   </button>
                   ${RolesManager.canDelete(auth.getCurrentUser()) ? `
-                    <button class="btn btn-outline btn-sm btn-delete-record" style="color: var(--danger);" onclick="sessionsManager.deleteSession('${safeId}')" title="حذف">
+                    <button type="button" class="btn btn-outline btn-sm btn-delete-record btn-delete-session" style="color: var(--danger);" data-session-id="${safeId}" title="حذف">
                       <i class="fa-solid fa-trash"></i>
                     </button>
                   ` : ''}
@@ -341,7 +389,7 @@ export class FinanceManager {
             <td style="font-size: 0.8rem; color: var(--text-muted);">${e.time}</td>
             <td class="no-print">
               ${RolesManager.canDelete(auth.getCurrentUser()) ? `
-                <button class="btn btn-outline btn-sm btn-delete-record" style="color: var(--danger);" onclick="financeManager.deleteExpense('${e.id}')" title="حذف">
+                <button type="button" class="btn btn-outline btn-sm btn-delete-record btn-delete-expense" style="color: var(--danger);" data-expense-id="${e.id}" title="حذف">
                   <i class="fa-solid fa-trash"></i>
                 </button>
               ` : '-'}

@@ -119,6 +119,58 @@ export class ClaimsManager {
         this.endDate = e.target.value;
       });
     }
+
+    const compSelect = document.getElementById('claim-company-select');
+    if (compSelect) {
+      compSelect.addEventListener('change', (e) => this.onCompanyChanged(e.target.value));
+    }
+
+    document.getElementById('btn-load-claim-patients')?.addEventListener('click', () => this.loadCompanyPatients());
+    document.getElementById('btn-print-claim-statement')?.addEventListener('click', () => this.printClaimStatement());
+    document.getElementById('btn-print-attendance-cards')?.addEventListener('click', () => this.printAttendanceCards());
+    document.getElementById('btn-export-claim-excel')?.addEventListener('click', () => this.exportClaimExcel());
+    document.getElementById('claim-patient-search-input')?.addEventListener('input', (e) => this.onSearchInput(e.target.value));
+
+    // Modal attendance card buttons
+    document.getElementById('btn-card-add-treatment')?.addEventListener('click', () => this.promptAddNewTreatment());
+    document.getElementById('btn-card-print-current')?.addEventListener('click', () => this.printAttendanceCards(this.activeCardPatientId));
+    document.getElementById('btn-card-save')?.addEventListener('click', () => this.saveAttendanceCardData());
+
+    // Event Delegation: Claims Patient Table (checkboxes, inputs, open card)
+    const tbody = document.getElementById('claim-patients-tbody');
+    if (tbody) {
+      tbody.addEventListener('change', (e) => {
+        const target = e.target;
+        if (target.classList.contains('claim-patient-check')) {
+          const pid = target.getAttribute('data-patient-id');
+          this.togglePatientCheck(pid, target.checked);
+        } else if (target.classList.contains('claim-patient-input')) {
+          const pid = target.getAttribute('data-patient-id');
+          const field = target.getAttribute('data-field');
+          this.updatePatientNumber(pid, field, target.value);
+        }
+      });
+
+      tbody.addEventListener('click', (e) => {
+        const btn = e.target.closest('.btn-open-card-modal');
+        if (btn) {
+          const pid = btn.getAttribute('data-patient-id');
+          if (pid) this.openAttendanceCardModal(pid);
+        }
+      });
+    }
+
+    // Event Delegation: Attendance Card Treatments Chips
+    const treatContainer = document.getElementById('card-treatment-chips-container');
+    if (treatContainer) {
+      treatContainer.addEventListener('click', (e) => {
+        const chip = e.target.closest('.card-treatment-chip');
+        if (chip) {
+          chip.classList.toggle('selected');
+          this.updateCardLivePreview();
+        }
+      });
+    }
   }
 
   async loadCompanyPatients() {
@@ -273,7 +325,7 @@ export class ClaimsManager {
       return `
         <tr style="${!item.isChecked ? 'opacity: 0.55; background-color: #f8fafc;' : ''}">
           <td style="text-align: center;">
-            <input type="checkbox" style="width: 18px; height: 18px; cursor: pointer;" ${rowChecked} onchange="claimsManager.togglePatientCheck('${safeId}', this.checked)">
+            <input type="checkbox" class="claim-patient-check" data-patient-id="${safeId}" style="width: 18px; height: 18px; cursor: pointer;" ${rowChecked}>
           </td>
           <td style="text-align: center; font-weight: 700;">${idx + 1}</td>
           <td>
@@ -281,19 +333,19 @@ export class ClaimsManager {
             <small style="color: var(--text-muted); font-size: 0.76rem;"><i class="fa-solid fa-phone"></i> ${safePhone} • ${safeDoc}</small>
           </td>
           <td>
-            <input type="number" class="form-control" style="width: 80px; padding: 4px 6px; font-weight: 700; text-align: center;" value="${item.evalFee}" onchange="claimsManager.updatePatientNumber('${safeId}', 'evalFee', this.value)">
+            <input type="number" class="form-control claim-patient-input" data-field="evalFee" data-patient-id="${safeId}" style="width: 80px; padding: 4px 6px; font-weight: 700; text-align: center;" value="${item.evalFee}">
           </td>
           <td>
-            <input type="number" class="form-control" style="width: 70px; padding: 4px 6px; font-weight: 700; text-align: center;" value="${item.sessionCount}" onchange="claimsManager.updatePatientNumber('${safeId}', 'sessionCount', this.value)">
+            <input type="number" class="form-control claim-patient-input" data-field="sessionCount" data-patient-id="${safeId}" style="width: 70px; padding: 4px 6px; font-weight: 700; text-align: center;" value="${item.sessionCount}">
           </td>
           <td>
-            <input type="number" class="form-control" style="width: 75px; padding: 4px 6px; font-weight: 700; text-align: center;" value="${item.sessionRate}" onchange="claimsManager.updatePatientNumber('${safeId}', 'sessionRate', this.value)">
+            <input type="number" class="form-control claim-patient-input" data-field="sessionRate" data-patient-id="${safeId}" style="width: 75px; padding: 4px 6px; font-weight: 700; text-align: center;" value="${item.sessionRate}">
           </td>
           <td style="font-weight: 800; color: var(--success); font-size: 0.95rem; text-align: center;">
             <span id="claim-row-total-${safeId}">${rowTotal.toLocaleString('en-US')}</span> ج.م
           </td>
           <td style="text-align: center;">
-            <button type="button" class="btn btn-outline btn-sm" onclick="claimsManager.openAttendanceCardModal('${safeId}')" style="padding: 4px 10px; font-size: 0.78rem; font-weight: 700; color: #0369a1; border-color: #bae6fd; background-color: #f0f9ff;" title="تخصيص وطباعة بطاقة التردد">
+            <button type="button" class="btn btn-outline btn-sm btn-open-card-modal" data-patient-id="${safeId}" style="padding: 4px 10px; font-size: 0.78rem; font-weight: 700; color: #0369a1; border-color: #bae6fd; background-color: #f0f9ff;" title="تخصيص وطباعة بطاقة التردد">
               <i class="fa-solid fa-id-card"></i> بطاقة التردد
             </button>
           </td>
@@ -372,7 +424,7 @@ export class ClaimsManager {
     container.innerHTML = allOptions.map(opt => {
       const isSelected = selectedTreatments.includes(opt);
       return `
-        <button type="button" class="chip-choice sheet-chip ${isSelected ? 'selected' : ''}" data-val="${opt}" onclick="this.classList.toggle('selected'); claimsManager.updateCardLivePreview();">
+        <button type="button" class="chip-choice sheet-chip card-treatment-chip ${isSelected ? 'selected' : ''}" data-val="${opt}">
           <i class="fa-solid fa-bolt"></i> ${opt}
         </button>
       `;
