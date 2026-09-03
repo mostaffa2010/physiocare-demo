@@ -293,6 +293,37 @@ class DemoDatabaseService {
     localStorage.setItem(key, JSON.stringify(list));
     return list;
   }
+
+  // ================= Insurance Companies Buttons (Direct / Indirect) =================
+  getInsuranceCompanies(contractType = 'direct') {
+    const key = 'pc_demo_ins_' + contractType;
+    const raw = localStorage.getItem(key);
+    if (raw) return JSON.parse(raw);
+
+    const defaults = {
+      direct: ['أكسا (AXA)', 'أليانز (Allianz)'],
+      indirect: ['نكست كير (NextCare)', 'مصر للتأمين']
+    };
+    const list = defaults[contractType] || [];
+    localStorage.setItem(key, JSON.stringify(list));
+    return list;
+  }
+
+  async addInsuranceCompany(contractType, name) {
+    const list = this.getInsuranceCompanies(contractType);
+    if (!list.includes(name)) {
+      list.push(name);
+      localStorage.setItem('pc_demo_ins_' + contractType, JSON.stringify(list));
+    }
+    return list;
+  }
+
+  async deleteInsuranceCompany(contractType, name) {
+    let list = this.getInsuranceCompanies(contractType);
+    list = list.filter(item => item !== name);
+    localStorage.setItem('pc_demo_ins_' + contractType, JSON.stringify(list));
+    return list;
+  }
 }
 
 export const db = new DemoDatabaseService();

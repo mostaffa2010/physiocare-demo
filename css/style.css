@@ -1299,3 +1299,63 @@ input, textarea, [contenteditable="true"] {
   user-select: text !important;
   -webkit-touch-callout: default !important;
 }
+
+/* Radio Pills (Contract Type Switcher) */
+.radio-pill-label {
+  display: block;
+  cursor: pointer;
+}
+
+.radio-pill-label input {
+  display: none !important;
+}
+
+.radio-pill-label .pill-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 7px 12px;
+  background-color: #ffffff;
+  border: 1.5px solid var(--border-color);
+  border-radius: 8px;
+  font-size: 0.84rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  user-select: none;
+}
+
+.radio-pill-label input:checked + .pill-btn {
+  background-color: var(--primary-light) !important;
+  border-color: var(--primary) !important;
+  color: var(--primary) !important;
+  font-weight: 800 !important;
+  box-shadow: 0 1px 3px rgba(2, 132, 199, 0.2) !important;
+}
+
+/* Company chip badge styles */
+.chip-choice.sheet-chip.chip-direct {
+  border-color: #bae6fd;
+  color: #0369a1;
+  background-color: #f0f9ff;
+}
+
+.chip-choice.sheet-chip.chip-direct.selected {
+  background-color: #0284c7 !important;
+  color: #ffffff !important;
+  border-color: #0284c7 !important;
+}
+
+.chip-choice.sheet-chip.chip-indirect {
+  border-color: #fde68a;
+  color: #92400e;
+  background-color: #fffbeb;
+}
+
+.chip-choice.sheet-chip.chip-indirect.selected {
+  background-color: #d97706 !important;
+  color: #ffffff !important;
+  border-color: #d97706 !important;
+}

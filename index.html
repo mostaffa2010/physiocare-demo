@@ -575,18 +575,44 @@
                 </div>
 
                 <!-- Conditional Insurance Box -->
-                <div id="session-insurance-fields" style="display: none; background-color: var(--bg-subtle); padding: 10px; border-radius: var(--radius-md);">
-                  <div class="form-group" style="margin-bottom: 8px;">
-                    <label>اسم شركة التأمين</label>
-                    <input type="text" id="session-insurance-name" class="form-control" placeholder="مثال: أكسا، نكست كير، أليانز...">
-                  </div>
-                  <div class="form-group">
-                    <label>نوع التعاقد</label>
-                    <div style="display: flex; gap: 15px;">
-                      <label style="display: flex; align-items: center; gap: 5px;"><input type="radio" name="session-contract-type" value="direct" checked> تعاقد مباشر</label>
-                      <label style="display: flex; align-items: center; gap: 5px;"><input type="radio" name="session-contract-type" value="indirect"> تعاقد غير مباشر</label>
+                <div id="session-insurance-fields" style="display: none; background-color: var(--bg-subtle); padding: 12px; border-radius: 10px; border: 1px solid var(--border-color); margin-top: 8px;">
+                  <!-- نوع التعاقد Switcher -->
+                  <div class="form-group" style="margin-bottom: 12px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                      <label style="font-weight: 800; font-size: 0.88rem; color: #0f172a;">نوع التعاقد مع الشركة *</label>
+                      <div class="admin-only">
+                        <button type="button" class="btn-edit-chips" id="btn-toggle-chips-ins-session" onclick="sessionsManager.toggleInsuranceEditMode('session')" style="padding: 3px 10px; font-size: 0.75rem;">
+                          <i class="fa-solid fa-pen-to-square"></i> <span class="edit-text">تعديل الشركات</span>
+                        </button>
+                      </div>
+                    </div>
+                    <div style="display: flex; gap: 10px;">
+                      <label class="radio-pill-label" style="flex: 1;">
+                        <input type="radio" name="session-contract-type" value="direct" checked onchange="sessionsManager.onContractTypeChanged(this.value)">
+                        <span class="pill-btn"><i class="fa-solid fa-file-contract"></i> تعاقد مباشر</span>
+                      </label>
+                      <label class="radio-pill-label" style="flex: 1;">
+                        <input type="radio" name="session-contract-type" value="indirect" onchange="sessionsManager.onContractTypeChanged(this.value)">
+                        <span class="pill-btn"><i class="fa-solid fa-handshake"></i> تعاقد غير مباشر</span>
+                      </label>
                     </div>
                   </div>
+
+                  <!-- أزرار شركات التأمين -->
+                  <div class="form-group" style="margin-bottom: 4px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                      <label style="font-weight: 800; font-size: 0.88rem; color: #0f172a;">اختر شركة التأمين *</label>
+                      <span id="session-selected-ins-preview" style="font-size: 0.8rem; font-weight: 700; color: var(--primary);"></span>
+                    </div>
+                    <input type="hidden" id="session-insurance-name" value="">
+                    
+                    <!-- Direct Companies Chips -->
+                    <div id="session-ins-direct-container" class="body-parts-chips" style="gap: 6px;"></div>
+
+                    <!-- Indirect Companies Chips -->
+                    <div id="session-ins-indirect-container" class="body-parts-chips" style="display: none; gap: 6px;"></div>
+                  </div>
+                </div>
                 </div>
 
                 <div class="form-group">
@@ -1087,22 +1113,41 @@
           </div>
 
           <!-- Insurance Details Box in Patient Modal -->
-          <div id="p-insurance-details" style="display: none; background-color: var(--bg-subtle); padding: 12px; border-radius: var(--radius-md); margin-top: 10px;">
-            <div class="form-group" style="margin-bottom: 10px;">
-              <label for="p-insurance-company">اسم شركة التأمين</label>
-              <input type="text" id="p-insurance-company" class="form-control" placeholder="مثال: أكسا، نكست كير، أليانز...">
-            </div>
-            <div class="form-group">
-              <label>نوع التعاقد مع الشركة</label>
-              <div style="display: flex; gap: 20px; margin-top: 4px;">
-                <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
-                  <input type="radio" name="p-contract" value="direct" checked> تعاقد مباشر
+          <div id="p-insurance-details" style="display: none; background-color: var(--bg-subtle); padding: 12px; border-radius: 10px; margin-top: 10px; border: 1px solid var(--border-color);">
+            <!-- نوع التعاقد Switcher -->
+            <div class="form-group" style="margin-bottom: 12px;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                <label style="font-weight: 800; font-size: 0.88rem; color: #0f172a;">نوع التعاقد مع الشركة *</label>
+                <div class="admin-only">
+                  <button type="button" class="btn-edit-chips" id="btn-toggle-chips-ins-patient" onclick="patientsManager.toggleInsuranceEditMode('patient')" style="padding: 3px 10px; font-size: 0.75rem;">
+                    <i class="fa-solid fa-pen-to-square"></i> <span class="edit-text">تعديل الشركات</span>
+                  </button>
+                </div>
+              </div>
+              <div style="display: flex; gap: 10px;">
+                <label class="radio-pill-label" style="flex: 1;">
+                  <input type="radio" name="p-contract-type" value="direct" checked onchange="patientsManager.onContractTypeChanged(this.value)">
+                  <span class="pill-btn"><i class="fa-solid fa-file-contract"></i> تعاقد مباشر</span>
                 </label>
-                <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
-                  <input type="radio" name="p-contract" value="indirect"> تعاقد غير مباشر
+                <label class="radio-pill-label" style="flex: 1;">
+                  <input type="radio" name="p-contract-type" value="indirect" onchange="patientsManager.onContractTypeChanged(this.value)">
+                  <span class="pill-btn"><i class="fa-solid fa-handshake"></i> تعاقد غير مباشر</span>
                 </label>
               </div>
             </div>
+
+            <!-- أزرار شركات التأمين -->
+            <div class="form-group" style="margin-bottom: 4px;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                <label style="font-weight: 800; font-size: 0.88rem; color: #0f172a;">اختر شركة التأمين *</label>
+                <span id="p-selected-ins-preview" style="font-size: 0.8rem; font-weight: 700; color: var(--primary);"></span>
+              </div>
+              <input type="hidden" id="p-insurance-company" value="">
+              
+              <div id="p-ins-direct-container" class="body-parts-chips" style="gap: 6px;"></div>
+              <div id="p-ins-indirect-container" class="body-parts-chips" style="display: none; gap: 6px;"></div>
+            </div>
+          </div>
           </div>
         </div>
         <div class="modal-footer">
@@ -1381,6 +1426,46 @@
         <div class="modal-footer">
           <button type="button" class="btn btn-outline" onclick="app.closeModal('modal-add-clinical-option')">إلغاء</button>
           <button type="submit" class="btn btn-primary"><i class="fa-solid fa-check"></i> إضافة للقائمة</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+    <!-- Modal: Add New Insurance Company (Admin Only) -->
+  <div class="modal-backdrop" id="modal-add-insurance-company" style="z-index: 230;">
+    <div class="modal-content" style="max-width: 400px;">
+      <div class="modal-header">
+        <h3 id="modal-ins-title"><i class="fa-solid fa-shield-halved"></i> إضافة شركة تأمين جديدة</h3>
+        <button class="modal-close" onclick="app.closeModal('modal-add-insurance-company')">&times;</button>
+      </div>
+      <form id="form-add-insurance-company" onsubmit="sessionsManager.handleSaveNewCompany(event)">
+        <input type="hidden" id="ins-target-contract" value="direct">
+        <input type="hidden" id="ins-caller-context" value="session">
+        <div class="modal-body">
+          <div class="form-group" style="margin-bottom: 12px;">
+            <label style="font-weight: 700;">نوع التعاقد *</label>
+            <div style="display: flex; gap: 10px; margin-top: 6px;">
+              <label class="radio-pill-label" style="flex: 1;">
+                <input type="radio" name="new-ins-contract-type" id="new-ins-type-direct" value="direct" checked onchange="document.getElementById('ins-target-contract').value = this.value">
+                <span class="pill-btn"><i class="fa-solid fa-file-contract"></i> مباشر</span>
+              </label>
+              <label class="radio-pill-label" style="flex: 1;">
+                <input type="radio" name="new-ins-contract-type" id="new-ins-type-indirect" value="indirect" onchange="document.getElementById('ins-target-contract').value = this.value">
+                <span class="pill-btn"><i class="fa-solid fa-handshake"></i> غير مباشر</span>
+              </label>
+            </div>
+          </div>
+          <div class="form-group">
+            <label style="font-weight: 700;">اسم شركة التأمين *</label>
+            <input type="text" id="ins-new-name" class="form-control" required placeholder="مثال: بوبا، ميتلايف، عناية...">
+            <small style="font-size: 0.78rem; color: var(--text-muted); margin-top: 5px; display: block;">
+              ستظهر هذه الشركة كزر دائم لاختيارها في الجلسات والمرضى.
+            </small>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline" onclick="app.closeModal('modal-add-insurance-company')">إلغاء</button>
+          <button type="submit" class="btn btn-primary"><i class="fa-solid fa-check"></i> إضافة الشركة</button>
         </div>
       </form>
     </div>

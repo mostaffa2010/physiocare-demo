@@ -13,6 +13,8 @@ export class SessionsManager {
     this.currentSessionDate = this.todayDateStr;
     this.selectedPatientId = null;
     this.editingSessionId = null;
+    this.insEditMode = false;
+    this.currentContractType = 'direct';
   }
 
   async init() {
@@ -20,6 +22,7 @@ export class SessionsManager {
     const dateInput = document.getElementById('session-date');
     if (dateInput) dateInput.value = this.currentSessionDate;
     this.updateDateLabel();
+    this.renderAllInsuranceChips();
     await this.loadTodaySessions();
   }
 
@@ -335,11 +338,162 @@ export class SessionsManager {
     await db.logAudit(auditAction, auditDesc, currentUser);
     this.app.showToast(isEdit ? 'تم تعديل بيانات الجلسة بنجاح' : 'تم تسجيل وحفظ الجلسة بنجاح');
     this.resetSessionForm();
+    this.renderAllInsuranceChips();
     await this.loadTodaySessions();
     
     // التحديث الفوري للحسابات والتقرير اليومي
     await this.app.financeManager.loadDailyReport();
   }
+
+  // ================= Insurance Interactive Buttons =================
+  renderAllInsuranceChips() {
+    this.renderInsuranceChips('direct', 'session-ins-direct-container');
+    this.renderInsuranceChips('indirect', 'session-ins-indirect-container');
+  }
+
+  renderInsuranceChips(contractType, containerId) {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+
+    const companies = db.getInsuranceCompanies(contractType);
+    const selectedCompany = document.getElementById('session-insurance-name')?.value || '';
+    const isEdit = Boolean(this.insEditMode);
+    const icon = contractType === 'direct' ? 'fa-solid fa-file-contract' : 'fa-solid fa-handshake';
+
+    let html = companies.map(comp => {
+      const isSelected = comp === selectedCompany;
+      const safeComp = comp.replace(/'/g, "\\'");
+      const editClass = isEdit ? 'in-edit-mode' : '';
+      const deleteIconHtml = isEdit
+        ? `<span class="chip-delete-tag" onclick="event.stopPropagation(); sessionsManager.deleteInsuranceDirect('${contractType}', '${safeComp}')" title="حذف الشركة"><i class="fa-solid fa-circle-xmark"></i></span>`
+        : '';
+
+      return `
+        <button type="button" class="chip-choice sheet-chip chip-${contractType} ${isSelected ? 'selected' : ''} ${editClass}" onclick="sessionsManager.selectInsuranceCompany('${contractType}', '${safeComp}')">
+          <i class="${icon}"></i> <span>${comp}</span>
+          ${deleteIconHtml}
+        </button>
+      `;
+    }).join('');
+
+    if (isEdit) {
+      html += `
+        <button type="button" class="chip-add-new-btn" onclick="sessionsManager.openAddInsuranceModal('${contractType}', 'session')">
+          <i class="fa-solid fa-plus"></i> <span>إضافة شركة جديدة</span>
+        </button>
+      `;
+    }
+
+    container.innerHTML = html;
+  }
+
+  selectInsuranceCompany(contractType, compName) {
+    if (this.insEditMode) return;
+
+    const input = document.getElementById('session-insurance-name');
+    if (input) input.value = compName;
+
+    const preview = document.getElementById('session-selected-ins-preview');
+    if (preview) preview.textContent = `المختارة: ${compName}`;
+
+    // Highlight selected chip in both direct and indirect containers
+    document.querySelectorAll('#session-ins-direct-container .sheet-chip, #session-ins-indirect-container .sheet-chip').forEach(btn => {
+      const isMatch = btn.textContent.trim().includes(compName);
+      btn.classList.toggle('selected', isMatch);
+    });
+  }
+
+  onContractTypeChanged(contractType) {
+    this.currentContractType = contractType;
+    const directCont = document.getElementById('session-ins-direct-container');
+    const indirectCont = document.getElementById('session-ins-indirect-container');
+
+    if (directCont && indirectCont) {
+      if (contractType === 'direct') {
+        directCont.style.display = 'flex';
+        indirectCont.style.display = 'none';
+      } else {
+        directCont.style.display = 'none';
+        indirectCont.style.display = 'flex';
+      }
+    }
+  }
+
+  toggleInsuranceEditMode(caller = 'session') {
+    const user = auth.getCurrentUser();
+    if (!RolesManager.canManageUsers(user)) {
+      this.app.showAlert('تعديل وحذف شركات التأمين متاح لمدير المركز فقط.', 'صلاحية المدير');
+      return;
+    }
+
+    this.insEditMode = !this.insEditMode;
+    const isEdit = this.insEditMode;
+
+    const btn = document.getElementById('btn-toggle-chips-ins-session');
+    if (btn) {
+      if (isEdit) {
+        btn.className = 'btn-edit-chips active';
+        btn.innerHTML = '<i class="fa-solid fa-check"></i> <span class="edit-text">تم الانتهاء</span>';
+      } else {
+        btn.className = 'btn-edit-chips';
+        btn.innerHTML = '<i class="fa-solid fa-pen-to-square"></i> <span class="edit-text">تعديل الشركات</span>';
+      }
+    }
+
+    this.renderAllInsuranceChips();
+  }
+
+  async deleteInsuranceDirect(contractType, compName) {
+    const user = auth.getCurrentUser();
+    if (!RolesManager.canManageUsers(user)) return;
+
+    const confirmed = await this.app.showConfirm(`هل أنت متأكد من حذف شركة "${compName}" نهائياً؟`, 'حذف شركة تأمين');
+    if (confirmed) {
+      await db.deleteInsuranceCompany(contractType, compName);
+      this.renderAllInsuranceChips();
+      if (this.app.patientsManager) this.app.patientsManager.renderAllInsuranceChips();
+      this.app.showToast(`تم حذف شركة "${compName}"`);
+      await db.logAudit('حذف شركة تأمين', `حذف شركة ${compName} من قائمة ${contractType}`, user);
+    }
+  }
+
+  openAddInsuranceModal(contractType, caller = 'session') {
+    const user = auth.getCurrentUser();
+    if (!RolesManager.canManageUsers(user)) {
+      this.app.showAlert('إضافة شركات التأمين متاح لمدير المركز فقط.', 'صلاحية المدير');
+      return;
+    }
+
+    document.getElementById('ins-target-contract').value = contractType;
+    document.getElementById('ins-caller-context').value = caller;
+    document.getElementById('ins-new-name').value = '';
+
+    const rDirect = document.getElementById('new-ins-type-direct');
+    const rIndirect = document.getElementById('new-ins-type-indirect');
+    if (rDirect) rDirect.checked = (contractType === 'direct');
+    if (rIndirect) rIndirect.checked = (contractType === 'indirect');
+
+    this.app.openModal('modal-add-insurance-company');
+  }
+
+  async handleSaveNewCompany(e) {
+    e.preventDefault();
+    const contractType = document.getElementById('ins-target-contract').value;
+    const nameInput = document.getElementById('ins-new-name');
+    const name = nameInput.value.trim();
+
+    if (!name || !contractType) return;
+
+    await db.addInsuranceCompany(contractType, name);
+    this.renderAllInsuranceChips();
+    if (this.app.patientsManager) this.app.patientsManager.renderAllInsuranceChips();
+
+    this.selectInsuranceCompany(contractType, name);
+    this.app.closeModal('modal-add-insurance-company');
+    this.app.showToast(`تمت إضافة شركة "${name}" بنجاح`);
+    await db.logAudit('إضافة شركة تأمين', `إضافة شركة ${name} في تعاقد ${contractType}`, auth.getCurrentUser());
+  }
+
 
   setDateQuick(type) {
     if (type === 'today') {
@@ -537,7 +691,8 @@ export class SessionsManager {
       await db.deleteSession(sessionId);
       await db.logAudit('حذف جلسة', `حذف حركة جلسة برقم ${sessionId}`, currentUser);
       this.app.showToast('تم حذف الجلسة');
-      await this.loadTodaySessions();
+      this.renderAllInsuranceChips();
+    await this.loadTodaySessions();
       await this.app.financeManager.loadDailyReport();
     }
   }
