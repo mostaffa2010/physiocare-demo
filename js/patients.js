@@ -12,6 +12,7 @@ export class PatientsManager {
     this.app = app;
     this.patients = [];
     this.currentSheetPatient = null;
+    window.patientsManager = this;
     this.insEditMode = false;
     this.currentContractType = "direct";
     this.chipsEditMode = {
@@ -142,7 +143,7 @@ export class PatientsManager {
     }
 
     // Event Delegation: Patients Directory Table (sheet, edit, delete)
-    const tbody = document.getElementById('patients-table-tbody');
+    const tbody = document.getElementById('patients-tbody');
     if (tbody) {
       tbody.addEventListener('click', (e) => {
         const sheetAction = e.target.closest('.btn-patient-sheet-action, .patient-sheet-link');
@@ -312,6 +313,7 @@ export class PatientsManager {
           <td style="font-weight: 800; color: var(--primary); cursor: ${canAccessSheet ? 'pointer' : 'default'}; white-space: nowrap;"
               class="${canAccessSheet ? 'patient-sheet-link' : 'btn-edit-patient'}"
               data-patient-id="${safeId}"
+              onclick="patientsManager.openPatientSheet('${safeId}')"
               title="${canAccessSheet ? 'اضغط لفتح الشيت الطبي' : 'تعديل بيانات المريض'}">
             <i class="fa-solid ${canAccessSheet ? 'fa-file-waveform' : 'fa-user'}" style="margin-left: 6px;"></i> ${safeName}
           </td>
