@@ -347,6 +347,13 @@ export class PatientsManager {
   openAddModal() {
     document.getElementById('form-patient').reset();
     document.getElementById('p-id').value = '';
+    const insComp = document.getElementById('p-insurance-company');
+    if (insComp) insComp.value = '';
+    const insPrev = document.getElementById('p-selected-ins-preview');
+    if (insPrev) insPrev.textContent = '';
+    document.querySelectorAll('#p-ins-direct-container .sheet-chip, #p-ins-indirect-container .sheet-chip').forEach(btn => {
+      btn.classList.remove('selected');
+    });
     document.getElementById('modal-patient-title').innerHTML = '<i class="fa-solid fa-user-plus"></i> تسجيل مريض جديد';
     document.getElementById('p-insurance-details').style.display = 'none';
     this.app.openModal('modal-patient');

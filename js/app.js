@@ -53,6 +53,12 @@ class App {
 
     // 3. ربط أحداث التنقل والحوارات
     this.bindNavigation();
+        // Disable browser text selection contextmenu on mobile non-input elements
+    window.addEventListener('contextmenu', (e) => {
+      if (e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA') {
+        e.preventDefault();
+      }
+    });
     this.bindHardwareBackButton();
     // Disable context menu on long-press for native app feel
     window.addEventListener('contextmenu', (e) => {

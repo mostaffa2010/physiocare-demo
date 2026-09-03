@@ -75,14 +75,9 @@ export class ClaimsManager {
     select.innerHTML = '<option value="">-- اضغط هنا لاختيار شركة التأمين --</option>' + 
       companies.map(c => `<option value="${c.name}">${c.label}</option>`).join('');
 
-    // Pre-select first company
-    if (companies.length > 0) {
-      select.value = companies[0].name;
-      this.currentCompany = companies[0].name;
-    } else {
-      select.value = '';
-      this.currentCompany = '';
-    }
+    // Keep default empty placeholder
+    select.value = '';
+    this.currentCompany = '';
 
     if (this.app && this.app.updateCustomSelectDisplay) {
       this.app.updateCustomSelectDisplay('claim-company-select');
