@@ -52,6 +52,13 @@ class App {
     this.bindNavigation();
     this.bindHardwareBackButton();
     this.disablePullToRefresh();
+    // Prevent native long-press text selection context menu
+    window.addEventListener('contextmenu', (e) => {
+      const tag = e.target.tagName;
+      if (tag !== 'INPUT' && tag !== 'TEXTAREA') {
+        e.preventDefault();
+      }
+    });
     this.updateTrainingModeUI();
     this.bindModalsAndAuth();
     this.bindCustomDialog();
