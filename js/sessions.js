@@ -1,3 +1,4 @@
+import { escapeHTML } from './utils.js';
 // ========================================================
 // PhysioFlow - Daily Sessions & Check-in Module
 // ========================================================

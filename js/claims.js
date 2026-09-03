@@ -1,3 +1,4 @@
+import { escapeHTML } from './utils.js';
 // ========================================================
 // PhysioFlow - Insurance Claims & Attendance Cards Module
 // نظام مطالبات شركات التأمين وبطاقات التردد

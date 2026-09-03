@@ -1,3 +1,4 @@
+import { escapeHTML } from './utils.js';
 // ========================================================
 // ASCPT - Daily & Monthly Financial & Statistical Reports
 // ========================================================
@@ -327,9 +328,9 @@ export class FinanceManager {
       } else {
         expTbody.innerHTML = allExpenses.map(e => `
           <tr>
-            <td style="font-weight: 600;">${e.title}</td>
-            <td style="font-weight: 700; color: var(--danger);">${e.amount} ج.م</td>
-            <td style="font-size: 0.8rem; color: var(--text-muted);">${e.recordedBy}</td>
+            <td style="font-weight: 600;">${escapeHTML(e.title)}</td>
+            <td style="font-weight: 700; color: var(--danger);">${escapeHTML(e.amount)} ج.م</td>
+            <td style="font-size: 0.8rem; color: var(--text-muted);">${escapeHTML(e.recordedBy)}</td>
             <td style="font-size: 0.8rem; color: var(--text-muted);">${e.time}</td>
             <td class="no-print">
               ${RolesManager.canDelete(auth.getCurrentUser()) ? `

@@ -1,3 +1,4 @@
+import { escapeHTML } from './utils.js';
 import { ClaimsManager } from './claims.js';
 // ========================================================
 // ASCPT - Main Application Coordinator
@@ -53,29 +54,9 @@ class App {
 
     // 3. ربط أحداث التنقل والحوارات
     this.bindNavigation();
-        // Disable browser text selection contextmenu on mobile non-input elements
-    window.addEventListener('contextmenu', (e) => {
-      if (e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA') {
-        e.preventDefault();
-      }
-    });
     this.bindHardwareBackButton();
-    // منع القوائم المنبثقة الافتراضية للمتصفح عند الضغط المطول
-    document.addEventListener('contextmenu', (e) => {
-      const tag = e.target.tagName;
-      if (tag !== 'INPUT' && tag !== 'TEXTAREA') {
-        e.preventDefault();
-      }
-    });
-    // Disable context menu on long-press for native app feel
-    window.addEventListener('contextmenu', (e) => {
-      if (e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA') {
-        e.preventDefault();
-      }
-    });
     this.disablePullToRefresh();
     this.disableBrowserContextMenu();
-    this.updateTrainingModeUI();
     this.bindModalsAndAuth();
     this.bindCustomDialog();
 
@@ -104,7 +85,7 @@ class App {
     window.alert = (msg) => this.showAlert(msg, 'تنبيه المركز', 'info');
     window.confirm = (msg) => this.showConfirm(msg, 'تأكيد الإجراء');
 
-    console.log('ASCPT Application fully initialized with custom pickers and dialogs.');
+    console.log('PhysioFlow Demo Application fully initialized.');
   }
 
   bindNavigation() {
@@ -240,13 +221,6 @@ class App {
     // منع سحب المتصفح عبر معايير CSS القياسية دون حظر لمسات iOS
     document.documentElement.style.overscrollBehaviorY = 'none';
     document.body.style.overscrollBehaviorY = 'none';
-
-    // منع القائمة السياقية وتحديد النصوص عند الضغط المطول
-    window.addEventListener('contextmenu', (e) => {
-      if (e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA') {
-        e.preventDefault();
-      }
-    });
   }
 
   // ================= Hardware Back Button & Mobile Gestures =================

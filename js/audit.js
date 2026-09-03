@@ -1,11 +1,11 @@
 // ========================================================
-// PhysioFlow - Audit Trail & Staff Admin Management
+// PhysioFlow Demo - Audit Trail & Staff Admin Management
 // ========================================================
 
 import { db } from './db.js';
 import { auth } from './auth.js';
 import { RolesManager } from './roles.js';
-import { firebaseConfig, isFirebaseConfigured } from './firebase-config.js';
+import { escapeHTML } from './utils.js';
 
 export class AuditAndAdminManager {
   constructor(app) {
@@ -51,18 +51,7 @@ export class AuditAndAdminManager {
       role
     };
 
-    // إنشاء المستخدم في Firebase Authentication سحابياً
-    if (isFirebaseConfigured && window.firebase) {
-      try {
-        const secApp = window.firebase.initializeApp(firebaseConfig, 'SecondaryAuth_' + Date.now());
-        await secApp.auth().createUserWithEmailAndPassword(email, password);
-        await secApp.delete();
-        console.log('User created in Firebase Auth:', email);
-      } catch (authErr) {
-        console.warn('Firebase Auth user create note:', authErr.message);
-      }
-    }
-
+    // حفظ المستخدم محلياً في ذاكرة الديمو المعزولة بالكامل
     await db.saveUser(newUser);
     await db.logAudit('إضافة موظف', `قام المدير بإضافة مستخدم جديد: ${name} بدقة دور (${RolesManager.getRoleLabel(role)})`, currentUser);
     await this.app.populateDoctorDropdowns();
@@ -82,17 +71,22 @@ export class AuditAndAdminManager {
 
     tbody.innerHTML = users.map(u => {
       const isSelf = currentUser && currentUser.id === u.id;
+      const safeName = escapeHTML(u.name);
+      const safeEmail = escapeHTML(u.email);
+      const safeRole = escapeHTML(u.role);
+      const roleLabel = escapeHTML(RolesManager.getRoleLabel(u.role));
+
       return `
         <tr>
-          <td style="font-weight: 700;">${u.name}</td>
-          <td>${u.email}</td>
-          <td><span class="badge badge-role-${u.role}">${RolesManager.getRoleLabel(u.role)}</span></td>
+          <td style="font-weight: 700;">${safeName}</td>
+          <td>${safeEmail}</td>
+          <td><span class="badge badge-role-${safeRole}">${roleLabel}</span></td>
           <td>
             ${!isSelf ? `
-              <button class="btn btn-outline btn-sm" style="color: var(--danger);" onclick="auditManager.deleteUser('${u.id}', '${u.name}')" title="حذف المستخدم">
+              <button class="btn btn-outline btn-sm" style="color: var(--danger);" onclick="auditManager.deleteUser('${escapeHTML(u.id)}', '${safeName}')" title="حذف المستخدم">
                 <i class="fa-solid fa-trash"></i>
               </button>
-            ` : '<span style="font-size: 0.8rem; color: var(--text-muted);">حسابك الحالي</span>'}
+            ` : '<span style="font-size: 0.8rem; color: var(--text-muted); font-weight: 600;">حسابك الحالي</span>'}
           </td>
         </tr>
       `;
@@ -105,7 +99,7 @@ export class AuditAndAdminManager {
       const currentUser = auth.getCurrentUser();
       await db.deleteUser(userId);
       await db.logAudit('حذف موظف', `قام المدير بحذف حساب: ${userName}`, currentUser);
-      this.app.showToast('تم حذف المستخدم');
+      this.app.showToast('تم حذف المستخدم بنجاح');
       await this.loadUsers();
       await this.loadAuditLogs();
     }
@@ -123,11 +117,11 @@ export class AuditAndAdminManager {
 
     tbody.innerHTML = logs.map(l => `
       <tr>
-        <td style="font-weight: 700;">${l.userName}</td>
-        <td><span class="badge badge-role-${l.userRole}">${RolesManager.getRoleLabel(l.userRole)}</span></td>
-        <td><span class="badge badge-direct">${l.actionType}</span></td>
-        <td>${l.description}</td>
-        <td style="font-size: 0.8rem; color: var(--text-muted);">${l.timestamp}</td>
+        <td style="font-weight: 700;">${escapeHTML(l.userName)}</td>
+        <td><span class="badge badge-role-${escapeHTML(l.userRole)}">${escapeHTML(RolesManager.getRoleLabel(l.userRole))}</span></td>
+        <td><span class="badge badge-direct">${escapeHTML(l.actionType)}</span></td>
+        <td>${escapeHTML(l.description)}</td>
+        <td style="font-size: 0.8rem; color: var(--text-muted);">${escapeHTML(l.timestamp)}</td>
       </tr>
     `).join('');
   }

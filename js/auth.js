@@ -41,7 +41,7 @@ class DemoAuthService {
     if (modal) modal.classList.remove('active');
   }
 
-    async switchRole(role) {
+  async switchRole(role) {
     const roleProfiles = {
       admin: { name: 'د. مصطفى محمود', role: 'admin', label: '👑 مدير' },
       doctor: { name: 'د. أحمد خليل', role: 'doctor', label: '🩺 طبيب' },
@@ -73,11 +73,13 @@ class DemoAuthService {
     await db.logAudit('تبديل صلاحية العرض', `تم تبديل واجهة العرض لدور: ${RolesManager.getRoleLabel(role)}`, this.currentUser);
     
     // توجيه واجهة المستخدم بحسب الصلاحية
-    if (role === 'doctor') {
-      this.app.switchView('patients');
-    } else if (role === 'receptionist') {
-      if (this.app.currentView === 'patient-sheet' || this.app.currentView === 'admin') {
+    if (this.app) {
+      if (role === 'doctor') {
         this.app.switchView('patients');
+      } else if (role === 'receptionist') {
+        if (this.app.currentView === 'patient-sheet' || this.app.currentView === 'admin') {
+          this.app.switchView('patients');
+        }
       }
     }
 
@@ -85,22 +87,44 @@ class DemoAuthService {
   }
 
   async login(email, password) {
-    // In demo, any login succeeds as admin
-    this.currentUser = {
-      id: 'u-demo-admin',
-      name: 'مدير المركز (ديمو)',
-      email: email || 'admin@physiocare.demo',
-      role: 'admin'
-    };
-        // Update role capsule active buttons
-    ['admin', 'doctor', 'receptionist'].forEach(r => {
-      const btn = document.getElementById(`r-opt-${r}`);
-      if (btn) btn.classList.toggle('active', r === role);
-    });
+    // التحقق من قائمة المستخدمين المحلية في الديمو
+    const users = await db.getUsers();
+    const cleanEmail = (email || '').trim().toLowerCase();
+    const matchedUser = users.find(u => u.email && u.email.trim().toLowerCase() === cleanEmail);
+
+    if (matchedUser) {
+      this.currentUser = {
+        id: matchedUser.id,
+        name: matchedUser.name,
+        email: matchedUser.email,
+        role: matchedUser.role
+      };
+    } else {
+      // مستخدم افتراضي كمدير للديمو إذا لم يتطابق الإيميل
+      this.currentUser = {
+        id: 'u-demo-admin',
+        name: 'د. مصطفى محمود',
+        email: email || 'admin@physiocare.demo',
+        role: 'admin'
+      };
+    }
 
     localStorage.setItem('pc_demo_active_user', JSON.stringify(this.currentUser));
+
+    // مزامنة قائمة الأدوار المنسدلة
+    const sel = document.getElementById('demo-role-select');
+    if (sel) sel.value = this.currentUser.role;
+
+    const btn = document.getElementById('btn-select-demo-role-select');
+    if (btn) {
+      const textSpan = btn.querySelector('.btn-text');
+      const labels = { admin: '👑 مدير', doctor: '🩺 طبيب', receptionist: '📋 استقبال' };
+      if (textSpan) textSpan.textContent = labels[this.currentUser.role] || '👑 مدير';
+    }
+
     this.hideLoginModal();
     this.updateUI();
+    await db.logAudit('تسجيل دخول', `تسجيل دخول للمستخدم: ${this.currentUser.name}`, this.currentUser);
     if (this.onUserChanged) this.onUserChanged(this.currentUser);
     return { success: true };
   }

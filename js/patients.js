@@ -1,3 +1,4 @@
+import { escapeHTML } from './utils.js';
 // ========================================================
 // PhysioFlow - Patients Management Module
 // ========================================================
@@ -178,7 +179,7 @@ export class PatientsManager {
     }
 
     if (filtered.length === 0) {
-      tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; color: var(--text-muted); padding: 30px;">لا يوجد مرضى مطابقين لكلمة البحث: <strong>"${rawSearch}"</strong></td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; color: var(--text-muted); padding: 30px;">لا يوجد مرضى مطابقين لكلمة البحث: <strong>"${escapeHTML(rawSearch)}"</strong></td></tr>`;
       return;
     }
 
