@@ -1487,3 +1487,52 @@ input, textarea, [contenteditable="true"], .allow-select {
   user-select: text !important;
   -webkit-touch-callout: default !important;
 }
+
+
+/* Desktop Table Responsive & Sticky Viewport Scrolling */
+@media (min-width: 992px) {
+  #view-patients .table-responsive,
+  #view-finance .table-responsive,
+  #view-sessions .table-responsive {
+    max-height: calc(100vh - 280px) !important;
+    overflow-y: auto !important;
+    overflow-x: auto !important;
+    position: relative !important;
+    border-radius: 10px !important;
+    border: 1px solid var(--border-color) !important;
+    background-color: #ffffff !important;
+  }
+
+  table.data-table thead th {
+    position: sticky !important;
+    top: 0 !important;
+    z-index: 10 !important;
+    background-color: #f1f5f9 !important;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06) !important;
+  }
+}
+
+/* Elegant visible scrollbars */
+.table-responsive::-webkit-scrollbar,
+.top-scrollbar-wrapper::-webkit-scrollbar {
+  height: 9px !important;
+  width: 8px !important;
+}
+
+.table-responsive::-webkit-scrollbar-track,
+.top-scrollbar-wrapper::-webkit-scrollbar-track {
+  background: #f1f5f9 !important;
+  border-radius: 4px !important;
+}
+
+.table-responsive::-webkit-scrollbar-thumb,
+.top-scrollbar-wrapper::-webkit-scrollbar-thumb {
+  background: #94a3b8 !important;
+  border-radius: 4px !important;
+  border: 1.5px solid #f1f5f9 !important;
+}
+
+.table-responsive::-webkit-scrollbar-thumb:hover,
+.top-scrollbar-wrapper::-webkit-scrollbar-thumb:hover {
+  background: #0284c7 !important;
+}

@@ -158,34 +158,36 @@
         </button>
       </nav>
 
-      <div class="sidebar-user-box">
-        <!-- Desktop Role Switcher for Demo -->
-        <div style="margin-bottom: 12px; padding-bottom: 10px; border-bottom: 1px solid var(--border-color);">
-          <div style="font-size: 0.78rem; font-weight: 700; color: var(--text-muted); margin-bottom: 6px; display: flex; align-items: center; gap: 6px;">
-            <i class="fa-solid fa-user-gear" style="color: var(--primary);"></i>
-            <span>تبديل صلاحية العرض (الكمبيوتر):</span>
+      <div class="sidebar-user-box" style="margin-top: auto; padding: 14px; border-top: 1px solid var(--border-color);">
+        <div style="background: var(--bg-subtle); border: 1px solid var(--border-color); border-radius: 10px; padding: 12px; display: flex; flex-direction: column; gap: 10px;">
+          <!-- User Profile & Logout -->
+          <div style="display: flex; align-items: center; justify-content: space-between;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <div style="width: 36px; height: 36px; border-radius: 50%; background: var(--primary-light); color: var(--primary); display: flex; align-items: center; justify-content: center; font-size: 1rem; flex-shrink: 0;">
+                <i class="fa-solid fa-user-doctor"></i>
+              </div>
+              <div style="overflow: hidden;">
+                <div id="sidebar-user-name" style="font-weight: 800; font-size: 0.88rem; color: var(--text-main); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">د. مصطفى محمود</div>
+                <div id="sidebar-user-role" class="badge badge-role-admin" style="font-size: 0.72rem; padding: 2px 6px;">مدير المركز</div>
+              </div>
+            </div>
+            <button class="btn btn-outline btn-sm" id="btn-logout-desktop" style="width: 30px; height: 30px; padding: 0; display: flex; align-items: center; justify-content: center; border-radius: 8px; color: var(--text-muted);" title="تسجيل الخروج">
+              <i class="fa-solid fa-right-from-bracket"></i>
+            </button>
           </div>
+
+          <!-- Desktop Role Switcher Dropdown for Demo -->
           <div class="custom-select-wrapper" style="width: 100%;">
             <select id="demo-role-select-desktop" style="display: none;" onchange="auth.switchRole(this.value)">
               <option value="admin">👑 مدير المركز (د. مصطفى)</option>
               <option value="doctor">🩺 طبيب معالج (د. أحمد)</option>
               <option value="receptionist">📋 استقبال العيادة (أ. منار)</option>
             </select>
-            <button type="button" class="custom-select-btn" id="btn-select-demo-role-select-desktop" style="width: 100%; padding: 6px 12px; font-size: 0.82rem; font-weight: 700; background-color: var(--primary-light); color: var(--primary); border-color: #bae6fd; justify-content: space-between;" onclick="app.openCustomPicker('demo-role-select-desktop', 'اختر دور المعاينة التجريبية')">
+            <button type="button" class="custom-select-btn" id="btn-select-demo-role-select-desktop" style="width: 100%; padding: 6px 10px; font-size: 0.78rem; font-weight: 700; background-color: #ffffff; color: var(--primary); border: 1.5px solid #bae6fd; border-radius: 8px; justify-content: space-between;" onclick="app.openCustomPicker('demo-role-select-desktop', 'اختر دور المعاينة التجريبية')">
               <span class="btn-text">👑 مدير المركز</span>
-              <i class="fa-solid fa-chevron-down" style="font-size: 0.72rem;"></i>
+              <i class="fa-solid fa-chevron-down" style="font-size: 0.7rem;"></i>
             </button>
           </div>
-        </div>
-
-        <div style="display: flex; align-items: center; justify-content: space-between;">
-          <div>
-            <div id="sidebar-user-name" style="font-weight: 700; font-size: 0.9rem;">د. مصطفى</div>
-            <div id="sidebar-user-role" class="badge badge-role-admin">مدير المركز</div>
-          </div>
-          <button class="btn btn-outline btn-sm" id="btn-logout-desktop" title="خروج">
-            <i class="fa-solid fa-right-from-bracket"></i>
-          </button>
         </div>
       </div>
     </aside>
@@ -263,41 +265,50 @@
 
       <!-- ================= View 2: Patients Directory ================= -->
       <section id="view-patients" class="view-section">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 10px;">
-          <div>
-            <h2 style="font-size: 1.35rem; font-weight: 800;">سجل المرضى</h2>
-            <p style="font-size: 0.85rem; color: var(--text-muted);">إدارة ملفات المرضى المسجلين والجدد</p>
-          </div>
-          <button type="button" class="btn btn-primary" id="btn-open-add-patient">
-            <i class="fa-solid fa-user-plus"></i> مريض جديد
-          </button>
+        <div style="margin-bottom: 16px;">
+          <h2 style="font-size: 1.35rem; font-weight: 800;">سجل المرضى</h2>
+          <p style="font-size: 0.85rem; color: var(--text-muted);">إدارة ملفات المرضى المسجلين والجدد والبحث السريع في السجلات</p>
         </div>
 
-        <div class="card" style="padding: 12px; margin-bottom: 16px;">
-          <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-            <div style="flex: 1; min-width: 200px;">
-              <input type="text" id="patient-search-input" class="form-control" placeholder="ابحث بالاسم، رقم الموبايل، أو جهة التأمين...">
+        <!-- Unified Search, Filter & New Patient Toolbar (Perfect on Desktop & Mobile) -->
+        <div class="card" style="padding: 12px 16px; margin-bottom: 16px;">
+          <div style="display: flex; gap: 12px; flex-wrap: wrap; align-items: center; justify-content: space-between;">
+            <!-- Search Box -->
+            <div style="flex: 1; min-width: 260px; position: relative;">
+              <input type="text" id="patient-search-input" class="form-control" placeholder="ابحث بالاسم، رقم الموبايل، أو جهة التأمين..." style="padding-right: 38px; height: 42px; font-size: 0.9rem;">
+              <i class="fa-solid fa-magnifying-glass" style="position: absolute; right: 14px; top: 50%; transform: translateY(-50%); color: var(--text-muted);"></i>
             </div>
-            <div>
-              <div class="custom-select-wrapper" style="min-width: 170px;">
+
+            <!-- Filter Dropdown -->
+            <div style="min-width: 170px;">
+              <div class="custom-select-wrapper">
                 <select id="patient-filter-type" class="form-control" style="display: none;">
                   <option value="all">كل الأنظمة</option>
                   <option value="cash">نقدي فقط</option>
                   <option value="insurance_direct">تأمين (مباشر)</option>
                   <option value="insurance_indirect">تأمين (غير مباشر)</option>
                 </select>
-                <button type="button" class="custom-select-btn" id="btn-select-patient-filter-type" data-open-picker="patient-filter-type" data-picker-title="تصفية سجل المرضى">
+                <button type="button" class="custom-select-btn" id="btn-select-patient-filter-type" data-open-picker="patient-filter-type" data-picker-title="تصفية سجل المرضى" style="height: 42px;">
                   <span class="btn-text">كل الأنظمة</span>
                   <i class="fa-solid fa-chevron-down"></i>
                 </button>
               </div>
             </div>
+
+            <!-- Add Patient Button -->
+            <button type="button" class="btn btn-primary" id="btn-open-add-patient" style="height: 42px; padding: 0 18px; font-weight: 700; white-space: nowrap; display: inline-flex; align-items: center; gap: 8px;">
+              <i class="fa-solid fa-user-plus"></i> <span>مريض جديد</span>
+            </button>
           </div>
         </div>
 
-        <!-- Patients List / Table -->
+        <!-- Patients List / Table with Top & Bottom Scrollbars -->
         <div class="card">
-          <div class="table-responsive">
+          <!-- Top Horizontal Scrollbar (Synchronized for instant scrolling on desktop) -->
+          <div class="top-scrollbar-wrapper no-print" id="patients-top-scroll-wrap" style="display: none; overflow-x: auto; overflow-y: hidden; height: 12px; margin-bottom: 6px; border-radius: 4px; background: #f8fafc;">
+            <div class="top-scrollbar-dummy" id="patients-top-scroll-dummy" style="height: 1px;"></div>
+          </div>
+          <div class="table-responsive" id="patients-table-container">
             <table class="data-table" id="patients-data-table">
               <thead>
                 <tr>
@@ -691,16 +702,16 @@
             <h2 style="font-size: 1.35rem; font-weight: 800;" id="finance-header-title">الحسابات والتقارير المالية</h2>
             <p style="font-size: 0.85rem; color: var(--text-muted);" id="finance-header-sub">متابعة الإيرادات والمصروفات والتقارير اليومية والشهرية الذكية</p>
           </div>
-          <!-- Action Buttons -->
-          <div class="no-print" id="finance-top-actions" style="display: flex; gap: 8px; flex-wrap: wrap;">
-            <button type="button" class="btn btn-outline" id="btn-add-expense" onclick="app.openAddExpenseModal()">
-              <i class="fa-solid fa-minus-circle" style="color: var(--danger);"></i> تسجيل مصروف
+          <!-- Action Buttons (Cohesive Desktop Layout) -->
+          <div class="no-print" id="finance-top-actions" style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+            <button type="button" class="btn btn-outline" id="btn-add-expense" onclick="app.openAddExpenseModal()" style="height: 42px; padding: 0 16px; border-color: var(--danger); color: var(--danger); font-weight: 700; display: inline-flex; align-items: center; gap: 6px;">
+              <i class="fa-solid fa-minus-circle"></i> <span>تسجيل مصروف</span>
             </button>
-            <button type="button" class="btn btn-success" id="btn-export-excel" onclick="app.exportToExcel()">
-              <i class="fa-solid fa-file-excel"></i> تصدير Excel
+            <button type="button" class="btn btn-success" id="btn-export-excel" onclick="app.exportToExcel()" style="height: 42px; padding: 0 16px; font-weight: 700; display: inline-flex; align-items: center; gap: 6px;">
+              <i class="fa-solid fa-file-excel"></i> <span>تصدير Excel</span>
             </button>
-            <button type="button" class="btn btn-primary" id="btn-print-report" onclick="app.printReport()">
-              <i class="fa-solid fa-print"></i> طباعة عبر Wi-Fi
+            <button type="button" class="btn btn-primary" id="btn-print-report" onclick="app.printReport()" style="height: 42px; padding: 0 16px; font-weight: 700; display: inline-flex; align-items: center; gap: 6px;">
+              <i class="fa-solid fa-print"></i> <span>طباعة عبر Wi-Fi</span>
             </button>
           </div>
         </div>

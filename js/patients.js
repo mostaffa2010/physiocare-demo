@@ -286,6 +286,7 @@ export class PatientsManager {
     const canDeletePatient = RolesManager.canDeletePatient(currentUser);
     const isDoctor = currentUser?.role === 'doctor';
 
+    setTimeout(() => this.setupScrollSync(), 50);
     tbody.innerHTML = filtered.map(p => {
       let billingBadge = '';
       const safeComp = escapeHTML(p.insuranceCompany || 'تأمين');
@@ -575,6 +576,47 @@ export class PatientsManager {
   }
 
   // ================= Clinical Patient Sheet =================
+  // ================= Top & Bottom Horizontal Scroll Synchronization =================
+  setupScrollSync() {
+    const topWrap = document.getElementById('patients-top-scroll-wrap');
+    const container = document.getElementById('patients-table-container') || document.querySelector('#view-patients .table-responsive');
+    const dummy = document.getElementById('patients-top-scroll-dummy');
+    const table = document.getElementById('patients-data-table');
+
+    if (!topWrap || !container || !dummy || !table) return;
+
+    const syncMetrics = () => {
+      if (table.scrollWidth > container.clientWidth) {
+        dummy.style.width = table.scrollWidth + 'px';
+        topWrap.style.display = 'block';
+      } else {
+        topWrap.style.display = 'none';
+      }
+    };
+
+    setTimeout(syncMetrics, 60);
+    window.addEventListener('resize', syncMetrics);
+
+    let isTopScrolling = false;
+    let isTableScrolling = false;
+
+    topWrap.onscroll = () => {
+      if (!isTopScrolling) {
+        isTableScrolling = true;
+        container.scrollLeft = topWrap.scrollLeft;
+      }
+      isTopScrolling = false;
+    };
+
+    container.onscroll = () => {
+      if (!isTableScrolling) {
+        isTopScrolling = true;
+        topWrap.scrollLeft = container.scrollLeft;
+      }
+      isTableScrolling = false;
+    };
+  }
+
   openPatientSheet(patientId) {
     const currentUser = auth.getCurrentUser();
     if (!RolesManager.canAccessClinicalSheet(currentUser)) {
