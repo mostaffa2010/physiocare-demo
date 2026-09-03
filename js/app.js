@@ -54,21 +54,6 @@ class App {
 
     // 3. ربط أحداث التنقل والحوارات
     this.bindNavigation();
-        // Disable browser long-press floating context menu / copy-share popup on non-input elements
-    window.addEventListener('contextmenu', (e) => {
-      const tag = e.target.tagName;
-      if (tag !== 'INPUT' && tag !== 'TEXTAREA' && !e.target.isContentEditable) {
-        e.preventDefault();
-      }
-    });
-
-        // منع القائمة المنبثقة للضغط المطول على عناصر التطبيق (Native feel)
-    window.addEventListener('contextmenu', (e) => {
-      if (e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA') {
-        e.preventDefault();
-      }
-    });
-
     this.bindHardwareBackButton();
     this.disablePullToRefresh();
     this.disableBrowserContextMenu();
@@ -104,6 +89,7 @@ class App {
     document.getElementById('btn-open-demo-guide')?.addEventListener('click', () => this.openDemoOnboarding());
     document.getElementById('sidebar-btn-demo-guide')?.addEventListener('click', () => this.openDemoOnboarding());
     document.getElementById('btn-dismiss-onboarding')?.addEventListener('click', () => this.dismissDemoOnboarding());
+    document.getElementById('btn-close-demo-onboarding')?.addEventListener('click', () => this.dismissDemoOnboarding());
 
     // إظهار النافذة التعريفية تلقائياً عند أول دخول فقط
     if (localStorage.getItem('pc_demo_onboarding_seen') !== 'true') {
@@ -288,7 +274,9 @@ class App {
 
     // Sales Banner, Demo & Training Buttons
     document.getElementById('btn-reset-demo-data')?.addEventListener('click', () => this.resetDemoData());
-    document.getElementById('demo-role-select')?.addEventListener('change', (e) => auth.switchRole(e.target.value));
+    ['demo-role-select', 'demo-role-select-desktop'].forEach(selId => {
+      document.getElementById(selId)?.addEventListener('change', (e) => auth.switchRole(e.target.value));
+    });
     document.getElementById('btn-reset-training-data')?.addEventListener('click', () => this.resetTrainingData());
     document.getElementById('btn-exit-training-data')?.addEventListener('click', () => this.toggleTrainingMode(false));
     document.getElementById('btn-toggle-training-desktop')?.addEventListener('click', () => this.toggleTrainingMode());
@@ -332,7 +320,7 @@ class App {
   disableBrowserContextMenu() {
     window.addEventListener('contextmenu', (e) => {
       const tag = e.target.tagName;
-      if (tag !== 'INPUT' && tag !== 'TEXTAREA') {
+      if (tag !== 'INPUT' && tag !== 'TEXTAREA' && !e.target.isContentEditable) {
         e.preventDefault();
       }
     });

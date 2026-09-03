@@ -10,7 +10,7 @@ export class PWAManager {
       const dot = document.getElementById('net-status-dot');
       if (dot) {
         dot.className = isOnline ? 'status-dot' : 'status-dot offline';
-        dot.title = isOnline ? 'متصل بالسحابة' : 'وضع غير متصل (حفظ محلي)';
+        dot.title = isOnline ? 'متصل بالإنترنت' : 'وضع غير متصل';
       }
     };
 
