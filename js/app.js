@@ -25,12 +25,14 @@ class App {
     this.financeManager = new FinanceManager(this);
     this.exportManager = new ExportManager(this, this.financeManager);
     this.auditManager = new AuditAndAdminManager(this);
+    this.claimsManager = new ClaimsManager(this);
 
     window.patientsManager = this.patientsManager;
     window.sessionsManager = this.sessionsManager;
     window.financeManager = this.financeManager;
     window.exportManager = this.exportManager;
     window.auditManager = this.auditManager;
+    window.claimsManager = this.claimsManager;
   }
 
   async init() {
@@ -65,6 +67,9 @@ class App {
     this.bindCustomDialog();
 
     // 4. تهيئة المصادقة
+    await this.claimsManager.init();
+
+    // 4. تهيئة المصادقة
     await auth.init(async (user) => {
       await this.refreshAll();
     });
@@ -78,7 +83,7 @@ class App {
     await this.auditManager.init();
 
     // مزامنة أزرار القوائم المخصصة
-    ['demo-role-select', 'patient-filter-type', 'session-doctor-select', 'finance-doctor-filter', 'newuser-role', 'p-doctor'].forEach(id => {
+    ['demo-role-select', 'claim-company-select', 'patient-filter-type', 'session-doctor-select', 'finance-doctor-filter', 'newuser-role', 'p-doctor'].forEach(id => {
       this.updateCustomSelectDisplay(id);
     });
 

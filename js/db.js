@@ -294,36 +294,48 @@ class DemoDatabaseService {
     return list;
   }
 
-  // ================= Insurance Companies Buttons (Direct / Indirect) =================
+  // ================= Insurance Companies Registry =================
   getInsuranceCompanies(contractType = 'direct') {
-    const key = 'pc_demo_ins_' + contractType;
+    const key = (this.isTraining ? 'pc_sb_ins_' : 'pc_ins_') + contractType;
     const raw = localStorage.getItem(key);
     if (raw) return JSON.parse(raw);
 
     const defaults = {
-      direct: ['أكسا (AXA)', 'أليانز (Allianz)'],
-      indirect: ['نكست كير (NextCare)', 'مصر للتأمين']
+      direct: ['أكسا (AXA)', 'أليانز (Allianz)', 'ميتلايف (MetLife)', 'بوبا (Bupa)', 'عناية الرعاية الصحية (Enaya)'],
+      indirect: ['نكست كير (NextCare)', 'مصر للتأمين', 'ايجي كير', 'المهندس للتأمين']
     };
     const list = defaults[contractType] || [];
     localStorage.setItem(key, JSON.stringify(list));
     return list;
   }
 
+  getAllInsuranceCompaniesWithTypes() {
+    const direct = this.getInsuranceCompanies('direct');
+    const indirect = this.getInsuranceCompanies('indirect');
+    const res = [];
+    direct.forEach(name => res.push({ name, contractType: 'direct', label: `${name} (تعاقد مباشر)` }));
+    indirect.forEach(name => res.push({ name, contractType: 'indirect', label: `${name} (تعاقد غير مباشر)` }));
+    return res;
+  }
+
   async addInsuranceCompany(contractType, name) {
     const list = this.getInsuranceCompanies(contractType);
-    if (!list.includes(name)) {
-      list.push(name);
-      localStorage.setItem('pc_demo_ins_' + contractType, JSON.stringify(list));
+    if (!list.includes(name.trim())) {
+      list.push(name.trim());
+      const key = (this.isTraining ? 'pc_sb_ins_' : 'pc_ins_') + contractType;
+      localStorage.setItem(key, JSON.stringify(list));
     }
     return list;
   }
 
   async deleteInsuranceCompany(contractType, name) {
     let list = this.getInsuranceCompanies(contractType);
-    list = list.filter(item => item !== name);
-    localStorage.setItem('pc_demo_ins_' + contractType, JSON.stringify(list));
+    list = list.filter(item => item !== name.trim());
+    const key = (this.isTraining ? 'pc_sb_ins_' : 'pc_ins_') + contractType;
+    localStorage.setItem(key, JSON.stringify(list));
     return list;
   }
+
 }
 
 export const db = new DemoDatabaseService();

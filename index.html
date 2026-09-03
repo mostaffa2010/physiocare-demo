@@ -672,7 +672,7 @@
             <p style="font-size: 0.85rem; color: var(--text-muted);" id="finance-header-sub">متابعة الإيرادات والمصروفات والتقارير اليومية والشهرية الذكية</p>
           </div>
           <!-- Action Buttons -->
-          <div class="no-print" style="display: flex; gap: 8px; flex-wrap: wrap;">
+          <div class="no-print" id="finance-top-actions" style="display: flex; gap: 8px; flex-wrap: wrap;">
             <button type="button" class="btn btn-outline" id="btn-add-expense" onclick="app.openAddExpenseModal()">
               <i class="fa-solid fa-minus-circle" style="color: var(--danger);"></i> تسجيل مصروف
             </button>
@@ -699,7 +699,7 @@
         </div>
 
         <!-- Filter Bar -->
-        <div class="card no-print" style="padding: 12px; margin-bottom: 16px;">
+        <div class="card no-print" id="finance-filter-bar-card" style="padding: 12px; margin-bottom: 16px;">
           <!-- Daily Filter Controls -->
           <div id="filter-group-daily" style="display: flex; gap: 12px; flex-wrap: wrap; align-items: center;">
             <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
@@ -738,7 +738,7 @@
         </div>
 
         <!-- Financial KPI Summary Cards -->
-        <div class="stats-grid">
+        <div class="stats-grid" id="finance-kpi-stats-grid">
           <div class="stat-box">
             <div class="stat-icon blue"><i class="fa-solid fa-users"></i></div>
             <div class="stat-info">
@@ -926,9 +926,15 @@
               <div class="form-grid" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px;">
                 <div class="form-group">
                   <label for="claim-company-select" style="font-weight: 800;">شركة التأمين *</label>
-                  <select id="claim-company-select" class="form-control" style="font-weight: 700;">
-                    <!-- Populated dynamically -->
-                  </select>
+                  <div class="custom-select-wrapper">
+                    <select id="claim-company-select" style="display: none;" onchange="claimsManager.onCompanyChanged(this.value)">
+                      <!-- Populated dynamically -->
+                    </select>
+                    <button type="button" class="custom-select-btn" id="btn-select-claim-company-select" onclick="app.openCustomPicker('claim-company-select', 'اختر شركة التأمين')">
+                      <span class="btn-text">-- اضغط هنا لاختيار شركة التأمين --</span>
+                      <i class="fa-solid fa-chevron-down"></i>
+                    </button>
+                  </div>
                 </div>
                 <div class="form-group">
                   <label for="claim-start-date" style="font-weight: 800;">من تاريخ *</label>
@@ -956,7 +962,7 @@
                 </div>
               </div>
               <div style="margin-top: 14px; display: flex; justify-content: flex-end;">
-                <button type="button" class="btn btn-primary" id="btn-load-claim-patients" style="font-weight: 800; padding: 8px 18px;">
+                <button type="button" class="btn btn-primary" id="btn-load-claim-patients" onclick="claimsManager.loadCompanyPatients()" style="font-weight: 800; padding: 8px 18px;">
                   <i class="fa-solid fa-magnifying-glass"></i> استخراج وعرض مرضى الشركة
                 </button>
               </div>
@@ -1401,7 +1407,7 @@
 
   
     <!-- ================= Printable Insurance Claim Statement (مطابقة للورقة 1) ================= -->
-  <div id="printable-insurance-claim" class="printable-doc">
+  <div id="printable-insurance-claim" class="printable-doc" style="display: none;">
     <!-- Top Header -->
     <div style="display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #000; padding-bottom: 6px; margin-bottom: 12px;">
       <div style="text-align: right; line-height: 1.35;">
@@ -1466,7 +1472,7 @@
   </div>
 
   <!-- ================= Printable Attendance Cards (مطابقة للورقة 2) ================= -->
-  <div id="printable-attendance-cards" class="printable-doc">
+  <div id="printable-attendance-cards" class="printable-doc" style="display: none;">
     <!-- Populated dynamically -->
   </div>
 

@@ -1377,3 +1377,8 @@ input, textarea, [contenteditable="true"], .selectable-text {
   user-select: text !important;
   -webkit-touch-callout: default !important;
 }
+
+
+.printable-doc {
+  display: none !important;
+}

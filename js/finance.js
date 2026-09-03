@@ -134,6 +134,12 @@ export class FinanceManager {
 
       if (filterDaily) filterDaily.style.display = 'flex';
       if (filterMonthly) filterMonthly.style.display = 'none';
+      const topActions = document.getElementById('finance-top-actions');
+      const filterCard = document.getElementById('finance-filter-bar-card');
+      const kpiCards = document.getElementById('finance-kpi-stats-grid');
+      if (topActions) topActions.style.display = 'flex';
+      if (filterCard) filterCard.style.display = 'block';
+      if (kpiCards) kpiCards.style.display = 'grid';
       if (contentDaily) contentDaily.style.display = 'block';
       if (contentMonthly) contentMonthly.style.display = 'none';
       if (contentClaims) contentClaims.style.display = 'none';
@@ -171,6 +177,14 @@ export class FinanceManager {
       if (contentDaily) contentDaily.style.display = 'none';
       if (contentMonthly) contentMonthly.style.display = 'none';
       if (contentClaims) contentClaims.style.display = 'block';
+
+      // Hide top actions, filter bar card, and 4 KPI cards when in claims mode
+      const topActions = document.getElementById('finance-top-actions');
+      const filterCard = document.getElementById('finance-filter-bar-card');
+      const kpiCards = document.getElementById('finance-kpi-stats-grid');
+      if (topActions) topActions.style.display = 'none';
+      if (filterCard) filterCard.style.display = 'none';
+      if (kpiCards) kpiCards.style.display = 'none';
 
       const title = document.getElementById('finance-header-title');
       const sub = document.getElementById('finance-header-sub');
