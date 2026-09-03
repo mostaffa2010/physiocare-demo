@@ -1012,12 +1012,25 @@
                 </div>
               </div>
 
+                            <!-- Search Bar for Claim Patients -->
+              <div style="padding: 12px 14px 10px 14px; border-bottom: 1px solid var(--border-color); background: #fafbfc;">
+                <div style="display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap;">
+                  <div class="search-box" style="flex: 1; min-width: 260px;">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                    <input type="text" id="claim-patient-search-input" class="form-control" placeholder="ابحث بالاسم، الهاتف، أو الطبيب في مرضى المطالبة..." oninput="claimsManager.onSearchInput(this.value)">
+                  </div>
+                  <div id="claim-search-stats" style="font-size: 0.82rem; font-weight: 700; color: var(--text-muted);">
+                    <!-- Dynamic search stats -->
+                  </div>
+                </div>
+              </div>
+
               <div class="table-responsive">
                 <table class="data-table">
                   <thead>
                     <tr>
                       <th style="width: 40px; text-align: center;">
-                        <input type="checkbox" id="claim-select-all-cb" checked title="تحديد / إلغاء تحديد الكل">
+                        <input type="checkbox" id="claim-select-all-cb" title="تحديد / إلغاء تحديد الكل">
                       </th>
                       <th style="width: 35px; text-align: center;">م</th>
                       <th>اسم المريض</th>

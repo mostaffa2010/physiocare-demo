@@ -16,6 +16,7 @@ export class ClaimsManager {
     this.claimPatientsData = [];
     this.activeCardPatientId = null;
     this.attendanceCardsStore = {};
+    this.searchQuery = '';
     this.defaultTreatmentOptions = [
       'pulsed Ultrasound',
       'Heat application',
@@ -170,7 +171,7 @@ export class ClaimsManager {
       });
 
       const sessionCount = patientSessions.length > 0 ? patientSessions.length : 12;
-      const isChecked = true;
+      const isChecked = false; // غير محدد افتراضياً حتى يبحث الطبيب ويحدد براحته
       const total = (sessionCount * defaultRate) + defaultEval;
 
       const clinical = p.clinicalSheet || {};
@@ -194,6 +195,12 @@ export class ClaimsManager {
       };
     });
 
+    this.searchQuery = '';
+    const sInput = document.getElementById('claim-patient-search-input');
+    if (sInput) sInput.value = '';
+    const selectAllCb = document.getElementById('claim-select-all-cb');
+    if (selectAllCb) selectAllCb.checked = false;
+
     this.renderPatientsTable();
     this.recalcGrandTotals();
     if (this.app && this.app.showToast) {
@@ -201,16 +208,58 @@ export class ClaimsManager {
     }
   }
 
+  onSearchInput(query) {
+    this.searchQuery = (query || '').trim().toLowerCase();
+    this.renderPatientsTable();
+  }
+
+  getFilteredPatients() {
+    if (!this.searchQuery) return this.claimPatientsData;
+    const q = this.searchQuery;
+    return this.claimPatientsData.filter(item => {
+      const p = item.patient;
+      const name = (p.name || '').toLowerCase();
+      const phone = (p.phone || '');
+      const doctor = (p.doctor || '').toLowerCase();
+      return name.includes(q) || phone.includes(q) || doctor.includes(q);
+    });
+  }
+
   renderPatientsTable() {
     const tbody = document.getElementById('claim-patients-tbody');
     if (!tbody) return;
 
     if (this.claimPatientsData.length === 0) {
-      tbody.innerHTML = `<tr><td colspan="9" style="text-align: center; padding: 24px; color: var(--text-muted);">اضغط على زر "استخراج وعرض مرضى الشركة" لعرض القائمة.</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; padding: 24px; color: var(--text-muted);">اضغط على زر "استخراج وعرض مرضى الشركة" لعرض القائمة.</td></tr>`;
+      const statsEl = document.getElementById('claim-search-stats');
+      if (statsEl) statsEl.innerHTML = '';
       return;
     }
 
-    tbody.innerHTML = this.claimPatientsData.map((item, idx) => {
+    const filtered = this.getFilteredPatients();
+
+    // Update search stats badge
+    const statsEl = document.getElementById('claim-search-stats');
+    if (statsEl) {
+      if (this.searchQuery) {
+        statsEl.innerHTML = `<span class="badge" style="background: #e0f2fe; color: #0284c7; font-weight: 700; font-size: 0.8rem;">عرض ${filtered.length} من أصل ${this.claimPatientsData.length} مريض</span>`;
+      } else {
+        statsEl.innerHTML = `<span style="color: var(--text-muted); font-size: 0.8rem;">إجمالي مرضى الشركة: ${this.claimPatientsData.length} مريض</span>`;
+      }
+    }
+
+    if (filtered.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; padding: 24px; color: var(--text-muted); font-weight: 700;">لا توجد نتائج مطابقة لبحثك: "${this.searchQuery}".</td></tr>`;
+      return;
+    }
+
+    // Sync select-all checkbox with filtered items
+    const selectAllCb = document.getElementById('claim-select-all-cb');
+    if (selectAllCb) {
+      selectAllCb.checked = filtered.length > 0 && filtered.every(i => i.isChecked);
+    }
+
+    tbody.innerHTML = filtered.map((item, idx) => {
       const p = item.patient;
       const rowChecked = item.isChecked ? 'checked' : '';
       const rowTotal = (item.sessionCount * item.sessionRate) + item.evalFee;
@@ -219,7 +268,7 @@ export class ClaimsManager {
       return `
         <tr style="${!item.isChecked ? 'opacity: 0.55; background-color: #f8fafc;' : ''}">
           <td style="text-align: center;">
-            <input type="checkbox" style="width: 18px; height: 18px; cursor: pointer;" ${rowChecked} onchange="claimsManager.togglePatientCheck(${idx}, this.checked)">
+            <input type="checkbox" style="width: 18px; height: 18px; cursor: pointer;" ${rowChecked} onchange="claimsManager.togglePatientCheck('${p.id}', this.checked)">
           </td>
           <td style="text-align: center; font-weight: 700;">${idx + 1}</td>
           <td>
@@ -227,16 +276,16 @@ export class ClaimsManager {
             <small style="color: var(--text-muted); font-size: 0.76rem;"><i class="fa-solid fa-phone"></i> ${p.phone} • ${p.doctor}</small>
           </td>
           <td>
-            <input type="number" class="form-control" style="width: 80px; padding: 4px 6px; font-weight: 700; text-align: center;" value="${item.evalFee}" onchange="claimsManager.updatePatientNumber(${idx}, 'evalFee', this.value)">
+            <input type="number" class="form-control" style="width: 80px; padding: 4px 6px; font-weight: 700; text-align: center;" value="${item.evalFee}" onchange="claimsManager.updatePatientNumber('${p.id}', 'evalFee', this.value)">
           </td>
           <td>
-            <input type="number" class="form-control" style="width: 70px; padding: 4px 6px; font-weight: 700; text-align: center;" value="${item.sessionCount}" onchange="claimsManager.updatePatientNumber(${idx}, 'sessionCount', this.value)">
+            <input type="number" class="form-control" style="width: 70px; padding: 4px 6px; font-weight: 700; text-align: center;" value="${item.sessionCount}" onchange="claimsManager.updatePatientNumber('${p.id}', 'sessionCount', this.value)">
           </td>
           <td>
-            <input type="number" class="form-control" style="width: 75px; padding: 4px 6px; font-weight: 700; text-align: center;" value="${item.sessionRate}" onchange="claimsManager.updatePatientNumber(${idx}, 'sessionRate', this.value)">
+            <input type="number" class="form-control" style="width: 75px; padding: 4px 6px; font-weight: 700; text-align: center;" value="${item.sessionRate}" onchange="claimsManager.updatePatientNumber('${p.id}', 'sessionRate', this.value)">
           </td>
-          <td style="font-weight: 800; color: var(--success); font-size: 0.95rem; text-align: center;">
-            <span id="claim-row-total-${idx}">${rowTotal}</span> ج.م
+          <td style="font-weight: 800; color: var="--success"; font-size: 0.95rem; text-align: center;">
+            <span id="claim-row-total-${p.id}">${rowTotal.toLocaleString('en-US')}</span> ج.م
           </td>
           <td style="text-align: center;">
             <button type="button" class="btn btn-outline btn-sm" onclick="claimsManager.openAttendanceCardModal('${p.id}')" style="padding: 4px 10px; font-size: 0.78rem; font-weight: 700; color: #0369a1; border-color: #bae6fd; background-color: #f0f9ff;" title="تخصيص وطباعة بطاقة التردد">
@@ -248,30 +297,28 @@ export class ClaimsManager {
     }).join('');
   }
 
-  togglePatientCheck(index, checked) {
-    if (this.claimPatientsData[index]) {
-      this.claimPatientsData[index].isChecked = checked;
+  togglePatientCheck(patientId, checked) {
+    const item = this.claimPatientsData.find(i => i.patient.id === patientId);
+    if (item) {
+      item.isChecked = checked;
       this.renderPatientsTable();
       this.recalcGrandTotals();
     }
   }
 
-  updatePatientNumber(index, field, val) {
+  updatePatientNumber(patientId, field, val) {
     const num = parseFloat(val) || 0;
-    if (this.claimPatientsData[index]) {
-      this.claimPatientsData[index][field] = num;
-      const item = this.claimPatientsData[index];
-      const newTotal = (item.sessionCount * item.sessionRate) + item.evalFee;
-      item.total = newTotal;
-
-      const totalSpan = document.getElementById(`claim-row-total-${index}`);
-      if (totalSpan) totalSpan.textContent = newTotal;
-
+    const item = this.claimPatientsData.find(i => i.patient.id === patientId);
+    if (item) {
+      item[field] = num;
+      item.total = (item.sessionCount * item.sessionRate) + item.evalFee;
+      const totalCell = document.getElementById(`claim-row-total-${patientId}`);
+      if (totalCell) totalCell.textContent = item.total.toLocaleString('en-US');
       this.recalcGrandTotals();
     }
   }
 
-  recalcGrandTotals() {
+    recalcGrandTotals() {
     let totalPatients = 0;
     let totalSessions = 0;
     let grandTotalAmount = 0;
