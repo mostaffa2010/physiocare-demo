@@ -312,7 +312,7 @@
               <i class="fa-solid fa-file-waveform" style="color: var(--primary);"></i> شيت المريض
             </h2>
           </div>
-          <button type="button" class="btn btn-primary btn-sm" onclick="patientsManager.printCurrentSheet()" style="padding: 6px 12px; font-weight: 700;">
+          <button type="button" class="btn btn-primary btn-sm btn-print-sheet" onclick="patientsManager.printCurrentSheet()" style="padding: 6px 12px; font-weight: 700;">
             <i class="fa-solid fa-print"></i> طباعة Wi-Fi
           </button>
         </div>
@@ -468,7 +468,7 @@
               <i class="fa-solid fa-arrow-right"></i> عودة لسجل المرضى
             </button>
             <div style="display: flex; gap: 8px;">
-              <button type="button" class="btn btn-primary" onclick="patientsManager.printCurrentSheet()">
+              <button type="button" class="btn btn-primary btn-print-sheet" onclick="patientsManager.printCurrentSheet()">
                 <i class="fa-solid fa-print"></i> طباعة الشيت عبر Wi-Fi
               </button>
               <button type="submit" class="btn btn-success" id="btn-save-sheet">

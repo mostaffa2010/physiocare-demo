@@ -71,6 +71,16 @@ class DemoAuthService {
     this.hideLoginModal();
     this.updateUI();
     await db.logAudit('تبديل صلاحية العرض', `تم تبديل واجهة العرض لدور: ${RolesManager.getRoleLabel(role)}`, this.currentUser);
+    
+    // توجيه واجهة المستخدم بحسب الصلاحية
+    if (role === 'doctor') {
+      this.app.switchView('patients');
+    } else if (role === 'receptionist') {
+      if (this.app.currentView === 'patient-sheet' || this.app.currentView === 'admin') {
+        this.app.switchView('patients');
+      }
+    }
+
     if (this.onUserChanged) this.onUserChanged(this.currentUser);
   }
 

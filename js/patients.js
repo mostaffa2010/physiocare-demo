@@ -183,7 +183,9 @@ export class PatientsManager {
     }
 
     const currentUser = auth.getCurrentUser();
-    const canDelete = RolesManager.canDelete(currentUser);
+    const canAccessSheet = RolesManager.canAccessClinicalSheet(currentUser);
+    const canDeletePatient = RolesManager.canDeletePatient(currentUser);
+    const isDoctor = currentUser?.role === 'doctor';
 
     tbody.innerHTML = filtered.map(p => {
       let billingBadge = '';
@@ -197,7 +199,11 @@ export class PatientsManager {
 
       return `
         <tr>
-          <td style="font-weight: 800; color: var(--primary); cursor: pointer; white-space: nowrap;" onclick="patientsManager.openPatientSheet('${p.id}')" title="اضغط لفتح الشيت الطبي"><i class="fa-solid fa-file-waveform" style="margin-left: 6px;"></i> ${p.name}</td>
+          <td style="font-weight: 800; color: var(--primary); cursor: ${canAccessSheet ? 'pointer' : 'default'}; white-space: nowrap;" 
+              onclick="${canAccessSheet ? `patientsManager.openPatientSheet('${p.id}')` : `patientsManager.openEditModal('${p.id}')`}" 
+              title="${canAccessSheet ? 'اضغط لفتح الشيت الطبي' : 'تعديل بيانات المريض'}">
+            <i class="fa-solid ${canAccessSheet ? 'fa-file-waveform' : 'fa-user'}" style="margin-left: 6px;"></i> ${p.name}
+          </td>
           <td style="white-space: nowrap;">${p.age} سنة</td>
           <td style="white-space: nowrap;">
             <a href="tel:${p.phone}" style="color: var(--primary); text-decoration: none; white-space: nowrap; direction: ltr; display: inline-flex; align-items: center; gap: 4px;">
@@ -210,17 +216,21 @@ export class PatientsManager {
           <td style="font-size: 0.8rem; color: var(--text-muted); white-space: nowrap;">${p.lastUpdatedBy || p.createdBy || '-'}</td>
           <td style="white-space: nowrap;">
             <div style="display: flex; gap: 6px; align-items: center; flex-wrap: nowrap;">
-              <button class="btn btn-primary btn-sm" onclick="patientsManager.openPatientSheet('${p.id}')" title="شيت العلاج الطبيعي">
-                <i class="fa-solid fa-file-waveform"></i> الشيت الطبي
-              </button>
+              ${canAccessSheet ? `
+                <button class="btn btn-primary btn-sm btn-patient-sheet-action" onclick="patientsManager.openPatientSheet('${p.id}')" title="شيت العلاج الطبيعي">
+                  <i class="fa-solid fa-file-waveform"></i> الشيت الطبي
+                </button>
+              ` : ''}
               <a href="https://wa.me/${(p.phone || '').replace(/[^0-9]/g, '').replace(/^0/, '20')}" target="_blank" class="btn btn-outline btn-sm" style="color: #10b981; border-color: #10b981;" title="محادثة واتساب">
                 <i class="fa-brands fa-whatsapp"></i>
               </a>
-              <button class="btn btn-outline btn-sm" onclick="patientsManager.openEditModal('${p.id}')" title="تعديل">
-                <i class="fa-solid fa-pen-to-square"></i>
-              </button>
-              ${canDelete ? `
-                <button class="btn btn-outline btn-sm btn-delete-record" style="color: var(--danger);" onclick="patientsManager.confirmDelete('${p.id}')" title="حذف">
+              ${!isDoctor ? `
+                <button class="btn btn-outline btn-sm" onclick="patientsManager.openEditModal('${p.id}')" title="تعديل بيانات المريض">
+                  <i class="fa-solid fa-pen-to-square"></i>
+                </button>
+              ` : ''}
+              ${canDeletePatient ? `
+                <button class="btn btn-outline btn-sm btn-delete-patient" style="color: var(--danger);" onclick="patientsManager.confirmDelete('${p.id}')" title="حذف المريض">
                   <i class="fa-solid fa-trash"></i>
                 </button>
               ` : ''}
@@ -456,6 +466,12 @@ export class PatientsManager {
 
   // ================= Clinical Patient Sheet =================
   openPatientSheet(patientId) {
+    const currentUser = auth.getCurrentUser();
+    if (!RolesManager.canAccessClinicalSheet(currentUser)) {
+      this.app.showAlert('الدخول على الشيت الطبي متاح للأطباء المعالجين ومدير المركز فقط.', 'صلاحية الأطباء');
+      return;
+    }
+
     const p = this.patients.find(item => item.id === patientId);
     if (!p) return;
 
@@ -746,6 +762,12 @@ export class PatientsManager {
   }
 
   printCurrentSheet() {
+    const currentUser = auth.getCurrentUser();
+    if (!RolesManager.canPrintSheet(currentUser)) {
+      this.app.showAlert('عفواً، طباعة وحفظ الشيت الطبي متاح لإدارة المركز فقط.', 'صلاحية الطباعة');
+      return;
+    }
+
     if (!this.currentSheetPatient) {
       this.app.showAlert('يرجى فتح شيت المريض أولاً قبل الطباعة.', 'تنبيه', 'warning');
       return;

@@ -130,6 +130,18 @@ class App {
   }
 
   switchView(viewName, isBackNavigation = false) {
+    const user = auth.getCurrentUser();
+    // تقييد صلاحيات التنقل حسب الدور
+    if (user?.role === 'doctor') {
+      if (viewName !== 'patients' && viewName !== 'patient-sheet') {
+        viewName = 'patients';
+      }
+    } else if (user?.role === 'receptionist') {
+      if (viewName === 'admin' || viewName === 'patient-sheet') {
+        viewName = 'patients';
+      }
+    }
+
     if (this.currentView === viewName && !isBackNavigation) return;
 
     if (!isBackNavigation) {
@@ -228,6 +240,13 @@ class App {
     // منع سحب المتصفح عبر معايير CSS القياسية دون حظر لمسات iOS
     document.documentElement.style.overscrollBehaviorY = 'none';
     document.body.style.overscrollBehaviorY = 'none';
+
+    // منع القائمة السياقية وتحديد النصوص عند الضغط المطول
+    window.addEventListener('contextmenu', (e) => {
+      if (e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA') {
+        e.preventDefault();
+      }
+    });
   }
 
   // ================= Hardware Back Button & Mobile Gestures =================
