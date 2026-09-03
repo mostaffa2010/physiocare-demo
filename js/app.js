@@ -60,6 +60,13 @@ class App {
       }
     });
     this.bindHardwareBackButton();
+    // منع القوائم المنبثقة الافتراضية للمتصفح عند الضغط المطول
+    document.addEventListener('contextmenu', (e) => {
+      const tag = e.target.tagName;
+      if (tag !== 'INPUT' && tag !== 'TEXTAREA') {
+        e.preventDefault();
+      }
+    });
     // Disable context menu on long-press for native app feel
     window.addEventListener('contextmenu', (e) => {
       if (e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA') {
