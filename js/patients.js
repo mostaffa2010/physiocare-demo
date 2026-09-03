@@ -86,33 +86,38 @@ export class PatientsManager {
     if (!q) return 1;
 
     const name = this.normalizeArabic(p.name);
-    const phone = (p.phone || '').replace(/[^0-9]/g, '');
-    const cleanDigits = rawQuery.replace(/[^0-9]/g, '');
+    const words = name.split(/\s+/);
 
-    // 1. First name starts directly with query (Top Priority)
-    if (name.startsWith(q)) {
-      return 1000 - name.length;
+    // 1. First name starts directly with query (Top Priority: 10,000+)
+    if (words[0] && words[0].startsWith(q)) {
+      return 10000 - words[0].length;
     }
 
-    // 2. Any subsequent word in the full name starts with query
-    const words = name.split(/\s+/);
-    for (let i = 1; i < words.length; i++) {
+    // 2. Second word (Father's name) starts with query (Priority: 5,000+)
+    if (words[1] && words[1].startsWith(q)) {
+      return 5000 - words[1].length;
+    }
+
+    // 3. Third or subsequent word starts with query (Priority: 2,000+)
+    for (let i = 2; i < words.length; i++) {
       if (words[i].startsWith(q)) {
-        return 500 - (i * 20);
+        return 2000 - (i * 10);
       }
     }
 
-    // 3. Name contains query substring
+    // 4. Substring match in full name
     if (name.includes(q)) {
-      return 200;
+      return 500;
     }
 
-    // 4. Phone match
+    // 5. Phone match
+    const phone = (p.phone || '').replace(/[^0-9]/g, '');
+    const cleanDigits = rawQuery.replace(/[^0-9]/g, '');
     if (cleanDigits && phone.includes(cleanDigits)) {
-      return phone.startsWith(cleanDigits) ? 150 : 100;
+      return phone.startsWith(cleanDigits) ? 200 : 100;
     }
 
-    // 5. Insurance company match
+    // 6. Insurance match
     if (p.insuranceCompany && this.normalizeArabic(p.insuranceCompany).includes(q)) {
       return 50;
     }
@@ -124,17 +129,32 @@ export class PatientsManager {
     const tbody = document.getElementById('patients-tbody');
     if (!tbody) return;
 
-    const searchTerm = document.getElementById('patient-search-input')?.value.trim().toLowerCase() || '';
+    const rawSearch = document.getElementById('patient-search-input')?.value.trim() || '';
     const filterType = document.getElementById('patient-filter-type')?.value || 'all';
+    const normSearch = this.normalizeArabic(rawSearch);
+    const cleanDigits = rawSearch.replace(/[^0-9]/g, '');
 
     let filtered = this.patients.filter(p => {
-      const matchSearch = 
-        p.name.toLowerCase().includes(searchTerm) ||
-        p.phone.includes(searchTerm) ||
-        (p.insuranceCompany && p.insuranceCompany.toLowerCase().includes(searchTerm));
+      // 1. Smart Normalized Arabic & Phone Search
+      let matchSearch = true;
+      if (rawSearch) {
+        const normName = this.normalizeArabic(p.name);
+        const normPhone = (p.phone || '').replace(/[^0-9]/g, '');
+        const normComp = this.normalizeArabic(p.insuranceCompany || '');
+        const normDoc = this.normalizeArabic(p.doctor || '');
+        const normAddr = this.normalizeArabic(p.address || '');
+
+        matchSearch = 
+          normName.includes(normSearch) ||
+          (cleanDigits.length > 0 && normPhone.includes(cleanDigits)) ||
+          normComp.includes(normSearch) ||
+          normDoc.includes(normSearch) ||
+          normAddr.includes(normSearch);
+      }
 
       if (!matchSearch) return false;
 
+      // 2. Billing Filter
       if (filterType === 'cash') return p.billing === 'cash';
       if (filterType === 'insurance_direct') return p.billing === 'insurance' && p.contractType === 'direct';
       if (filterType === 'insurance_indirect') return p.billing === 'insurance' && p.contractType === 'indirect';
@@ -142,8 +162,20 @@ export class PatientsManager {
       return true;
     });
 
+    // 3. Relevance ranking if user typed a search query
+    if (rawSearch) {
+      filtered.sort((a, b) => {
+        const scoreA = this.getPatientSearchScore(a, rawSearch);
+        const scoreB = this.getPatientSearchScore(b, rawSearch);
+        if (scoreB !== scoreA) {
+          return scoreB - scoreA;
+        }
+        return a.name.localeCompare(b.name, 'ar');
+      });
+    }
+
     if (filtered.length === 0) {
-      tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; color: var(--text-muted); padding: 30px;">لا يوجد مرضى مطابقين للبحث.</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; color: var(--text-muted); padding: 30px;">لا يوجد مرضى مطابقين لكلمة البحث: <strong>"${rawSearch}"</strong></td></tr>`;
       return;
     }
 
@@ -162,14 +194,18 @@ export class PatientsManager {
 
       return `
         <tr>
-          <td style="font-weight: 800; color: var(--primary); cursor: pointer;" onclick="patientsManager.openPatientSheet('${p.id}')" title="اضغط لفتح الشيت الطبي"><i class="fa-solid fa-file-waveform" style="margin-left: 6px;"></i> ${p.name}</td>
-          <td>${p.age} سنة</td>
-          <td><a href="tel:${p.phone}" style="color: var(--primary); text-decoration: none;"><i class="fa-solid fa-phone"></i> ${p.phone}</a></td>
-          <td>${p.address || '-'}</td>
-          <td><span style="font-weight: 600; color: #1e293b;">${p.doctor}</span></td>
-          <td>${billingBadge}</td>
-          <td style="font-size: 0.8rem; color: var(--text-muted);">${p.lastUpdatedBy || p.createdBy || '-'}</td>
-          <td>
+          <td style="font-weight: 800; color: var(--primary); cursor: pointer; white-space: nowrap;" onclick="patientsManager.openPatientSheet('${p.id}')" title="اضغط لفتح الشيت الطبي"><i class="fa-solid fa-file-waveform" style="margin-left: 6px;"></i> ${p.name}</td>
+          <td style="white-space: nowrap;">${p.age} سنة</td>
+          <td style="white-space: nowrap;">
+            <a href="tel:${p.phone}" style="color: var(--primary); text-decoration: none; white-space: nowrap; direction: ltr; display: inline-flex; align-items: center; gap: 4px;">
+              <i class="fa-solid fa-phone" style="font-size: 0.75rem;"></i> <bdi dir="ltr">${p.phone}</bdi>
+            </a>
+          </td>
+          <td style="white-space: nowrap;">${p.address || '-'}</td>
+          <td style="white-space: nowrap;"><span style="font-weight: 600; color: #1e293b;">${p.doctor}</span></td>
+          <td style="white-space: nowrap;">${billingBadge}</td>
+          <td style="font-size: 0.8rem; color: var(--text-muted); white-space: nowrap;">${p.lastUpdatedBy || p.createdBy || '-'}</td>
+          <td style="white-space: nowrap;">
             <div style="display: flex; gap: 6px; align-items: center; flex-wrap: nowrap;">
               <button class="btn btn-primary btn-sm" onclick="patientsManager.openPatientSheet('${p.id}')" title="شيت العلاج الطبيعي">
                 <i class="fa-solid fa-file-waveform"></i> الشيت الطبي

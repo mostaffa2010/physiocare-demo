@@ -108,28 +108,38 @@ export class SessionsManager {
     if (!q) return 1;
 
     const name = this.normalizeArabic(p.name);
-    const phone = (p.phone || '').replace(/[^0-9]/g, '');
-    const cleanDigits = rawQuery.replace(/[^0-9]/g, '');
+    const words = name.split(/\s+/);
 
-    if (name.startsWith(q)) {
-      return 1000 - name.length;
+    // 1. First name starts directly with query (Top Priority: 10,000+)
+    if (words[0] && words[0].startsWith(q)) {
+      return 10000 - words[0].length;
     }
 
-    const words = name.split(/\s+/);
-    for (let i = 1; i < words.length; i++) {
+    // 2. Second word (Father's name) starts with query (Priority: 5,000+)
+    if (words[1] && words[1].startsWith(q)) {
+      return 5000 - words[1].length;
+    }
+
+    // 3. Third or subsequent word starts with query (Priority: 2,000+)
+    for (let i = 2; i < words.length; i++) {
       if (words[i].startsWith(q)) {
-        return 500 - (i * 20);
+        return 2000 - (i * 10);
       }
     }
 
+    // 4. Substring match in full name
     if (name.includes(q)) {
-      return 200;
+      return 500;
     }
 
+    // 5. Phone match
+    const phone = (p.phone || '').replace(/[^0-9]/g, '');
+    const cleanDigits = rawQuery.replace(/[^0-9]/g, '');
     if (cleanDigits && phone.includes(cleanDigits)) {
-      return phone.startsWith(cleanDigits) ? 150 : 100;
+      return phone.startsWith(cleanDigits) ? 200 : 100;
     }
 
+    // 6. Insurance match
     if (p.insuranceCompany && this.normalizeArabic(p.insuranceCompany).includes(q)) {
       return 50;
     }

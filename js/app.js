@@ -51,7 +51,14 @@ class App {
     // 3. ربط أحداث التنقل والحوارات
     this.bindNavigation();
     this.bindHardwareBackButton();
+    this.bindContextMenuPrevention();
     this.disablePullToRefresh();
+    // Disable long-press context menu on non-input UI elements
+    window.addEventListener('contextmenu', (e) => {
+      if (e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA') {
+        e.preventDefault();
+      }
+    });
     this.disableBrowserContextMenu();
     // Prevent native long-press text selection context menu
     window.addEventListener('contextmenu', (e) => {
