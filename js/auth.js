@@ -58,15 +58,28 @@ class DemoAuthService {
 
     localStorage.setItem('pc_demo_active_user', JSON.stringify(this.currentUser));
     
-    // Sync dropdown select and button label
-    const sel = document.getElementById('demo-role-select');
-    if (sel) sel.value = role;
-    
-    const btn = document.getElementById('btn-select-demo-role-select');
-    if (btn) {
-      const textSpan = btn.querySelector('.btn-text');
-      if (textSpan) textSpan.textContent = prof.label;
-    }
+    // Sync mobile and desktop dropdown selects and buttons
+    ['demo-role-select', 'demo-role-select-desktop'].forEach(selId => {
+      const sel = document.getElementById(selId);
+      if (sel) sel.value = role;
+      
+      const btn = document.getElementById(`btn-select-${selId}`);
+      if (btn) {
+        const textSpan = btn.querySelector('.btn-text');
+        if (textSpan) {
+          if (selId.includes('desktop')) {
+            const deskLabels = {
+              admin: '👑 مدير المركز (د. مصطفى)',
+              doctor: '🩺 طبيب معالج (د. أحمد)',
+              receptionist: '📋 استقبال العيادة (أ. منار)'
+            };
+            textSpan.textContent = deskLabels[role] || '👑 مدير المركز';
+          } else {
+            textSpan.textContent = prof.label;
+          }
+        }
+      }
+    });
 
     this.hideLoginModal();
     this.updateUI();

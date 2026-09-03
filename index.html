@@ -159,6 +159,25 @@
       </nav>
 
       <div class="sidebar-user-box">
+        <!-- Desktop Role Switcher for Demo -->
+        <div style="margin-bottom: 12px; padding-bottom: 10px; border-bottom: 1px solid var(--border-color);">
+          <div style="font-size: 0.78rem; font-weight: 700; color: var(--text-muted); margin-bottom: 6px; display: flex; align-items: center; gap: 6px;">
+            <i class="fa-solid fa-user-gear" style="color: var(--primary);"></i>
+            <span>تبديل صلاحية العرض (الكمبيوتر):</span>
+          </div>
+          <div class="custom-select-wrapper" style="width: 100%;">
+            <select id="demo-role-select-desktop" style="display: none;" onchange="auth.switchRole(this.value)">
+              <option value="admin">👑 مدير المركز (د. مصطفى)</option>
+              <option value="doctor">🩺 طبيب معالج (د. أحمد)</option>
+              <option value="receptionist">📋 استقبال العيادة (أ. منار)</option>
+            </select>
+            <button type="button" class="custom-select-btn" id="btn-select-demo-role-select-desktop" style="width: 100%; padding: 6px 12px; font-size: 0.82rem; font-weight: 700; background-color: var(--primary-light); color: var(--primary); border-color: #bae6fd; justify-content: space-between;" onclick="app.openCustomPicker('demo-role-select-desktop', 'اختر دور المعاينة التجريبية')">
+              <span class="btn-text">👑 مدير المركز</span>
+              <i class="fa-solid fa-chevron-down" style="font-size: 0.72rem;"></i>
+            </button>
+          </div>
+        </div>
+
         <div style="display: flex; align-items: center; justify-content: space-between;">
           <div>
             <div id="sidebar-user-name" style="font-weight: 700; font-size: 0.9rem;">د. مصطفى</div>
@@ -168,9 +187,6 @@
             <i class="fa-solid fa-right-from-bracket"></i>
           </button>
         </div>
-        <button type="button" class="training-pill-btn" id="btn-toggle-training-desktop" style="width: 100%; justify-content: center; margin-bottom: 8px;">
-          <i class="fa-solid fa-flask"></i> <span id="training-btn-text-desktop">تفعيل الوضع التدريبي (Sandbox)</span>
-        </button>
       </div>
     </aside>
 

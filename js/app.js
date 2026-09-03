@@ -62,6 +62,13 @@ class App {
       }
     });
 
+        // منع القائمة المنبثقة للضغط المطول على عناصر التطبيق (Native feel)
+    window.addEventListener('contextmenu', (e) => {
+      if (e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA') {
+        e.preventDefault();
+      }
+    });
+
     this.bindHardwareBackButton();
     this.disablePullToRefresh();
     this.disableBrowserContextMenu();
@@ -731,6 +738,14 @@ class App {
         const val = select.value;
         const labels = { admin: '👑 مدير', doctor: '🩺 طبيب', receptionist: '📋 استقبال' };
         textSpan.textContent = labels[val] || '👑 مدير';
+      } else if (selectId === 'demo-role-select-desktop') {
+        const val = select.value;
+        const deskLabels = {
+          admin: '👑 مدير المركز (د. مصطفى)',
+          doctor: '🩺 طبيب معالج (د. أحمد)',
+          receptionist: '📋 استقبال العيادة (أ. منار)'
+        };
+        textSpan.textContent = deskLabels[val] || '👑 مدير المركز';
       } else {
         const selectedOpt = select.options[select.selectedIndex];
         textSpan.textContent = selectedOpt ? selectedOpt.text : '-- اختر --';
