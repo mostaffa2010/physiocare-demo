@@ -495,26 +495,28 @@ export class ClaimsManager {
             <h1 style="font-size: 16pt; margin: 0; font-weight: 900; text-decoration: underline;">بطاقة تردد</h1>
           </div>
 
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; font-size: 11pt; font-weight: bold; border-bottom: 1px dashed #777; padding-bottom: 10px;">
-            <div>شركة: <span>${companyName}</span></div>
-            <div>Referred from / Name: <span style="font-size: 12pt; font-weight: 800;">${p.name}</span></div>
+          <!-- Top Line: Name on the RIGHT, Company on the LEFT (No 'Referred from') -->
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; font-size: 11.5pt; font-weight: bold; border-bottom: 1.5px dashed #777; padding-bottom: 10px; direction: rtl;">
+            <div style="text-align: right;">الاسم: <span style="font-size: 12.5pt; font-weight: 800; color: #0f172a;">${p.name}</span></div>
+            <div style="text-align: left;">شركة: <span style="font-weight: 800; color: #0f172a;">${companyName}</span></div>
           </div>
 
-          <div style="line-height: 2; margin-bottom: 30px; font-size: 11pt;">
-            <div style="margin-bottom: 18px;">
-              <strong style="font-size: 11.5pt; display: block; color: #000; text-decoration: underline;">Referred diagnosis:</strong>
-              <div style="padding-right: 15px; font-weight: 700; color: #0f172a; margin-top: 4px;">${diag}</div>
+          <!-- Content Block: strictly LTR, left-aligned, with bullet points underneath -->
+          <div style="direction: ltr; text-align: left; line-height: 1.8; margin-bottom: 30px; font-size: 11pt;">
+            <div style="margin-bottom: 20px;">
+              <strong style="font-size: 12pt; display: block; color: #000; text-decoration: underline; margin-bottom: 6px;">Referred diagnosis:</strong>
+              <div style="padding-left: 14px; font-weight: 700; color: #0f172a;">• ${diag}</div>
             </div>
 
-            <div style="margin-bottom: 18px;">
-              <strong style="font-size: 11.5pt; display: block; color: #000; text-decoration: underline;">P.T. Evaluation:</strong>
-              <div style="padding-right: 15px; color: #334155; margin-top: 4px;">${evaluation}</div>
+            <div style="margin-bottom: 20px;">
+              <strong style="font-size: 12pt; display: block; color: #000; text-decoration: underline; margin-bottom: 6px;">P.T. Evaluation:</strong>
+              <div style="padding-left: 14px; color: #334155;">• ${evaluation}</div>
             </div>
 
-            <div style="margin-bottom: 18px;">
-              <strong style="font-size: 11.5pt; display: block; color: #000; text-decoration: underline;">Plan of P.T. Treatment:</strong>
-              <div style="padding-right: 20px; font-weight: 700; color: #0f172a; margin-top: 6px;">
-                ${treatments.map(t => `<div>- ${t}</div>`).join('')}
+            <div style="margin-bottom: 20px;">
+              <strong style="font-size: 12pt; display: block; color: #000; text-decoration: underline; margin-bottom: 6px;">Plan of P.T. Treatment:</strong>
+              <div style="padding-left: 14px; font-weight: 700; color: #0f172a; line-height: 1.8;">
+                ${treatments.map(t => `<div style="margin-bottom: 4px;">• ${t}</div>`).join('')}
               </div>
             </div>
           </div>
