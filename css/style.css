@@ -1440,3 +1440,31 @@ input, textarea, select, [contenteditable="true"] {
   user-select: text !important;
   -webkit-touch-callout: default !important;
 }
+
+
+/* ================= Strict Doctor Permissions ================= */
+body.role-doctor [data-view="dashboard"],
+body.role-doctor [data-view="sessions"],
+body.role-doctor [data-view="finance"],
+body.role-doctor [data-view="admin"],
+body.role-doctor .bottom-nav button[data-view="dashboard"],
+body.role-doctor .bottom-nav button[data-view="sessions"],
+body.role-doctor .bottom-nav button[data-view="finance"],
+body.role-doctor .bottom-nav button[data-view="admin"],
+body.role-doctor .sidebar-nav button[data-view="dashboard"],
+body.role-doctor .sidebar-nav button[data-view="sessions"],
+body.role-doctor .sidebar-nav button[data-view="finance"],
+body.role-doctor .sidebar-nav button[data-view="admin"] {
+  display: none !important;
+}
+
+body.role-doctor #btn-open-add-patient {
+  display: none !important;
+}
+
+body.role-doctor .btn-edit-patient,
+body.role-doctor .btn-delete-patient,
+body.role-doctor .btn-delete-record,
+body.role-doctor .admin-only {
+  display: none !important;
+}

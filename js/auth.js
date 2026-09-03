@@ -72,13 +72,13 @@ class DemoAuthService {
     this.updateUI();
     await db.logAudit('تبديل صلاحية العرض', `تم تبديل واجهة العرض لدور: ${RolesManager.getRoleLabel(role)}`, this.currentUser);
     
-    // توجيه واجهة المستخدم بحسب الصلاحية
-    if (this.app) {
+    // توجيه واجهة المستخدم بحسب الصلاحية فوراً
+    if (window.app) {
       if (role === 'doctor') {
-        this.app.switchView('patients');
+        window.app.switchView('patients');
       } else if (role === 'receptionist') {
-        if (this.app.currentView === 'patient-sheet' || this.app.currentView === 'admin') {
-          this.app.switchView('patients');
+        if (window.app.currentView === 'patient-sheet' || window.app.currentView === 'admin') {
+          window.app.switchView('patients');
         }
       }
     }
@@ -124,6 +124,9 @@ class DemoAuthService {
 
     this.hideLoginModal();
     this.updateUI();
+    if (window.app && this.currentUser.role === 'doctor') {
+      window.app.switchView('patients');
+    }
     await db.logAudit('تسجيل دخول', `تسجيل دخول للمستخدم: ${this.currentUser.name}`, this.currentUser);
     if (this.onUserChanged) this.onUserChanged(this.currentUser);
     return { success: true };

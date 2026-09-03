@@ -236,11 +236,11 @@ export class PatientsManager {
                 <i class="fa-brands fa-whatsapp"></i>
               </a>
               ${!isDoctor ? `
-                <button class="btn btn-outline btn-sm" onclick="patientsManager.openEditModal('${safeId}')" title="تعديل بيانات المريض">
+                <button class="btn btn-outline btn-sm btn-edit-patient" onclick="patientsManager.openEditModal('${safeId}')" title="تعديل بيانات المريض">
                   <i class="fa-solid fa-pen-to-square"></i>
                 </button>
               ` : ''}
-              ${canDeletePatient ? `
+              ${!isDoctor && canDeletePatient ? `
                 <button class="btn btn-outline btn-sm btn-delete-patient" style="color: var(--danger);" onclick="patientsManager.confirmDelete('${safeId}')" title="حذف المريض">
                   <i class="fa-solid fa-trash"></i>
                 </button>
