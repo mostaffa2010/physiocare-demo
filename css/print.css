@@ -346,3 +346,75 @@
     width: 130px !important;
   }
 }
+
+  /* ================= CASE 3: PRINTING INSURANCE CLAIM STATEMENT (مطابقة للورقة 1) ================= */
+  body.printing-claim > *:not(#printable-insurance-claim) {
+    display: none !important;
+    height: 0 !important;
+    max-height: 0 !important;
+    min-height: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: none !important;
+    overflow: hidden !important;
+  }
+
+  body.printing-claim #printable-insurance-claim {
+    display: block !important;
+    position: relative !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 4mm 2mm !important;
+    page-break-inside: avoid !important;
+    page-break-after: avoid !important;
+    page-break-before: avoid !important;
+  }
+
+  body.printing-claim table.claim-print-table {
+    width: 100% !important;
+    border-collapse: collapse !important;
+    margin: 12px 0 !important;
+  }
+
+  body.printing-claim table.claim-print-table th,
+  body.printing-claim table.claim-print-table td {
+    border: 1.2px solid #000000 !important;
+    padding: 6px 8px !important;
+    font-size: 10pt !important;
+    line-height: 1.3 !important;
+  }
+
+  body.printing-claim table.claim-print-table th {
+    background-color: #f1f5f9 !important;
+    font-weight: 800 !important;
+  }
+
+  /* ================= CASE 4: PRINTING ATTENDANCE / TREATMENT CARDS (مطابقة للورقة 2) ================= */
+  body.printing-cards > *:not(#printable-attendance-cards) {
+    display: none !important;
+    height: 0 !important;
+    max-height: 0 !important;
+    min-height: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: none !important;
+    overflow: hidden !important;
+  }
+
+  body.printing-cards #printable-attendance-cards {
+    display: block !important;
+    position: relative !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  body.printing-cards .attendance-card-print-page {
+    display: block !important;
+    position: relative !important;
+    width: 100% !important;
+    min-height: 275mm !important;
+    padding: 6mm 4mm !important;
+    page-break-after: always !important;
+    page-break-inside: avoid !important;
+  }

@@ -686,13 +686,16 @@
           </div>
         </div>
 
-        <!-- Mode Toggle Tabs (Daily vs Monthly) -->
-        <div class="no-print" style="display: flex; gap: 10px; margin-bottom: 14px;">
+        <!-- Mode Toggle Tabs (Daily vs Monthly vs Claims) -->
+        <div class="no-print" style="display: flex; gap: 8px; margin-bottom: 14px; flex-wrap: wrap;">
           <button type="button" class="btn btn-primary btn-sm" id="btn-mode-daily" onclick="financeManager.setReportMode('daily')">
             <i class="fa-solid fa-calendar-day"></i> التقرير اليومي
           </button>
           <button type="button" class="btn btn-outline btn-sm" id="btn-mode-monthly" onclick="financeManager.setReportMode('monthly')">
             <i class="fa-solid fa-calendar-days"></i> التقرير الشهري الإحصائي
+          </button>
+          <button type="button" class="btn btn-outline btn-sm" id="btn-mode-claims" onclick="financeManager.setReportMode('claims')">
+            <i class="fa-solid fa-file-invoice-dollar"></i> مطالبات التأمين وبطاقات التردد
           </button>
         </div>
 
@@ -911,6 +914,123 @@
             <div class="signature-line"></div>
           </div>
         </div>
+
+          <!-- ================= 3. Insurance Claims & Attendance Cards (مطالبات شركات التأمين وبطاقات التردد) ================= -->
+          <div id="finance-claims-content" style="display: none;">
+            <!-- Control Panel -->
+            <div class="card" style="margin-bottom: 16px; border: 1.5px solid var(--border-color); background: #ffffff;">
+              <div class="card-header" style="border-bottom: 1px solid var(--border-color); padding-bottom: 8px; margin-bottom: 12px;">
+                <span class="card-title" style="font-size: 1.05rem; color: var(--primary); font-weight: 800;">
+                  <i class="fa-solid fa-sliders"></i> إعداد بيانات مطالبة شركة التأمين
+                </span>
+              </div>
+              <div class="form-grid" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px;">
+                <div class="form-group">
+                  <label for="claim-company-select" style="font-weight: 800;">شركة التأمين *</label>
+                  <select id="claim-company-select" class="form-control" style="font-weight: 700;">
+                    <!-- Populated dynamically -->
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label for="claim-start-date" style="font-weight: 800;">من تاريخ *</label>
+                  <input type="text" id="claim-start-date" readonly class="form-control date-picker-clickable" value="2026-08-01" onclick="app.openCalendarPicker('claim-start-date')">
+                </div>
+                <div class="form-group">
+                  <label for="claim-end-date" style="font-weight: 800;">إلى تاريخ *</label>
+                  <input type="text" id="claim-end-date" readonly class="form-control date-picker-clickable" value="2026-08-31" onclick="app.openCalendarPicker('claim-end-date')">
+                </div>
+                <div class="form-group">
+                  <label for="claim-default-session-rate" style="font-weight: 800;">سعر الجلسة الافتراضي (ج.م)</label>
+                  <input type="number" id="claim-default-session-rate" class="form-control" value="120" style="font-weight: 700; text-align: center;">
+                </div>
+                <div class="form-group">
+                  <label for="claim-default-eval-fee" style="font-weight: 800;">فحص وتقييم افتراضي (ج.م)</label>
+                  <input type="number" id="claim-default-eval-fee" class="form-control" value="150" style="font-weight: 700; text-align: center;">
+                </div>
+                <div class="form-group">
+                  <label for="claim-tax-number" style="font-weight: 800;">رقم البطاقة الضريبية</label>
+                  <input type="text" id="claim-tax-number" class="form-control" value="745-392-430" style="font-weight: 700;">
+                </div>
+                <div class="form-group">
+                  <label for="claim-doc-date" style="font-weight: 800;">تحريراً في (تاريخ المطالبة)</label>
+                  <input type="text" id="claim-doc-date" readonly class="form-control date-picker-clickable" value="2026-08-31" onclick="app.openCalendarPicker('claim-doc-date')">
+                </div>
+              </div>
+              <div style="margin-top: 14px; display: flex; justify-content: flex-end;">
+                <button type="button" class="btn btn-primary" id="btn-load-claim-patients" style="font-weight: 800; padding: 8px 18px;">
+                  <i class="fa-solid fa-magnifying-glass"></i> استخراج وعرض مرضى الشركة
+                </button>
+              </div>
+            </div>
+
+            <!-- Grand Summary Stats Banner -->
+            <div class="stat-grid" style="margin-bottom: 16px;">
+              <div class="stat-card">
+                <div class="stat-info">
+                  <h3>المرضى المحددون</h3>
+                  <p id="claim-total-patients-count" style="color: var(--primary);">0 مريض</p>
+                </div>
+                <div class="stat-icon blue"><i class="fa-solid fa-users"></i></div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-info">
+                  <h3>إجمالي عدد الجلسات</h3>
+                  <p id="claim-total-sessions-count" style="color: var(--primary);">0 جلسة</p>
+                </div>
+                <div class="stat-icon amber"><i class="fa-solid fa-calendar-check"></i></div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-info">
+                  <h3>إجمالي مبلغ المطالبة</h3>
+                  <p id="claim-grand-total-amount" style="color: var(--success); font-size: 1.4rem;">0 ج.م</p>
+                </div>
+                <div class="stat-icon green"><i class="fa-solid fa-hand-holding-dollar"></i></div>
+              </div>
+            </div>
+
+            <!-- Patients Table & Actions Card -->
+            <div class="card" style="margin-bottom: 16px;">
+              <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+                <span class="card-title" style="font-size: 1rem; font-weight: 800;">
+                  <i class="fa-solid fa-table-list"></i> بيان السادة المحولين (المرضى المشمولين بالمطالبة)
+                </span>
+                <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+                  <button type="button" class="btn btn-primary btn-sm" onclick="claimsManager.printClaimStatement()" style="font-weight: 800; padding: 6px 12px;">
+                    <i class="fa-solid fa-print"></i> طباعة المطالبة الرسمية A4
+                  </button>
+                  <button type="button" class="btn btn-outline btn-sm" onclick="claimsManager.printAttendanceCards()" style="font-weight: 800; padding: 6px 12px; color: #0369a1; border-color: #0284c7; background: #f0f9ff;">
+                    <i class="fa-solid fa-id-card"></i> طباعة جميع بطاقات التردد
+                  </button>
+                  <button type="button" class="btn btn-outline btn-sm" onclick="claimsManager.exportClaimExcel()" style="font-weight: 800; padding: 6px 12px; color: var(--success); border-color: var(--success);">
+                    <i class="fa-solid fa-file-excel"></i> تصدير Excel
+                  </button>
+                </div>
+              </div>
+
+              <div class="table-responsive">
+                <table class="data-table">
+                  <thead>
+                    <tr>
+                      <th style="width: 40px; text-align: center;">
+                        <input type="checkbox" id="claim-select-all-cb" checked title="تحديد / إلغاء تحديد الكل">
+                      </th>
+                      <th style="width: 35px; text-align: center;">م</th>
+                      <th>اسم المريض</th>
+                      <th style="width: 95px; text-align: center;">فحص وتقييم (ج.م)</th>
+                      <th style="width: 85px; text-align: center;">الجلسات</th>
+                      <th style="width: 90px; text-align: center;">سعر الجلسة (ج.م)</th>
+                      <th style="width: 105px; text-align: center;">الإجمالي</th>
+                      <th style="width: 120px; text-align: center;">بطاقة التردد</th>
+                    </tr>
+                  </thead>
+                  <tbody id="claim-patients-tbody">
+                    <tr><td colspan="8" style="text-align: center; padding: 24px; color: var(--text-muted);">يرجى اختيار شركة التأمين ثم الضغط على "استخراج وعرض مرضى الشركة".</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
       </section>
 
       <!-- ================= View 5: Admin Panel & Permissions ================= -->
@@ -1282,6 +1402,76 @@
   </div>
 
   
+    <!-- ================= Printable Insurance Claim Statement (مطابقة للورقة 1) ================= -->
+  <div id="printable-insurance-claim" class="printable-doc">
+    <!-- Top Header -->
+    <div style="display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #000; padding-bottom: 6px; margin-bottom: 12px;">
+      <div style="text-align: right; line-height: 1.35;">
+        <h2 style="font-size: 13pt; margin: 0; font-weight: 800;">مركز الإسكندرية التخصصي للعلاج الطبيعي</h2>
+        <div style="font-size: 9.5pt; font-weight: 700;">د/ حسني أحمد الجويلي</div>
+        <div style="font-size: 8.5pt; color: #333;">استشاري العلاج الطبيعي</div>
+        <div style="font-size: 8.5pt; color: #333;">والتقويم الحركي للعمود الفقري</div>
+      </div>
+      <div style="text-align: left; line-height: 1.4;">
+        <div style="font-size: 9pt; font-weight: bold;" id="claim-print-date">تحريراً في: 31/8/2026</div>
+        <div style="font-size: 9pt; font-weight: bold; margin-top: 3px;" id="claim-print-tax-no">رقم البطاقة الضريبية: 745-392-430</div>
+      </div>
+    </div>
+
+    <!-- Main Title & Company Destination -->
+    <div style="text-align: center; margin: 12px 0 16px 0;">
+      <h3 style="font-size: 13pt; margin: 0 0 3px 0; font-weight: 800;">السادة شركة <span id="claim-print-company-name">ايجي كير</span></h3>
+      <h4 style="font-size: 11pt; margin: 0; font-weight: 700; text-decoration: underline;">بيان بأسماء السادة المحولين</h4>
+      <p style="font-size: 8.5pt; margin: 3px 0 0 0; color: #444;" id="claim-print-period-text">عن الفترة من 01/08/2026 إلى 31/08/2026</p>
+    </div>
+
+    <!-- The Claim Table (Matching Image 1) -->
+    <table class="claim-print-table" style="width: 100%; border-collapse: collapse; margin-bottom: 12px;">
+      <thead>
+        <tr>
+          <th style="width: 35px; text-align: center;">م</th>
+          <th style="padding-right: 8px;">الاسم</th>
+          <th style="width: 90px; text-align: center;">فحص و تقييم</th>
+          <th style="width: 85px; text-align: center;">عدد الجلسات</th>
+          <th style="width: 85px; text-align: center;">قيمة الجلسة</th>
+          <th style="width: 95px; text-align: center;">الإجمالي</th>
+        </tr>
+      </thead>
+      <tbody id="claim-print-tbody">
+        <!-- Populated dynamically -->
+      </tbody>
+      <tfoot>
+        <tr>
+          <th colspan="5" style="text-align: right; padding-right: 12px; font-size: 10.5pt;">الإجمالي الكلي المستحق للمطالبة</th>
+          <th id="claim-print-grand-total" style="font-size: 11pt; font-weight: 800; text-align: center;">0 ج.م</th>
+        </tr>
+      </tfoot>
+    </table>
+
+    <!-- Signature & Stamp Section -->
+    <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-top: 30px; padding: 0 20px;">
+      <div style="text-align: center;">
+        <div style="font-size: 9.5pt; font-weight: bold;">خاتم واعتماد المركز</div>
+        <div style="width: 120px; height: 60px; border: 1.5px dashed #777; margin-top: 6px; display: flex; align-items: center; justify-content: center; font-size: 8pt; color: #777;">موضع الختم</div>
+      </div>
+      <div style="text-align: center;">
+        <div style="font-size: 10pt; font-weight: bold;">مدير المركز</div>
+        <div style="margin-top: 35px; border-bottom: 1.5px solid #000; width: 140px;"></div>
+      </div>
+    </div>
+
+    <!-- Official Clinic Footer -->
+    <div style="margin-top: 40px; border-top: 1px solid #777; padding-top: 6px; text-align: center; font-size: 8pt; color: #444; line-height: 1.4;">
+      <div>17 شارع حسين شيرين - لوران - خلف بنك مصر لوران - الإسكندرية</div>
+      <div>ت: 0106548155 - 035702356 | E-mail: algewelyspincare@yahoo.com</div>
+    </div>
+  </div>
+
+  <!-- ================= Printable Attendance Cards (مطابقة للورقة 2) ================= -->
+  <div id="printable-attendance-cards" class="printable-doc">
+    <!-- Populated dynamically -->
+  </div>
+
   <!-- Printable Patient Clinical Sheet (Visible only when printing sheet) -->
   <div id="printable-patient-sheet" style="display: none;">
     <div class="sheet-print-header" style="text-align: center; border-bottom: 2px solid #0284c7; padding-bottom: 3px; margin-bottom: 6px;">
@@ -1468,6 +1658,65 @@
           <button type="submit" class="btn btn-primary"><i class="fa-solid fa-check"></i> إضافة الشركة</button>
         </div>
       </form>
+    </div>
+  </div>
+
+    <!-- Modal: Attendance Card Customization (بطاقة تردد المريض) -->
+  <div class="modal-backdrop" id="modal-attendance-card" style="z-index: 230;">
+    <div class="modal-content" style="max-width: 500px; border-radius: 10px;">
+      <div class="modal-header" style="background: #f0f9ff; border-bottom: 1.5px solid #bae6fd; padding: 12px 16px;">
+        <h3 style="color: var(--primary); font-size: 1.1rem; margin: 0; font-weight: 800;">
+          <i class="fa-solid fa-id-card"></i> بطاقة تردد: <span id="card-modal-patient-name" style="color: #0f172a;">اسم المريض</span>
+        </h3>
+        <button class="modal-close" onclick="app.closeModal('modal-attendance-card')">&times;</button>
+      </div>
+      <div class="modal-body" style="padding: 14px 16px; max-height: 75vh; overflow-y: auto;">
+        <div style="font-size: 0.82rem; color: var(--text-muted); margin-bottom: 12px;">
+          شركة التأمين المحول منها: <strong id="card-modal-company-name" style="color: var(--primary);">-</strong>
+        </div>
+
+        <!-- 1. Referred Diagnosis -->
+        <div class="form-group" style="margin-bottom: 12px;">
+          <label for="card-input-diagnosis" style="font-weight: 800;">Referred diagnosis (التشخيص الطبي المحول به) *</label>
+          <input type="text" id="card-input-diagnosis" class="form-control" style="font-weight: 700;" placeholder="Lumber discogenic low back pain">
+        </div>
+
+        <!-- 2. P.T. Evaluation -->
+        <div class="form-group" style="margin-bottom: 12px;">
+          <label for="card-input-eval" style="font-weight: 800;">P.T. Evaluation (فحص وتقييم العلاج الطبيعي)</label>
+          <input type="text" id="card-input-eval" class="form-control" placeholder="P.T. Initial functional evaluation">
+        </div>
+
+        <!-- 3. Plan of P.T. Treatment (Interactive Chips) -->
+        <div class="form-group" style="margin-bottom: 12px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+            <label style="font-weight: 800; margin: 0;">Plan of P.T. Treatment (أزرار خطة العلاج الطبيعي):</label>
+            <button type="button" class="btn btn-outline btn-sm admin-only" onclick="claimsManager.promptAddNewTreatment()" style="padding: 2px 8px; font-size: 0.72rem; border-color: var(--primary); color: var(--primary); font-weight: 700;">
+              <i class="fa-solid fa-plus"></i> إضافة وسيلة
+            </button>
+          </div>
+          <div class="body-parts-chips" id="card-treatment-chips-container" style="gap: 5px; margin-bottom: 8px;">
+            <!-- Populated dynamically -->
+          </div>
+
+          <!-- Live Preview Box matching Image 2 -->
+          <div style="background: #fafbfc; border: 1px dashed #cbd5e1; border-radius: 8px; padding: 10px; margin-top: 8px;">
+            <strong style="font-size: 0.8rem; color: var(--primary); display: block; margin-bottom: 4px;">معاينة ما سيُطبع في بطاقة التردد:</strong>
+            <div id="card-plan-preview-list" style="font-size: 0.85rem; line-height: 1.6;"></div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer" style="padding: 10px 16px; background: #f8fafc; border-top: 1px solid var(--border-color); display: flex; justify-content: space-between;">
+        <button type="button" class="btn btn-outline btn-sm" onclick="claimsManager.printAttendanceCards(claimsManager.activeCardPatientId)">
+          <i class="fa-solid fa-print"></i> طباعة هذه البطاقة فقط
+        </button>
+        <div style="display: flex; gap: 6px;">
+          <button type="button" class="btn btn-outline btn-sm" onclick="app.closeModal('modal-attendance-card')">إلغاء</button>
+          <button type="button" class="btn btn-primary btn-sm" onclick="claimsManager.saveAttendanceCardData()">
+            <i class="fa-solid fa-check"></i> حفظ البطاقة
+          </button>
+        </div>
+      </div>
     </div>
   </div>
 

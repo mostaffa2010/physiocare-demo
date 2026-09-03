@@ -119,63 +119,68 @@ export class FinanceManager {
     
     const btnDaily = document.getElementById('btn-mode-daily');
     const btnMonthly = document.getElementById('btn-mode-monthly');
+    const btnClaims = document.getElementById('btn-mode-claims');
     const filterDaily = document.getElementById('filter-group-daily');
     const filterMonthly = document.getElementById('filter-group-monthly');
     const contentDaily = document.getElementById('finance-daily-content');
     const contentMonthly = document.getElementById('finance-monthly-content');
+    const contentClaims = document.getElementById('finance-claims-content');
     const labelPatients = document.getElementById('rep-total-patients-label');
 
     if (mode === 'daily') {
-      if (btnDaily) { btnDaily.className = 'btn btn-primary btn-sm'; }
-      if (btnMonthly) { btnMonthly.className = 'btn btn-outline btn-sm'; }
+      if (btnDaily) btnDaily.className = 'btn btn-primary btn-sm';
+      if (btnMonthly) btnMonthly.className = 'btn btn-outline btn-sm';
+      if (btnClaims) btnClaims.className = 'btn btn-outline btn-sm';
+
       if (filterDaily) filterDaily.style.display = 'flex';
       if (filterMonthly) filterMonthly.style.display = 'none';
       if (contentDaily) contentDaily.style.display = 'block';
       if (contentMonthly) contentMonthly.style.display = 'none';
-      if (labelPatients) labelPatients.textContent = 'مرضى اليوم';
+      if (contentClaims) contentClaims.style.display = 'none';
+
+      if (labelPatients) labelPatients.textContent = 'إجمالي مرضى اليوم';
+      const title = document.getElementById('finance-header-title');
+      const sub = document.getElementById('finance-header-sub');
+      if (title) title.innerHTML = '<i class="fa-solid fa-calculator" style="color: var(--primary);"></i> الحسابات والتقرير اليومي';
+      if (sub) sub.textContent = 'متابعة الإيرادات والمصروفات والتقارير اليومية والشهرية الذكية';
       this.loadDailyReport();
-    } else {
-      if (btnDaily) { btnDaily.className = 'btn btn-outline btn-sm'; }
-      if (btnMonthly) { btnMonthly.className = 'btn btn-primary btn-sm'; }
+    } else if (mode === 'monthly') {
+      if (btnDaily) btnDaily.className = 'btn btn-outline btn-sm';
+      if (btnMonthly) btnMonthly.className = 'btn btn-primary btn-sm';
+      if (btnClaims) btnClaims.className = 'btn btn-outline btn-sm';
+
       if (filterDaily) filterDaily.style.display = 'none';
       if (filterMonthly) filterMonthly.style.display = 'flex';
       if (contentDaily) contentDaily.style.display = 'none';
       if (contentMonthly) contentMonthly.style.display = 'block';
-      if (labelPatients) labelPatients.textContent = 'مرضى الشهر';
+      if (contentClaims) contentClaims.style.display = 'none';
+
+      if (labelPatients) labelPatients.textContent = 'إجمالي مرضى الشهر';
+      const title = document.getElementById('finance-header-title');
+      const sub = document.getElementById('finance-header-sub');
+      if (title) title.innerHTML = '<i class="fa-solid fa-chart-pie" style="color: var(--primary);"></i> التقرير الشهري الشامل';
+      if (sub) sub.textContent = 'متابعة أداء أطباء المركز وتوزيع جهات التأمين والمصروفات الشهرية';
       this.loadMonthlyReport();
+    } else if (mode === 'claims') {
+      if (btnDaily) btnDaily.className = 'btn btn-outline btn-sm';
+      if (btnMonthly) btnMonthly.className = 'btn btn-outline btn-sm';
+      if (btnClaims) btnClaims.className = 'btn btn-primary btn-sm';
+
+      if (filterDaily) filterDaily.style.display = 'none';
+      if (filterMonthly) filterMonthly.style.display = 'none';
+      if (contentDaily) contentDaily.style.display = 'none';
+      if (contentMonthly) contentMonthly.style.display = 'none';
+      if (contentClaims) contentClaims.style.display = 'block';
+
+      const title = document.getElementById('finance-header-title');
+      const sub = document.getElementById('finance-header-sub');
+      if (title) title.innerHTML = '<i class="fa-solid fa-file-invoice-dollar" style="color: var(--primary);"></i> مطالبات شركات التأمين وبطاقات التردد';
+      if (sub) sub.textContent = 'إعداد وتجهيز مطالبات مستحقات المركز لدى شركات التأمين وبطاقات التردد الرسمية';
+
+      if (window.claimsManager) {
+        window.claimsManager.loadCompanyPatients();
+      }
     }
-  }
-
-  openAddExpenseModal() {
-    const form = document.getElementById('form-expense');
-    if (form) form.reset();
-    this.app.openModal('modal-expense');
-  }
-
-  async handleAddExpense(e) {
-    e.preventDefault();
-    const title = document.getElementById('exp-title').value.trim();
-    const amount = parseFloat(document.getElementById('exp-amount').value) || 0;
-    const currentUser = auth.getCurrentUser();
-
-    if (!title || amount <= 0) {
-      await this.app.showAlert('يرجى كتابة بند المصروف وتحديد مبلغ صالح.', 'بيانات غير مكتملة', 'warning');
-      return;
-    }
-
-    const expenseData = {
-      date: this.currentDate,
-      title,
-      amount
-    };
-
-    await db.saveExpense(expenseData, currentUser);
-    await db.logAudit('تسجيل مصروف', `صرف مبلغ ${amount} ج.م لبند: ${title}`, currentUser);
-
-    this.app.closeModal('modal-expense');
-    this.app.showToast('تم تسجيل المصروف بنجاح');
-    await this.loadReport();
-    this.app.refreshAll();
   }
 
   async loadReport() {

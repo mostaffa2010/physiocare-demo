@@ -1,3 +1,4 @@
+import { ClaimsManager } from './claims.js';
 // ========================================================
 // ASCPT - Main Application Coordinator
 // ========================================================
@@ -51,6 +52,12 @@ class App {
     // 3. ربط أحداث التنقل والحوارات
     this.bindNavigation();
     this.bindHardwareBackButton();
+    // Disable context menu on long-press for native app feel
+    window.addEventListener('contextmenu', (e) => {
+      if (e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA') {
+        e.preventDefault();
+      }
+    });
     this.disablePullToRefresh();
     this.disableBrowserContextMenu();
     this.updateTrainingModeUI();
