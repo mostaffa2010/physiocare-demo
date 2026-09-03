@@ -1,8 +1,9 @@
 // ========================================================
 // PhysioFlow Demo - Service Worker & Offline PWA Cache
+// Version: 1.2.0 (Cache: physioflow-demo-v13)
 // ========================================================
 
-const CACHE_NAME = 'physioflow-demo-v12';
+const CACHE_NAME = 'physioflow-demo-v13';
 
 const APP_SHELL_ASSETS = [
   './',
@@ -12,6 +13,7 @@ const APP_SHELL_ASSETS = [
   './css/print.css',
   './icons/icon-192.png',
   './icons/icon-512.png',
+  './assets/vendor/xlsx/xlsx.full.min.js',
   './js/app.js',
   './js/auth.js',
   './js/db.js',
@@ -53,28 +55,44 @@ self.addEventListener('activate', (event) => {
   );
 });
 
-// Network-First with robust Cache fallback for 100% offline support
+// Cache-First with Network Revalidation for rock-solid Offline PWA support
 self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return;
   if (!event.request.url.startsWith('http')) return;
 
   event.respondWith(
-    fetch(event.request)
-      .then((networkResponse) => {
-        if (networkResponse && networkResponse.status === 200) {
-          const responseClone = networkResponse.clone();
-          caches.open(CACHE_NAME).then((cache) => {
-            try {
-              cache.put(event.request, responseClone);
-            } catch (e) {}
-          });
-        }
-        return networkResponse;
-      })
-      .catch(() => {
-        return caches.match(event.request).then((cachedResponse) => {
-          return cachedResponse || caches.match('./index.html') || caches.match('./');
+    caches.match(event.request).then((cachedResponse) => {
+      if (cachedResponse) {
+        // Return cached asset immediately
+        // Refresh cache in background when online
+        fetch(event.request).then((networkResponse) => {
+          if (networkResponse && networkResponse.status === 200) {
+            const clone = networkResponse.clone();
+            caches.open(CACHE_NAME).then((cache) => {
+              try { cache.put(event.request, clone); } catch (e) {}
+            });
+          }
+        }).catch(() => {});
+        return cachedResponse;
+      }
+
+      // If not in cache, fetch from network and store in cache
+      return fetch(event.request)
+        .then((networkResponse) => {
+          if (networkResponse && networkResponse.status === 200) {
+            const clone = networkResponse.clone();
+            caches.open(CACHE_NAME).then((cache) => {
+              try { cache.put(event.request, clone); } catch (e) {}
+            });
+          }
+          return networkResponse;
+        })
+        .catch(() => {
+          if (event.request.mode === 'navigate') {
+            return caches.match('./index.html') || caches.match('./');
+          }
+          return caches.match('./index.html');
         });
-      })
+    })
   );
 });

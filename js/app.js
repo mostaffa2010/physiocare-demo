@@ -93,6 +93,18 @@ class App {
     window.alert = (msg) => this.showAlert(msg, 'تنبيه المركز', 'info');
     window.confirm = (msg) => this.showConfirm(msg, 'تأكيد الإجراء');
 
+        // ربط أزرار دليل الـ Demo والنافذة التعريفية
+    document.getElementById('btn-open-demo-guide')?.addEventListener('click', () => this.openDemoOnboarding());
+    document.getElementById('sidebar-btn-demo-guide')?.addEventListener('click', () => this.openDemoOnboarding());
+    document.getElementById('btn-dismiss-onboarding')?.addEventListener('click', () => this.dismissDemoOnboarding());
+
+    // إظهار النافذة التعريفية تلقائياً عند أول دخول فقط
+    if (localStorage.getItem('pc_demo_onboarding_seen') !== 'true') {
+      setTimeout(() => {
+        this.openDemoOnboarding();
+      }, 600);
+    }
+
     console.log('PhysioFlow Demo Application fully initialized.');
   }
 
@@ -367,16 +379,49 @@ class App {
     });
   }
 
-  // ================= Demo Showcase Methods =================
+  // ================= Demo Showcase & Onboarding Methods =================
+  openDemoOnboarding() {
+    this.openModal('modal-demo-onboarding');
+  }
+
+  dismissDemoOnboarding() {
+    const chk = document.getElementById('chk-dont-show-onboarding');
+    if (chk && chk.checked) {
+      localStorage.setItem('pc_demo_onboarding_seen', 'true');
+    }
+    this.closeModal('modal-demo-onboarding');
+  }
+
   async resetDemoData() {
     const confirmed = await this.showConfirm(
-      'هل ترغب في إعادة ضبط بيانات العرض التجريبي؟ سيتم استعادة الـ 185 مريض، و 635 جلسة، ومصروفات شهرين كاملين.',
-      'إعادة ضبط العرض التجريبي'
+      'هل ترغب في إعادة ضبط جميع بيانات الـ Demo للحالة الأصلية؟\n\nسيتم استعادة الـ 185 مريض، و 635 جلسة، ومصروفات شهرين كاملين، وتصفير أي تعديلات أو إضافات أجريتها.',
+      'تأكيد إعادة ضبط الـ Demo'
     );
     if (confirmed) {
       db.resetDemo();
+
+      // إعادة ضبط الحساب النشط لمدير المركز
+      if (typeof auth !== 'undefined' && auth.switchRole) {
+        await auth.switchRole('admin');
+      }
+
+      // إذا كان المستخدم داخل شيت مريض فرعي يعود لشاشة المرضى بأمان
+      if (this.currentView === 'patient-sheet') {
+        this.switchView('patients');
+      }
+
+      // إعادة ضبط محددات التاريخ لليوم الحالي
+      if (this.sessionsManager && typeof this.sessionsManager.setDateQuick === 'function') {
+        this.sessionsManager.setDateQuick('today');
+      }
+      if (this.financeManager && typeof this.financeManager.setDateQuick === 'function') {
+        this.financeManager.setDateQuick('today');
+      }
+
+      // تحديث كامل الشاشات والبيانات في الذاكرة دون reload
       await this.refreshAll();
-      this.showToast('تمت استعادة 185 مريض وسجلات شهرين كاملين بنجاح');
+
+      this.showToast('تمت استعادة جميع بيانات الـ Demo للحالة الأصلية بنجاح 🔄');
     }
   }
 
@@ -803,6 +848,12 @@ class App {
     if (this.patientsManager) await this.patientsManager.loadPatients();
     if (this.sessionsManager) await this.sessionsManager.loadTodaySessions();
     if (this.financeManager) await this.financeManager.loadDailyReport();
+    if (this.claimsManager && typeof this.claimsManager.loadClaims === 'function') {
+      await this.claimsManager.loadClaims();
+    }
+    if (this.auditManager && typeof this.auditManager.loadAuditLogs === 'function') {
+      await this.auditManager.loadAuditLogs();
+    }
   }
 }
 

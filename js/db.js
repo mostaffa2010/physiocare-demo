@@ -35,7 +35,49 @@ class DemoDatabaseService {
   }
 
   resetDemo() {
-    this.initDemoStorage(true);
+    // 1. إعادة ضبط المجموعات الرئيسية بالكامل لنسخ أصلية جديدة
+    localStorage.setItem('pc_demo_v1_init', 'true');
+    localStorage.setItem('pc_demo_patients', JSON.stringify(DEMO_PATIENTS));
+    localStorage.setItem('pc_demo_sessions', JSON.stringify(DEMO_SESSIONS));
+    localStorage.setItem('pc_demo_expenses', JSON.stringify(DEMO_EXPENSES));
+    localStorage.setItem('pc_demo_users', JSON.stringify(DEMO_USERS));
+
+    // 2. تصفير سجل التدقيق وإضافة سجل إعادة ضبط حديث
+    localStorage.setItem('pc_demo_audit', JSON.stringify([
+      {
+        id: 'log-reset-' + Date.now(),
+        userName: 'نظام العرض التجريبي',
+        userRole: 'النظام',
+        actionType: 'إعادة ضبط الـ Demo',
+        description: 'تمت استعادة جميع البيانات الأصلية (185 مريض، 635 جلسة، ومصروفات شهرين) بنجاح.',
+        timestamp: new Date().toLocaleString('ar-EG-u-nu-latn'),
+        timestampRaw: Date.now()
+      }
+    ]));
+
+    // 3. إعادة ضبط أزرار الشيت الطبي المخصصة (Modalities, Procedures, Exercises) إلى القوائم الافتراضية
+    localStorage.removeItem('pc_opt_modality');
+    localStorage.removeItem('pc_opt_procedure');
+    localStorage.removeItem('pc_opt_exercise');
+    localStorage.removeItem('pc_sb_opt_modality');
+    localStorage.removeItem('pc_sb_opt_procedure');
+    localStorage.removeItem('pc_sb_opt_exercise');
+
+    // 4. إعادة ضبط بنود المطالبات المخصصة
+    localStorage.removeItem('pc_claim_treatments');
+
+    // 5. إعادة ضبط الحساب التجريبي النشط إلى مدير المركز
+    if (DEMO_USERS && DEMO_USERS.length > 0) {
+      localStorage.setItem('pc_demo_active_user', JSON.stringify(DEMO_USERS[0]));
+    }
+
+    // 6. مسح أي مفاتيح مؤقتة أخرى خاصة بالنظام مع الإبقاء على تفضيل النافذة التعريفية
+    for (let i = localStorage.length - 1; i >= 0; i--) {
+      const k = localStorage.key(i);
+      if (k && k.startsWith('pc_') && !['pc_demo_v1_init', 'pc_demo_patients', 'pc_demo_sessions', 'pc_demo_expenses', 'pc_demo_users', 'pc_demo_audit', 'pc_demo_active_user', 'pc_demo_onboarding_seen'].includes(k)) {
+        localStorage.removeItem(k);
+      }
+    }
   }
 
   // Patients

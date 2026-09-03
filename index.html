@@ -30,7 +30,7 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 
   <!-- SheetJS for Excel Export (Direct & Safe for iOS WebKit) -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <script src="assets/vendor/xlsx/xlsx.full.min.js"></script>
 
   
 
@@ -55,6 +55,9 @@
       <span style="font-size: 0.85rem; font-weight: 700; color: #0c4a6e;">نظام PhysioFlow لإدارة مراكز العلاج الطبيعي • 185 مريض وسجلات شهرين كاملين</span>
     </div>
     <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+      <button type="button" class="btn btn-outline btn-sm" id="btn-open-demo-guide" style="background-color: #ffffff; color: #0369a1; border-color: #bae6fd; font-weight: 700; padding: 4px 10px; font-size: 0.78rem;" title="دليل تجربة الديمو">
+        <i class="fa-solid fa-circle-question"></i> كيف تستخدم الـ Demo؟
+      </button>
       <button type="button" class="btn btn-outline btn-sm" style="background-color: #ffffff; color: #0284c7; border-color: #bae6fd; font-weight: 700; padding: 4px 10px; font-size: 0.78rem;" id="btn-reset-demo-data" title="استعادة الـ 185 مريض وسجلات الشهرين">
         <i class="fa-solid fa-rotate-left"></i> إعادة تعيين بيانات الديمو
       </button>
@@ -148,6 +151,10 @@
         <button class="nav-link admin-only" data-view="admin">
           <i class="fa-solid fa-user-shield"></i>
           <span>لوحة المدير والصلاحيات</span>
+        </button>
+        <button type="button" class="nav-link" id="sidebar-btn-demo-guide" style="color: var(--primary); font-weight: 700; border-top: 1px dashed var(--border-color); margin-top: 6px; padding-top: 10px;">
+          <i class="fa-solid fa-circle-question"></i>
+          <span>كيف تستخدم الـ Demo؟</span>
         </button>
       </nav>
 
@@ -1729,6 +1736,125 @@
             <i class="fa-solid fa-check"></i> حفظ البطاقة
           </button>
         </div>
+      </div>
+    </div>
+  </div>
+
+    <!-- Modal: Demo Onboarding & Quick Tour (دليل تجربة الـ Demo) -->
+  <div class="modal-backdrop" id="modal-demo-onboarding" style="z-index: 250;">
+    <div class="modal-content" style="max-width: 550px; border-radius: 12px; overflow: hidden; max-height: 90vh; display: flex; flex-direction: column; padding: 0;">
+      <!-- Header -->
+      <div style="background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%); color: #ffffff; padding: 18px 20px; position: relative;">
+        <button class="modal-close" style="color: #ffffff; opacity: 0.9; top: 14px; left: 16px; font-size: 1.5rem; background: none; border: none; cursor: pointer;" onclick="app.dismissDemoOnboarding()">&times;</button>
+        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
+          <span style="background: #f59e0b; color: #ffffff; font-size: 0.72rem; font-weight: 800; padding: 2px 8px; border-radius: 6px;">نسخة تجريبية Demo</span>
+          <span style="font-size: 0.8rem; opacity: 0.9;">PhysioFlow v1.2.0</span>
+        </div>
+        <h2 style="font-size: 1.25rem; font-weight: 800; margin: 0; color: #ffffff;">مرحباً بك في العرض التجريبي لنظام PhysioFlow</h2>
+        <p style="font-size: 0.84rem; margin: 4px 0 0 0; opacity: 0.92;">نظام إدارة مراكز وعيادات العلاج الطبيعي والتأهيل الطبي الذكي</p>
+      </div>
+
+      <!-- Body Scrollable -->
+      <div class="modal-body" style="padding: 16px 20px; overflow-y: auto; font-size: 0.88rem; line-height: 1.6;">
+        <!-- Notice Card -->
+        <div style="background-color: #f0f9ff; border: 1.5px solid #bae6fd; border-radius: 10px; padding: 12px 14px; margin-bottom: 16px;">
+          <div style="font-weight: 800; color: #0369a1; font-size: 0.9rem; display: flex; align-items: center; gap: 6px; margin-bottom: 6px;">
+            <i class="fa-solid fa-circle-info"></i> حول هذه النسخة التجريبية:
+          </div>
+          <ul style="margin: 0; padding-right: 18px; color: #0f172a; font-size: 0.82rem;">
+            <li style="margin-bottom: 4px;">هذا <strong>إصدار تجريبي تفاعلي بالكامل</strong> من PhysioFlow.</li>
+            <li style="margin-bottom: 4px;">البيانات الموجودة (185 مريض، 635 جلسة، مصروفات شهرين) هي <strong>بيانات تجريبية واقعية</strong> وليست حقيقية لتوضيح بيئة العمل في مركز نشط.</li>
+            <li style="margin-bottom: 4px;">بإمكانك تجربة <strong>جميع الوظائف المتاحة بحرية</strong>: إضافة وتعديل المرضى، تسجيل الجلسات، تعديل الخطة العلاجية، الفلترة، والطباعة.</li>
+            <li>أي تعديلات تجريها على بيانات الـ Demo يمكن إعادة ضبطها للحالة الأصلية في أي وقت من زر <strong>"إعادة تعيين بيانات الديمو"</strong>.</li>
+          </ul>
+        </div>
+
+        <!-- Section: ابدأ تجربتك -->
+        <div style="margin-bottom: 16px;">
+          <h3 style="font-size: 1rem; font-weight: 800; color: #0f172a; margin: 0 0 10px 0; display: flex; align-items: center; gap: 8px;">
+            <i class="fa-solid fa-route" style="color: var(--primary);"></i> ابدأ تجربتك — خطوات مقترحة:
+          </h3>
+          <div style="display: flex; flex-direction: column; gap: 8px;">
+            <div style="display: flex; gap: 10px; background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: 8px; padding: 9px 12px; align-items: flex-start;">
+              <span style="background: var(--primary-light); color: var(--primary); font-weight: 800; width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 0.8rem;">1</span>
+              <div>
+                <strong style="color: #0f172a; font-size: 0.85rem;">جرّب لوحة التحكم:</strong>
+                <p style="margin: 2px 0 0 0; font-size: 0.78rem; color: var(--text-muted);">شاهد إيرادات اليوم النقدية، حالات التأمين، وإحصائية الحركات المسجلة.</p>
+              </div>
+            </div>
+            <div style="display: flex; gap: 10px; background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: 8px; padding: 9px 12px; align-items: flex-start;">
+              <span style="background: var(--primary-light); color: var(--primary); font-weight: 800; width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 0.8rem;">2</span>
+              <div>
+                <strong style="color: #0f172a; font-size: 0.85rem;">افتح قائمة المرضى:</strong>
+                <p style="margin: 2px 0 0 0; font-size: 0.78rem; color: var(--text-muted);">ابحث في سجل الـ 185 مريض، وجرب فلترة الكشف (نقدي / شركات التأمين مثل أكسا وأليانز وبوبا ومصر للتأمين).</p>
+              </div>
+            </div>
+            <div style="display: flex; gap: 10px; background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: 8px; padding: 9px 12px; align-items: flex-start;">
+              <span style="background: var(--primary-light); color: var(--primary); font-weight: 800; width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 0.8rem;">3</span>
+              <div>
+                <strong style="color: #0f172a; font-size: 0.85rem;">افتح شيت أحد المرضى:</strong>
+                <p style="margin: 2px 0 0 0; font-size: 0.78rem; color: var(--text-muted);">استعرض تشخيص الحالة، أزرار الأجهزة (TENS, ليزر, شد)، العلاج اليدوي، والتمارين العلاجية الموصوفة وجرّب زر الطباعة.</p>
+              </div>
+            </div>
+            <div style="display: flex; gap: 10px; background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: 8px; padding: 9px 12px; align-items: flex-start;">
+              <span style="background: var(--primary-light); color: var(--primary); font-weight: 800; width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 0.8rem;">4</span>
+              <div>
+                <strong style="color: #0f172a; font-size: 0.85rem;">جرّب تسجيل جلسة:</strong>
+                <p style="margin: 2px 0 0 0; font-size: 0.78rem; color: var(--text-muted);">اختر مريضاً وطبيباً معالجاً وحدد الأعضاء المعالجة وسجل المبلغ المسدد نقداً أو بالتأمين.</p>
+              </div>
+            </div>
+            <div style="display: flex; gap: 10px; background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: 8px; padding: 9px 12px; align-items: flex-start;">
+              <span style="background: var(--primary-light); color: var(--primary); font-weight: 800; width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 0.8rem;">5</span>
+              <div>
+                <strong style="color: #0f172a; font-size: 0.85rem;">استكشف التقارير والحسابات:</strong>
+                <p style="margin: 2px 0 0 0; font-size: 0.78rem; color: var(--text-muted);">تنقل بين تقرير اليوم وأمس بنقرة واحدة، وافتح "التقرير الشهري" لمراجعة إحصائيات شهر كامل وأداء الأطباء.</p>
+              </div>
+            </div>
+            <div style="display: flex; gap: 10px; background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: 8px; padding: 9px 12px; align-items: flex-start;">
+              <span style="background: var(--primary-light); color: var(--primary); font-weight: 800; width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 0.8rem;">6</span>
+              <div>
+                <strong style="color: #0f172a; font-size: 0.85rem;">جرّب تصدير البيانات إلى Excel:</strong>
+                <p style="margin: 2px 0 0 0; font-size: 0.78rem; color: var(--text-muted);">اضغط على "تصدير Excel" لتنزيل شيت إكسيل منسق متعدد الصفحات يعمل كلياً بدون إنترنت.</p>
+              </div>
+            </div>
+            <div style="display: flex; gap: 10px; background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: 8px; padding: 9px 12px; align-items: flex-start;">
+              <span style="background: var(--primary-light); color: var(--primary); font-weight: 800; width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 0.8rem;">7</span>
+              <div>
+                <strong style="color: #0f172a; font-size: 0.85rem;">جرّب الصلاحيات المختلفة للحسابات التجريبية:</strong>
+                <p style="margin: 2px 0 0 0; font-size: 0.78rem; color: var(--text-muted);">بدّل الدور من القائمة المنسدلة في الشريط العلوي لتجربة النظام كـ (مدير المركز / طبيب معالج / استقبال).</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Section: الصلاحيات والحسابات التجريبية -->
+        <div style="background: #f8fafc; border: 1px solid var(--border-color); border-radius: 10px; padding: 12px 14px;">
+          <h4 style="font-size: 0.88rem; font-weight: 800; color: #0f172a; margin: 0 0 6px 0; display: flex; align-items: center; gap: 6px;">
+            <i class="fa-solid fa-users-gear" style="color: var(--primary);"></i> الحسابات التجريبية الثلاثة:
+          </h4>
+          <div style="display: flex; flex-direction: column; gap: 6px; font-size: 0.78rem; color: var(--text-main);">
+            <div style="background: #ffffff; padding: 6px 10px; border-radius: 6px; border: 1px solid #e2e8f0;">
+              <strong>👑 مدير المركز (د. مصطفى محمود)</strong>: صلاحيات شاملة، الاطلاع على الأرباح والمصروفات وإدارة فريق العمل وتخصيص أزرار الشيت.
+            </div>
+            <div style="background: #ffffff; padding: 6px 10px; border-radius: 6px; border: 1px solid #e2e8f0;">
+              <strong>🩺 طبيب معالج (د. أحمد خليل)</strong>: فتح وتحديث شيتات العلاج الطبيعي لمرضاه ومتابعة التمارين وتسجيل الجلسات.
+            </div>
+            <div style="background: #ffffff; padding: 6px 10px; border-radius: 6px; border: 1px solid #e2e8f0;">
+              <strong>📋 سكرتارية واستقبال (أ. منار خالد)</strong>: تسجيل المرضى الجدد وحضور الجلسات اليومية دون الاطلاع على أرباح المركز.
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Footer -->
+      <div class="modal-footer" style="padding: 12px 18px; background-color: var(--bg-subtle); display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap;">
+        <label style="display: flex; align-items: center; gap: 6px; font-size: 0.8rem; color: var(--text-muted); cursor: pointer; user-select: none;">
+          <input type="checkbox" id="chk-dont-show-onboarding" checked style="cursor: pointer;">
+          <span>عدم إظهار هذه النافذة تلقائياً مرة أخرى</span>
+        </label>
+        <button type="button" class="btn btn-primary btn-sm" id="btn-dismiss-onboarding" onclick="app.dismissDemoOnboarding()" style="font-weight: 800; padding: 6px 16px;">
+          ابدأ التجربة الآن <i class="fa-solid fa-arrow-left"></i>
+        </button>
       </div>
     </div>
   </div>
