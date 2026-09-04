@@ -1576,3 +1576,41 @@ input, textarea, [contenteditable="true"] {
 .chip-choice.sheet-chip.selected span {
   color: #ffffff !important;
 }
+
+
+/* Form Field Validation Feedback (Arabic UX) */
+.form-feedback-msg {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  padding: 6px 10px;
+  border-radius: 8px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  margin-top: 6px;
+  line-height: 1.35;
+  animation: fadeIn 0.15s ease-in-out;
+}
+
+.form-feedback-msg.error {
+  background-color: #fef2f2 !important;
+  color: #b91c1c !important;
+  border: 1px solid #fca5a5 !important;
+}
+
+.form-feedback-msg.success {
+  background-color: #f0fdf4 !important;
+  color: #15803d !important;
+  border: 1px solid #86efac !important;
+}
+
+.form-control.input-error {
+  border-color: #ef4444 !important;
+  background-color: #fff5f5 !important;
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.12) !important;
+}
+
+.form-control.input-success {
+  border-color: #10b981 !important;
+  background-color: #f0fdf4 !important;
+}

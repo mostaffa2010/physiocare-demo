@@ -466,8 +466,69 @@ export class PatientsManager {
       }).join('');
   }
 
+  validatePhoneLive() {
+    const phoneInput = document.getElementById('p-phone');
+    const feedback = document.getElementById('p-phone-feedback');
+    if (!phoneInput) return false;
+
+    let val = phoneInput.value.trim().replace(/[\s\-\(\)\.]/g, '');
+    if (val.startsWith('+20')) val = '0' + val.slice(3);
+    else if (val.startsWith('20') && val.length === 12) val = '0' + val.slice(2);
+
+    if (!val) {
+      phoneInput.classList.remove('input-error', 'input-success');
+      if (feedback) { feedback.style.display = 'none'; feedback.innerHTML = ''; }
+      return false;
+    }
+
+    const isValid = /^01[0125][0-9]{8}$/.test(val);
+
+    if (isValid) {
+      phoneInput.classList.remove('input-error');
+      phoneInput.classList.add('input-success');
+      if (feedback) {
+        feedback.className = 'form-feedback-msg success';
+        feedback.style.display = 'flex';
+        feedback.innerHTML = '<i class="fa-solid fa-circle-check" style="margin-top: 2px;"></i> <span>رقم موبايل مصري صحيح ومكتمل (11 رقماً).</span>';
+      }
+      return true;
+    } else {
+      phoneInput.classList.remove('input-success');
+      phoneInput.classList.add('input-error');
+      let whatIsWrong = '';
+      let whatToDo = 'اكتب 11 رقماً يبدأ بأحد شبكات المحمول المصرية (010، 011، 012، 015).';
+
+      if (!val.startsWith('01')) {
+        whatIsWrong = 'الرقم لا يبدأ بـ 01.';
+      } else if (val.length >= 3 && !/^01[0125]/.test(val)) {
+        whatIsWrong = `كود الشبكة (${val.slice(0, 3)}) غير معروف.`;
+      } else if (val.length < 11) {
+        whatIsWrong = `الرقم ناقص (${val.length} أرقام فقط من 11).`;
+      } else if (val.length > 11) {
+        whatIsWrong = `الرقم زائد عن 11 رقماً (${val.length} رقماً).`;
+      } else {
+        whatIsWrong = 'صيغة الرقم غير صحيحة.';
+      }
+
+      if (feedback) {
+        feedback.className = 'form-feedback-msg error';
+        feedback.style.display = 'flex';
+        feedback.innerHTML = `<i class="fa-solid fa-circle-exclamation" style="margin-top: 2px; flex-shrink: 0;"></i> <div><strong>خطأ:</strong> ${whatIsWrong}<br><span style="color: #7f1d1d;"><strong>الصحيح:</strong> ${whatToDo}</span></div>`;
+      }
+      return false;
+    }
+  }
+
+  clearPhoneValidation() {
+    const phoneInput = document.getElementById('p-phone');
+    const feedback = document.getElementById('p-phone-feedback');
+    if (phoneInput) phoneInput.classList.remove('input-error', 'input-success');
+    if (feedback) { feedback.style.display = 'none'; feedback.innerHTML = ''; }
+  }
+
   openAddModal() {
     document.getElementById('form-patient').reset();
+    this.clearPhoneValidation();
     document.getElementById('p-id').value = '';
     const insComp = document.getElementById('p-insurance-company');
     if (insComp) insComp.value = '';
@@ -560,8 +621,22 @@ export class PatientsManager {
     const egyptianMobileRegex = /^01[0125][0-9]{8}$/;
     if (!egyptianMobileRegex.test(cleanPhone)) {
       if (saveBtn) { saveBtn.disabled = false; saveBtn.innerHTML = 'حفظ المريض'; }
-      await this.app.showAlert('رقم الموبايل غير صحيح! يجب أن يتكون من 11 رقماً ويبدأ بأحد شبكات المحمول المصرية (010 أو 011 أو 012 أو 015) مثل: 01012345678', 'رقم هاتف غير صالح', 'warning');
-      document.getElementById('p-phone')?.focus();
+      const phoneInput = document.getElementById('p-phone');
+      phoneInput?.classList.add('input-error');
+
+      let whatIsWrong = '';
+      if (!cleanPhone.startsWith('01')) {
+        whatIsWrong = `الرقم المدخل (${cleanPhone}) لا يبدأ بـ 01.`;
+      } else if (cleanPhone.length !== 11) {
+        whatIsWrong = `عدد أرقام الهاتف الحالي (${cleanPhone.length} أرقام) والمطلوب 11 رقماً.`;
+      } else {
+        whatIsWrong = `كود الشبكة (${cleanPhone.slice(0, 3)}) غير معتمد في شبكات مصر.`;
+      }
+
+      const alertMsg = `⚠️ خطأ في رقم الموبايل:\n${whatIsWrong}\n\n✅ كيف تملأ الحقل بشكل صحيح؟\nيجب كتابة 11 رقماً بالضبط، يبدأ بأحد أكواد شبكات المحمول:\n• 010 (فودافون)\n• 011 (إتصالات)\n• 012 (أورنج)\n• 015 (وي)\n\nمثال صحيح: 01012345678`;
+
+      await this.app.showAlert(alertMsg, 'رقم الموبايل غير صحيح', 'warning');
+      phoneInput?.focus();
       return;
     }
     const normalizedPhone = cleanPhone;

@@ -1240,7 +1240,7 @@
         <h3 id="modal-patient-title"><i class="fa-solid fa-user-plus"></i> تسجيل مريض جديد</h3>
         <button type="button" class="modal-close" data-close-modal="modal-patient">&times;</button>
       </div>
-      <form id="form-patient">
+      <form id="form-patient" novalidate>
         <input type="hidden" id="p-id">
         <div class="modal-body">
           <div class="form-grid two-cols">
@@ -1254,7 +1254,8 @@
             </div>
             <div class="form-group">
               <label for="p-phone">رقم الموبايل *</label>
-              <input type="tel" id="p-phone" class="form-control" required placeholder="01xxxxxxxxx" maxlength="11" pattern="01[0125][0-9]{8}" inputmode="numeric">
+              <input type="tel" id="p-phone" class="form-control" required placeholder="01xxxxxxxxx" maxlength="11" inputmode="numeric">
+              <div id="p-phone-feedback" class="form-feedback-msg" style="display: none;"></div>
             </div>
             <div class="form-group">
               <label for="p-address">العنوان</label>
