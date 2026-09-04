@@ -121,25 +121,10 @@ class App {
       });
     }
 
-    // 3. ربط أحداث التنقل والحوارات
+    // 3. ربط أحداث التنقل والحوارات وتأمين الواجهة
     this.bindNavigation();
     this.bindHardwareBackButton();
-    // منع قائمة المتصفح الافتراضية عند الضغط المطول (لإحساس التطبيق الأصلي)
-    window.addEventListener('contextmenu', (e) => {
-      const tag = e.target.tagName;
-      if (tag !== 'INPUT' && tag !== 'TEXTAREA') {
-        e.preventDefault();
-      }
-    });
     this.disablePullToRefresh();
-    this.disableNativeContextMenu();
-    // Prevent long-press text selection / contextmenu on non-inputs for native app feel
-    window.addEventListener('contextmenu', (e) => {
-      if (e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA') {
-        e.preventDefault();
-      }
-    });
-    this.bindGlobalTouchAndSelectionGuards();
     this.disableBrowserContextMenu();
     this.bindModalsAndAuth();
     this.bindCustomDialog();
@@ -764,22 +749,7 @@ class App {
     }).join('');
   }
 
-    bindGlobalTouchAndSelectionGuards() {
-    // Disable text selection and contextmenu toolbar on non-input elements
-    window.addEventListener('selectstart', (e) => {
-      const tag = e.target.tagName;
-      if (tag !== 'INPUT' && tag !== 'TEXTAREA' && !e.target.isContentEditable) {
-        e.preventDefault();
-      }
-    });
 
-    window.addEventListener('contextmenu', (e) => {
-      const tag = e.target.tagName;
-      if (tag !== 'INPUT' && tag !== 'TEXTAREA' && !e.target.isContentEditable) {
-        e.preventDefault();
-      }
-    });
-  }
 
   // ================= Sandbox & Training Mode =================
   updateTrainingModeUI() {
