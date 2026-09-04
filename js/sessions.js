@@ -16,6 +16,7 @@ export class SessionsManager {
     this.editingSessionId = null;
     this.insEditMode = false;
     this.currentContractType = 'direct';
+    window.sessionsManager = this;
   }
 
   async init() {
@@ -143,7 +144,7 @@ export class SessionsManager {
     }
 
     // Event Delegation: Sessions Table Body
-    const sessionsTbody = document.getElementById('sessions-today-table-body');
+    const sessionsTbody = document.getElementById('sessions-today-tbody') || document.getElementById('sessions-today-table-body');
     if (sessionsTbody) {
       sessionsTbody.addEventListener('click', (e) => {
         const editBtn = e.target.closest('.btn-edit-session');
@@ -775,11 +776,11 @@ export class SessionsManager {
           <td style="font-size: 0.8rem; color: var(--text-muted);">${safeRecBy} (${safeRecAt})</td>
           <td>
             <div style="display: flex; gap: 4px;">
-              <button type="button" class="btn btn-outline btn-sm btn-edit-session" data-session-id="${safeId}" title="تعديل بيانات الجلسة">
+              <button type="button" class="btn btn-outline btn-sm btn-edit-session" data-session-id="${safeId}" onclick="sessionsManager.editSession('${safeId}')" title="تعديل بيانات الجلسة">
                 <i class="fa-solid fa-pen-to-square"></i>
               </button>
               ${canDelete ? `
-                <button type="button" class="btn btn-outline btn-sm btn-delete-record btn-delete-session" style="color: var(--danger);" data-session-id="${safeId}" title="حذف">
+                <button type="button" class="btn btn-outline btn-sm btn-delete-record btn-delete-session" style="color: var(--danger);" data-session-id="${safeId}" onclick="sessionsManager.deleteSession('${safeId}')" title="حذف">
                   <i class="fa-solid fa-trash"></i>
                 </button>
               ` : ''}

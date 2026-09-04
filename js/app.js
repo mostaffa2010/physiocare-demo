@@ -391,6 +391,13 @@ class App {
         e.preventDefault();
       }
     });
+
+    window.addEventListener('selectstart', (e) => {
+      const tag = e.target.tagName;
+      if (tag !== 'INPUT' && tag !== 'TEXTAREA' && !e.target.isContentEditable) {
+        e.preventDefault();
+      }
+    });
   }
 
   disablePullToRefresh() {
