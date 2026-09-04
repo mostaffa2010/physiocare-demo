@@ -740,7 +740,8 @@ table.data-table tr:hover {
   }
 }
 
-.print-header {
+.print-header,
+.print-footer {
   display: none;
 }
 
