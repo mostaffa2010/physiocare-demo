@@ -28,12 +28,12 @@ export class RolesManager {
     body.classList.add('role-' + role);
 
     // 1. التحكم في أشرطة التنقل (Sidebar & Mobile Bottom Nav)
-    // الطبيب المعالج: لا يرى أي تبويب سوى "المرضى" فقط
+    // الطبيب المعالج: يرى "الرئيسية (الخاصة بحالاته)" و "سجل المرضى العام" فقط
     const navItems = document.querySelectorAll('.nav-link, .b-nav-item');
     navItems.forEach(item => {
       const view = item.getAttribute('data-view');
       if (role === ROLES.DOCTOR) {
-        item.style.setProperty('display', view === 'patients' ? 'flex' : 'none', 'important');
+        item.style.setProperty('display', (view === 'dashboard' || view === 'patients') ? 'flex' : 'none', 'important');
       } else if (role === ROLES.RECEPTIONIST) {
         // السكرتارية ترى الرئيسية، المرضى، الجلسات، الحسابات (وتُحجب لوحة المدير فقط)
         item.style.setProperty('display', view === 'admin' ? 'none' : 'flex', 'important');
@@ -43,10 +43,26 @@ export class RolesManager {
       }
     });
 
-    // 2. تحويل الطبيب فوراً لشاشة المرضى إذا كان يقف على شاشة أخرى
+    // 2. التبديل الذكي بين لوحة الإدارة ولوحة الطبيب المعالج في الشاشة الرئيسية
+    const adminDashboard = document.getElementById('dashboard-admin-view');
+    const doctorDashboard = document.getElementById('dashboard-doctor-view');
+
+    if (role === ROLES.DOCTOR) {
+      if (adminDashboard) adminDashboard.style.display = 'none';
+      if (doctorDashboard) doctorDashboard.style.display = 'block';
+      if (window.doctorDashboardManager) {
+        window.doctorDashboardManager.render();
+      }
+    } else {
+      if (adminDashboard) adminDashboard.style.display = 'block';
+      if (doctorDashboard) doctorDashboard.style.display = 'none';
+    }
+
+    // 3. حماية التنقل: توجيه الطبيب للرئيسية إذا كان يقف على شاشة محجوبة (الحسابات/الجلسات/المدير)
     if (role === ROLES.DOCTOR && window.app) {
-      if (window.app.currentView !== 'patients' && window.app.currentView !== 'patient-sheet') {
-        window.app.switchView('patients');
+      const allowedViews = ['dashboard', 'patients', 'patient-sheet'];
+      if (!allowedViews.includes(window.app.currentView)) {
+        window.app.switchView('dashboard');
       }
     }
 

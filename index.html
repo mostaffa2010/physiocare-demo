@@ -173,68 +173,152 @@
 
       <!-- ================= View 1: Dashboard ================= -->
       <section id="view-dashboard" class="view-section active">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-          <div>
-            <h2 style="font-size: 1.35rem; font-weight: 800;">لوحة المتابعة اليومية</h2>
-            <p style="font-size: 0.85rem; color: var(--text-muted);" id="dashboard-date-display"></p>
+        <!-- 1. Clinic Operations & Finance Dashboard (Admin & Receptionist) -->
+        <div id="dashboard-admin-view">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <div>
+              <h2 style="font-size: 1.35rem; font-weight: 800;">لوحة المتابعة اليومية</h2>
+              <p style="font-size: 0.85rem; color: var(--text-muted);" id="dashboard-date-display"></p>
+            </div>
+            <button type="button" class="btn btn-primary btn-sm" data-view-target="sessions">
+              <i class="fa-solid fa-plus"></i> تسجيل جلسة سريعة
+            </button>
           </div>
-          <button type="button" class="btn btn-primary btn-sm" data-view-target="sessions">
-            <i class="fa-solid fa-plus"></i> تسجيل جلسة سريعة
-          </button>
+
+          <div class="stats-grid">
+            <div class="stat-box">
+              <div class="stat-icon blue"><i class="fa-solid fa-user-injured"></i></div>
+              <div class="stat-info">
+                <div class="stat-value" id="stat-patients-today">0</div>
+                <div class="stat-label">مرضى اليوم</div>
+              </div>
+            </div>
+            <div class="stat-box">
+              <div class="stat-icon green"><i class="fa-solid fa-money-bill-wave"></i></div>
+              <div class="stat-info">
+                <div class="stat-value" id="stat-cash-today">0 ج.م</div>
+                <div class="stat-label">إيراد نقدي</div>
+              </div>
+            </div>
+            <div class="stat-box">
+              <div class="stat-icon amber"><i class="fa-solid fa-hand-holding-medical"></i></div>
+              <div class="stat-info">
+                <div class="stat-value" id="stat-insurance-count">0</div>
+                <div class="stat-label">حالات تأمين</div>
+              </div>
+            </div>
+            <div class="stat-box">
+              <div class="stat-icon red"><i class="fa-solid fa-receipt"></i></div>
+              <div class="stat-info">
+                <div class="stat-value" id="stat-expenses-today">0 ج.م</div>
+                <div class="stat-label">مصروفات اليوم</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-header">
+              <span class="card-title"><i class="fa-solid fa-clock-rotate-left"></i> آخر الجلسات المسجلة اليوم</span>
+              <button type="button" class="btn btn-outline btn-sm" data-view-target="sessions">عرض الكل</button>
+            </div>
+            <div class="table-responsive">
+              <table class="data-table" id="dashboard-recent-table">
+                <thead>
+                  <tr>
+                    <th>المريض</th>
+                    <th>الدكتور</th>
+                    <th>الدفع</th>
+                    <th>الأعضاء</th>
+                    <th>المبلغ</th>
+                    <th>الوقت</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <!-- Populated by JS -->
+                </tbody>
+              </table>
+            </div>
+          </div>
         </div>
 
-        <div class="stats-grid">
-          <div class="stat-box">
-            <div class="stat-icon blue"><i class="fa-solid fa-user-injured"></i></div>
-            <div class="stat-info">
-              <div class="stat-value" id="stat-patients-today">0</div>
-              <div class="stat-label">مرضى اليوم</div>
+        <!-- 2. Doctor Personal Clinical Dashboard (Exclusively for Treating Doctors) -->
+        <div id="dashboard-doctor-view" style="display: none;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px;">
+            <div>
+              <h2 style="font-size: 1.35rem; font-weight: 800; color: var(--text-main);">
+                <i class="fa-solid fa-stethoscope" style="color: var(--primary);"></i> لوحة متابعة الطبيب المعالج
+              </h2>
+              <p style="font-size: 0.85rem; color: var(--text-muted);" id="doctor-dashboard-sub">
+                متابعة الحالات الطبية وسجل الجلسات الخاص بك
+              </p>
             </div>
+            <button type="button" class="btn btn-outline btn-sm" onclick="app.switchView('patients')" style="font-weight: 700;">
+              <i class="fa-solid fa-users"></i> سجل المرضى العام
+            </button>
           </div>
-          <div class="stat-box">
-            <div class="stat-icon green"><i class="fa-solid fa-money-bill-wave"></i></div>
-            <div class="stat-info">
-              <div class="stat-value" id="stat-cash-today">0 ج.م</div>
-              <div class="stat-label">إيراد نقدي</div>
-            </div>
-          </div>
-          <div class="stat-box">
-            <div class="stat-icon amber"><i class="fa-solid fa-hand-holding-medical"></i></div>
-            <div class="stat-info">
-              <div class="stat-value" id="stat-insurance-count">0</div>
-              <div class="stat-label">حالات تأمين</div>
-            </div>
-          </div>
-          <div class="stat-box">
-            <div class="stat-icon red"><i class="fa-solid fa-receipt"></i></div>
-            <div class="stat-info">
-              <div class="stat-value" id="stat-expenses-today">0 ج.م</div>
-              <div class="stat-label">مصروفات اليوم</div>
-            </div>
-          </div>
-        </div>
 
-        <div class="card">
-          <div class="card-header">
-            <span class="card-title"><i class="fa-solid fa-clock-rotate-left"></i> آخر الجلسات المسجلة اليوم</span>
-            <button type="button" class="btn btn-outline btn-sm" data-view-target="sessions">عرض الكل</button>
+          <!-- Doctor Personal KPI Stats Grid (Clinical & Patient Counts Only, NO Financials) -->
+          <div class="stats-grid">
+            <div class="stat-box">
+              <div class="stat-icon blue"><i class="fa-solid fa-user-injured"></i></div>
+              <div class="stat-info">
+                <div class="stat-value" id="stat-doc-today-count">0 حالة</div>
+                <div class="stat-label">مرضاك اليوم</div>
+              </div>
+            </div>
+            <div class="stat-box">
+              <div class="stat-icon green"><i class="fa-solid fa-calendar-check"></i></div>
+              <div class="stat-info">
+                <div class="stat-value" id="stat-doc-month-count">0 حالة</div>
+                <div class="stat-label">حالات هذا الشهر</div>
+              </div>
+            </div>
+            <div class="stat-box">
+              <div class="stat-icon purple" style="background-color: #f3e8ff; color: #9333ea;"><i class="fa-solid fa-hospital-user"></i></div>
+              <div class="stat-info">
+                <div class="stat-value" id="stat-doc-lifetime-count">0 مريض</div>
+                <div class="stat-label">إجمالي مرضاك (Lifetime)</div>
+              </div>
+            </div>
+            <div class="stat-box">
+              <div class="stat-icon amber"><i class="fa-solid fa-shield-halved"></i></div>
+              <div class="stat-info">
+                <div class="stat-value" id="stat-doc-types-ratio">-</div>
+                <div class="stat-label">توزيع الحالات (هذا الشهر)</div>
+              </div>
+            </div>
           </div>
-          <div class="table-responsive">
-            <table class="data-table" id="dashboard-recent-table">
-              <thead>
-                <tr>
-                  <th>المريض</th>
-                  <th>الدكتور</th>
-                  <th>الدفع</th>
-                  <th>الأعضاء</th>
-                  <th>المبلغ</th>
-                  <th>الوقت</th>
-                </tr>
-              </thead>
-              <tbody>
-                <!-- Populated by JS -->
-              </tbody>
-            </table>
+
+          <!-- Doctor's Personal Patients Register Card -->
+          <div class="card" style="margin-top: 20px;">
+            <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+              <div class="card-title" style="margin: 0; display: flex; align-items: center; gap: 8px; font-size: 1rem;">
+                <i class="fa-solid fa-book-medical" style="color: var(--primary);"></i>
+                <span id="doc-table-title">جلسات مرضاك اليوم</span>
+              </div>
+              <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+                <button type="button" class="btn-quick-date active" id="btn-doc-filter-today" onclick="doctorDashboardManager.setFilter('today')">جلسات اليوم</button>
+                <button type="button" class="btn-quick-date" id="btn-doc-filter-month" onclick="doctorDashboardManager.setFilter('month')">حالات هذا الشهر</button>
+                <button type="button" class="btn-quick-date" id="btn-doc-filter-lifetime" onclick="doctorDashboardManager.setFilter('lifetime')">كل مرضاي (Lifetime)</button>
+              </div>
+            </div>
+            <div class="table-responsive">
+              <table class="data-table" id="doctor-personal-table">
+                <thead>
+                  <tr>
+                    <th>المريض</th>
+                    <th>نظام الحساب</th>
+                    <th>الأعضاء المعالجة</th>
+                    <th>تاريخ / وقت الجلسة</th>
+                    <th>ملاحظات الحالة</th>
+                    <th style="text-align: center;">الشيت الطبي</th>
+                  </tr>
+                </thead>
+                <tbody id="doctor-personal-tbody">
+                  <!-- Populated by JS -->
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
       </section>

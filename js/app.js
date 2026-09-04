@@ -76,6 +76,7 @@ import { db } from './db.js';
 import { PatientsManager } from './patients.js';
 import { SessionsManager } from './sessions.js';
 import { FinanceManager } from './finance.js';
+import { DoctorDashboardManager } from './doctor-dashboard.js';
 import { ExportManager } from './export.js';
 import { AuditAndAdminManager } from './audit.js';
 
@@ -129,6 +130,12 @@ class App {
       }
     });
     this.disablePullToRefresh();
+    // Prevent long-press text selection / contextmenu on non-inputs for native app feel
+    window.addEventListener('contextmenu', (e) => {
+      if (e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA') {
+        e.preventDefault();
+      }
+    });
     this.bindGlobalTouchAndSelectionGuards();
     this.disableBrowserContextMenu();
     this.bindModalsAndAuth();

@@ -1,4 +1,4 @@
-// ========================================================
+const CACHE_NAME = 'physioflow-demo-v10';
 // PhysioFlow Demo - Service Worker & Offline PWA Cache
 // Version: 1.3.0 (Cache: physioflow-demo-v11)
 // ========================================================
