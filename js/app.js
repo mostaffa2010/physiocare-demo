@@ -252,9 +252,14 @@ class App {
     if (formLogin) {
       formLogin.addEventListener('submit', async (e) => {
         e.preventDefault();
-        const email = document.getElementById('login-email').value;
-        const password = document.getElementById('login-password').value;
+        const email = document.getElementById('login-email')?.value.trim();
+        const password = document.getElementById('login-password')?.value;
         const errMsg = document.getElementById('login-error-msg');
+
+        if (!email || !password) {
+          await this.showAlert('يرجى إدخال البريد الإلكتروني وكلمة المرور للمتابعة.', 'بيانات الدخول مطلوبة', 'warning');
+          return;
+        }
 
         const result = await auth.login(email, password);
         if (!result.success) {

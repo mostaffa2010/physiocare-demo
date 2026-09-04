@@ -153,6 +153,43 @@ export class FinanceManager {
     this.app.openAddExpenseModal();
   }
 
+  async handleAddExpense(e) {
+    e.preventDefault();
+    const title = document.getElementById('expense-title')?.value.trim();
+    const amountStr = document.getElementById('expense-amount')?.value.trim();
+    const amount = parseFloat(amountStr);
+
+    if (!title) {
+      await this.app.showAlert('يرجى إدخال بند أو بيان المصروف.', 'بيانات مطلوبة', 'warning');
+      document.getElementById('expense-title')?.focus();
+      return;
+    }
+
+    if (isNaN(amount) || amount <= 0) {
+      await this.app.showAlert('يرجى إدخال مبلغ صحيح للمصروف أكبر من صفر.', 'مبلغ غير صحيح', 'warning');
+      document.getElementById('expense-amount')?.focus();
+      return;
+    }
+
+    const currentUser = auth.getCurrentUser();
+    const todayStr = new Date().toISOString().split('T')[0];
+    const expenseData = {
+      title,
+      amount,
+      date: this.currentDate || todayStr,
+      recordedBy: currentUser?.name || 'مدير المركز'
+    };
+
+    await db.saveExpense(expenseData, currentUser);
+    await db.logAudit('تسجيل مصروف', `تسجيل مصروف: ${title} بمبلغ ${amount} ج.م`, currentUser);
+
+    this.app.closeModal('modal-expense');
+    this.app.showToast('تم تسجيل وحفظ المصروف بنجاح');
+    document.getElementById('form-expense')?.reset();
+    await this.loadReport();
+    this.app.refreshAll();
+  }
+
   async deleteExpense(expenseId) {
     const confirmed = await this.app.showConfirm('هل أنت متأكد من حذف هذا المصروف؟', 'تأكيد الحذف');
     if (confirmed) {

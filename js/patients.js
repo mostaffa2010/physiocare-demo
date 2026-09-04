@@ -841,6 +841,21 @@ export class PatientsManager {
     e.preventDefault();
     if (!this.currentSheetPatient) return;
 
+    const diagnosis = document.getElementById('sheet-diagnosis')?.value.trim();
+    const affectedArea = document.getElementById('sheet-affected-area')?.value.trim();
+
+    if (!diagnosis) {
+      await this.app.showAlert('يرجى كتابة التشخيص الطبي أو شكوى المريض الرئيسية قبل حفظ الشيت.', 'بيانات مطلوبة', 'warning');
+      document.getElementById('sheet-diagnosis')?.focus();
+      return;
+    }
+
+    if (!affectedArea) {
+      await this.app.showAlert('يرجى تحديد المنطقة أو العضو المصاب المراد علاجه.', 'بيانات مطلوبة', 'warning');
+      document.getElementById('sheet-affected-area')?.focus();
+      return;
+    }
+
     const currentUser = auth.getCurrentUser();
     const saveBtn = document.getElementById('btn-save-sheet');
     if (saveBtn) {
@@ -1054,7 +1069,12 @@ export class PatientsManager {
     const nameInput = document.getElementById('opt-new-name');
     const name = nameInput.value.trim();
 
-    if (!name || !category) return;
+    if (!name) {
+      await this.app.showAlert('يرجى كتابة اسم الزر الجديد أولاً قبل الحفظ.', 'بيانات مطلوبة', 'warning');
+      nameInput?.focus();
+      return;
+    }
+    if (!category) return;
 
     await db.addClinicalOption(category, name);
     const containerMap = {

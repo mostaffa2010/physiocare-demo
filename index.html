@@ -394,7 +394,7 @@
         </div>
 
         <!-- Doctor Clinical Edit Form -->
-        <form id="form-patient-sheet">
+        <form id="form-patient-sheet" novalidate>
           <!-- 1. Diagnosis & Region -->
           <div class="card">
             <div class="card-header">
@@ -529,7 +529,7 @@
             <div class="card-header">
               <span class="card-title"><i class="fa-solid fa-plus-circle"></i> تسجيل جلسة جديدة</span>
             </div>
-            <form id="form-log-session">
+            <form id="form-log-session" novalidate>
               <input type="hidden" id="session-edit-id" value="">
               <div class="form-grid">
                 <!-- Session Date Selection with Quick Today / Yesterday buttons -->
@@ -1105,7 +1105,7 @@
             <div class="card-header">
               <span class="card-title"><i class="fa-solid fa-user-plus"></i> إضافة مستخدم جديد للنظام</span>
             </div>
-            <form id="form-add-user">
+            <form id="form-add-user" novalidate>
               <div class="form-grid">
                 <div class="form-group">
                   <label>الاسم بالكامل *</label>
@@ -1344,7 +1344,7 @@
         <h3><i class="fa-solid fa-receipt"></i> تسجيل مصروف جديد</h3>
         <button type="button" class="modal-close" data-close-modal="modal-expense">&times;</button>
       </div>
-      <form id="form-expense">
+      <form id="form-expense" novalidate>
         <div class="modal-body">
           <div class="form-group" style="margin-bottom: 12px;">
             <label for="exp-title">بند المصروف *</label>
@@ -1369,7 +1369,7 @@
       <div class="modal-header">
         <h3><i class="fa-solid fa-lock"></i> تسجيل الدخول للنظام</h3>
       </div>
-      <form id="form-login">
+      <form id="form-login" novalidate>
         <div class="modal-body">
           <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 15px;">
             قم بتسجيل الدخول بحسابك في نظام PhysioFlow للمتابعة بحسب صلاحياتك.
@@ -1660,7 +1660,7 @@
         <h3 id="modal-opt-title"><i class="fa-solid fa-circle-plus"></i> إضافة زر جديد</h3>
         <button type="button" class="modal-close" data-close-modal="modal-add-clinical-option">&times;</button>
       </div>
-      <form id="form-add-clinical-option">
+      <form id="form-add-clinical-option" novalidate>
         <input type="hidden" id="opt-target-category" value="">
         <div class="modal-body">
           <div class="form-group">
@@ -1686,7 +1686,7 @@
         <h3 id="modal-ins-title"><i class="fa-solid fa-shield-halved"></i> إضافة شركة تأمين جديدة</h3>
         <button type="button" class="modal-close" data-close-modal="modal-add-insurance-company">&times;</button>
       </div>
-      <form id="form-add-insurance-company">
+      <form id="form-add-insurance-company" novalidate>
         <input type="hidden" id="ins-target-contract" value="direct">
         <input type="hidden" id="ins-caller-context" value="session">
         <div class="modal-body">
