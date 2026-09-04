@@ -50,9 +50,33 @@ export class AuditAndAdminManager {
     const password = document.getElementById('newuser-password').value;
     const role = document.getElementById('newuser-role').value;
 
+    if (!name || name.length < 3) {
+      await this.app.showAlert('يرجى إدخال اسم صحيح للموظف (3 أحرف على الأقل).', 'بيانات غير مكتملة', 'warning');
+      document.getElementById('newuser-name')?.focus();
+      return;
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!email || !emailRegex.test(email)) {
+      await this.app.showAlert('يرجى إدخال بريد إلكتروني صحيح (مثال: user@example.com).', 'بريد إلكتروني غير صالح', 'warning');
+      document.getElementById('newuser-email')?.focus();
+      return;
+    }
+
+    if (!password || password.length < 6) {
+      await this.app.showAlert('كلمة المرور يجب ألا تقل عن 6 خانات/أحرف لضمان الأمان.', 'كلمة المرور قصيرة', 'warning');
+      document.getElementById('newuser-password')?.focus();
+      return;
+    }
+
+    if (!role) {
+      await this.app.showAlert('يرجى اختيار الصلاحية / الدور الوظيفي للمستخدم.', 'الدور مطلوب', 'warning');
+      return;
+    }
+
     const existingUsers = await db.getUsers();
     if (existingUsers.some(u => u.email === email)) {
-      await this.app.showAlert('هذا البريد أو اسم المستخدم مسجل بالفعل في المركز.', 'تنبيه', 'warning');
+      await this.app.showAlert('هذا البريد الإلكتروني مسجل بالفعل لمستخدم آخر.', 'تنبيه', 'warning');
       return;
     }
 

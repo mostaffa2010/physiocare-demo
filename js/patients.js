@@ -121,6 +121,14 @@ export class PatientsManager {
     document.getElementById('btn-toggle-chips-procedure')?.addEventListener('click', () => this.toggleChipsEditMode('procedure'));
     document.getElementById('btn-toggle-chips-exercise')?.addEventListener('click', () => this.toggleChipsEditMode('exercise'));
 
+    // Real-time phone input digits filter
+    const phoneInp = document.getElementById('p-phone');
+    if (phoneInp) {
+      phoneInp.addEventListener('input', (e) => {
+        e.target.value = e.target.value.replace(/[^0-9]/g, '');
+      });
+    }
+
     // Modal Add Clinical Option Form Submit
     const formAddOption = document.getElementById('form-add-clinical-option');
     if (formAddOption) {
@@ -521,10 +529,76 @@ export class PatientsManager {
     const doctor = document.getElementById('p-doctor').value;
     const billing = document.querySelector('input[name="p-billing"]:checked')?.value || 'cash';
 
+    // 1. Name Validation (must be at least 2 words and not contain numbers)
+    const nameWords = name.split(/\s+/).filter(w => w.length > 0);
+    if (nameWords.length < 2 || name.length < 5) {
+      if (saveBtn) { saveBtn.disabled = false; saveBtn.innerHTML = 'حفظ المريض'; }
+      await this.app.showAlert('يرجى إدخال اسم المريض ثنائياً على الأقل (الاسم واسم العائلة).', 'اسم المريض غير مكتمل', 'warning');
+      document.getElementById('p-name')?.focus();
+      return;
+    }
+    if (/[0-9]/.test(name)) {
+      if (saveBtn) { saveBtn.disabled = false; saveBtn.innerHTML = 'حفظ المريض'; }
+      await this.app.showAlert('اسم المريض يجب ألا يحتوي على أرقام.', 'خطأ في الاسم', 'warning');
+      document.getElementById('p-name')?.focus();
+      return;
+    }
+
+    // 2. Age Validation (must be between 1 and 120)
+    if (isNaN(age) || age < 1 || age > 120) {
+      if (saveBtn) { saveBtn.disabled = false; saveBtn.innerHTML = 'حفظ المريض'; }
+      await this.app.showAlert('يرجى إدخال سن صحيح للمريض (بين 1 و 120 سنة).', 'خطأ في السن', 'warning');
+      document.getElementById('p-age')?.focus();
+      return;
+    }
+
+    // 3. Strict Egyptian Mobile Phone Validation (010, 011, 012, 015 - exactly 11 digits)
+    let cleanPhone = phone.replace(/[\s\-\(\)\.]/g, '');
+    if (cleanPhone.startsWith('+20')) cleanPhone = '0' + cleanPhone.slice(3);
+    else if (cleanPhone.startsWith('20') && cleanPhone.length === 12) cleanPhone = '0' + cleanPhone.slice(2);
+
+    const egyptianMobileRegex = /^01[0125][0-9]{8}$/;
+    if (!egyptianMobileRegex.test(cleanPhone)) {
+      if (saveBtn) { saveBtn.disabled = false; saveBtn.innerHTML = 'حفظ المريض'; }
+      await this.app.showAlert('رقم الموبايل غير صحيح! يجب أن يتكون من 11 رقماً ويبدأ بأحد شبكات المحمول المصرية (010 أو 011 أو 012 أو 015) مثل: 01012345678', 'رقم هاتف غير صالح', 'warning');
+      document.getElementById('p-phone')?.focus();
+      return;
+    }
+    const normalizedPhone = cleanPhone;
+
+    // Duplicate Phone Check for new patients
+    if (!id) {
+      const existingPatient = this.patients.find(p => p.phone === normalizedPhone);
+      if (existingPatient) {
+        const confirmDup = await this.app.showConfirm(
+          `رقم الهاتف (${normalizedPhone}) مسجل بالفعل للمريض (${existingPatient.name}). هل ترغب في الاستمرار وتسجيل ملف جديد بنفس الرقم؟`,
+          'تنبيه رقم مكرر'
+        );
+        if (!confirmDup) {
+          if (saveBtn) { saveBtn.disabled = false; saveBtn.innerHTML = 'حفظ المريض'; }
+          return;
+        }
+      }
+    }
+
+    // 4. Doctor Validation
+    if (!doctor || doctor === '') {
+      if (saveBtn) { saveBtn.disabled = false; saveBtn.innerHTML = 'حفظ المريض'; }
+      await this.app.showAlert('يرجى اختيار الطبيب المعالج المتابع للحالة.', 'اختيار الطبيب', 'warning');
+      return;
+    }
+
+    // 5. Insurance Company Validation
     let insuranceCompany = '';
     let contractType = '';
     if (billing === 'insurance') {
       insuranceCompany = document.getElementById('p-insurance-company').value.trim();
+      if (!insuranceCompany || insuranceCompany.length < 2) {
+        if (saveBtn) { saveBtn.disabled = false; saveBtn.innerHTML = 'حفظ المريض'; }
+        await this.app.showAlert('يرجى كتابة أو اختيار اسم شركة التأمين أو جهة التعاقد.', 'جهة التأمين مطلوبة', 'warning');
+        document.getElementById('p-insurance-company')?.focus();
+        return;
+      }
       contractType = document.querySelector('input[name="p-contract"]:checked')?.value || 'direct';
     }
 
@@ -532,7 +606,7 @@ export class PatientsManager {
       id: id || null,
       name,
       age,
-      phone,
+      phone: normalizedPhone,
       address,
       doctor,
       billing,

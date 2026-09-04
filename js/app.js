@@ -122,6 +122,7 @@ class App {
     this.bindNavigation();
     this.bindHardwareBackButton();
     this.disablePullToRefresh();
+    this.bindGlobalTouchAndSelectionGuards();
     this.disableBrowserContextMenu();
     this.bindModalsAndAuth();
     this.bindCustomDialog();
@@ -627,6 +628,23 @@ class App {
     }
 
     container.innerHTML = cellsHtml;
+  }
+
+  bindGlobalTouchAndSelectionGuards() {
+    // Disable text selection and contextmenu toolbar on non-input elements
+    window.addEventListener('selectstart', (e) => {
+      const tag = e.target.tagName;
+      if (tag !== 'INPUT' && tag !== 'TEXTAREA' && !e.target.isContentEditable) {
+        e.preventDefault();
+      }
+    });
+
+    window.addEventListener('contextmenu', (e) => {
+      const tag = e.target.tagName;
+      if (tag !== 'INPUT' && tag !== 'TEXTAREA' && !e.target.isContentEditable) {
+        e.preventDefault();
+      }
+    });
   }
 
   // ================= Sandbox & Training Mode =================
