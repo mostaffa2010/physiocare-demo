@@ -91,8 +91,24 @@ export class PatientsManager {
     // Patient Sheet Navigation & Print Buttons
     document.getElementById('btn-back-to-patients-top')?.addEventListener('click', () => this.app.switchView('patients'));
     document.getElementById('btn-back-to-patients-bottom')?.addEventListener('click', () => this.app.switchView('patients'));
-    document.getElementById('btn-print-sheet-top')?.addEventListener('click', () => this.printCurrentSheet());
-    document.getElementById('btn-print-sheet-bottom')?.addEventListener('click', () => this.printCurrentSheet());
+        const btnTop = document.getElementById('btn-print-sheet-top');
+    if (btnTop) {
+      btnTop.onclick = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (btnTop.disabled) return;
+        this.printCurrentSheet();
+      };
+    }
+    const btnBottom = document.getElementById('btn-print-sheet-bottom');
+    if (btnBottom) {
+      btnBottom.onclick = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (btnBottom.disabled) return;
+        this.printCurrentSheet();
+      };
+    }
 
     // Patient Sheet Form Submit
     const formSheet = document.getElementById('form-patient-sheet');

@@ -1493,7 +1493,9 @@ input, textarea, [contenteditable="true"], .allow-select {
 @media (min-width: 992px) {
   #view-patients .table-responsive,
   #view-finance .table-responsive,
-  #view-sessions .table-responsive {
+  #view-sessions .table-responsive,
+  #claim-table-container,
+  #finance-claims-content .table-responsive {
     max-height: calc(100vh - 280px) !important;
     overflow-y: auto !important;
     overflow-x: auto !important;
@@ -1503,7 +1505,8 @@ input, textarea, [contenteditable="true"], .allow-select {
     background-color: #ffffff !important;
   }
 
-  table.data-table thead th {
+  table.data-table thead th,
+  #claim-patients-table thead th {
     position: sticky !important;
     top: 0 !important;
     z-index: 10 !important;

@@ -1056,8 +1056,12 @@
                 </div>
               </div>
 
-              <div class="table-responsive">
-                <table class="data-table">
+              <!-- Top Horizontal Scrollbar (Synchronized for instant scrolling on desktop & mobile) -->
+              <div class="top-scrollbar-wrapper no-print" id="claim-top-scroll-wrap" style="display: none; overflow-x: auto; overflow-y: hidden; height: 12px; margin-bottom: 6px; border-radius: 4px; background: #f8fafc;">
+                <div class="top-scrollbar-dummy" id="claim-top-scroll-dummy" style="height: 1px;"></div>
+              </div>
+              <div class="table-responsive" id="claim-table-container">
+                <table class="data-table" id="claim-patients-table">
                   <thead>
                     <tr>
                       <th style="width: 40px; text-align: center;">

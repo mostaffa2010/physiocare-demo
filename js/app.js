@@ -1,24 +1,66 @@
-// ================= Global Bulletproof Debounce on window.print =================
+// ================= Global Bulletproof Event-Driven Lock on window.print =================
 if (typeof window !== 'undefined' && !window.__print_lock_installed) {
   window.__print_lock_installed = true;
   const _origPrint = window.print.bind(window);
-  let _printActive = false;
+  let _isPrintingNow = false;
 
   window.print = function() {
-    if (_printActive) {
+    if (_isPrintingNow) {
       console.warn('Prevented duplicate window.print() call.');
       return;
     }
-    _printActive = true;
+    _isPrintingNow = true;
+
+    // 1. Remove focus immediately so Android Chrome cannot replay click event on return
+    if (document.activeElement && typeof document.activeElement.blur === 'function') {
+      try { document.activeElement.blur(); } catch (e) {}
+    }
+
+    // 2. Disable all print buttons on the page
+    const printBtns = document.querySelectorAll(
+      '#btn-print-report, #btn-print-sheet-top, #btn-print-sheet-bottom, .btn-print-sheet, #btn-print-claim-statement, #btn-print-attendance-cards, #btn-card-print-current'
+    );
+    printBtns.forEach(btn => {
+      btn.setAttribute('disabled', 'true');
+      btn.style.pointerEvents = 'none';
+    });
+
     try {
       _origPrint();
     } catch (e) {
       console.error('Print trigger notice:', e);
-    } finally {
-      setTimeout(() => {
-        _printActive = false;
-      }, 2500);
     }
+
+    // 3. Unlock ONLY 1 second AFTER the user returns to the app from print activity
+    const unlock = () => {
+      setTimeout(() => {
+        _isPrintingNow = false;
+        printBtns.forEach(btn => {
+          btn.removeAttribute('disabled');
+          btn.style.pointerEvents = '';
+        });
+      }, 1000);
+    };
+
+    const onReturn = () => {
+      window.removeEventListener('focus', onReturn);
+      window.removeEventListener('afterprint', onReturn);
+      document.removeEventListener('visibilitychange', onVisChange);
+      unlock();
+    };
+
+    const onVisChange = () => {
+      if (document.visibilityState === 'visible') {
+        onReturn();
+      }
+    };
+
+    window.addEventListener('focus', onReturn, { once: true });
+    window.addEventListener('afterprint', onReturn, { once: true });
+    document.addEventListener('visibilitychange', onVisChange);
+
+    // Fallback unlock after 6 seconds in case browser doesn't dispatch focus event
+    setTimeout(unlock, 6000);
   };
 }
 

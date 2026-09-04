@@ -243,6 +243,11 @@ export class FinanceManager {
       if (sub) sub.textContent = 'إعداد وتجهيز مطالبات مستحقات المركز لدى شركات التأمين وبطاقات التردد الرسمية';
 
       // Mode switched to claims cleanly without premature alert
+      setTimeout(() => {
+        if (this.app.claimsManager) {
+          this.app.claimsManager.setupScrollSync();
+        }
+      }, 100);
     }
   }
 

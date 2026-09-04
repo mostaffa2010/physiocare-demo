@@ -36,6 +36,7 @@ export class ClaimsManager {
   async init() {
     this.bindEvents();
     this.setDefaultDates();
+    this.setupScrollSync();
     await this.populateCompaniesDropdown();
   }
 
@@ -126,14 +127,14 @@ export class ClaimsManager {
     }
 
     document.getElementById('btn-load-claim-patients')?.addEventListener('click', () => this.loadCompanyPatients());
-    document.getElementById('btn-print-claim-statement')?.addEventListener('click', () => this.printClaimStatement());
-    document.getElementById('btn-print-attendance-cards')?.addEventListener('click', () => this.printAttendanceCards());
+    const bClaim = document.getElementById('btn-print-claim-statement'); if (bClaim) bClaim.onclick = (e) => { e.preventDefault(); e.stopPropagation(); this.printClaimStatement(); };
+    const bCards = document.getElementById('btn-print-attendance-cards'); if (bCards) bCards.onclick = (e) => { e.preventDefault(); e.stopPropagation(); this.printAttendanceCards(); };
     document.getElementById('btn-export-claim-excel')?.addEventListener('click', () => this.exportClaimExcel());
     document.getElementById('claim-patient-search-input')?.addEventListener('input', (e) => this.onSearchInput(e.target.value));
 
     // Modal attendance card buttons
     document.getElementById('btn-card-add-treatment')?.addEventListener('click', () => this.promptAddNewTreatment());
-    document.getElementById('btn-card-print-current')?.addEventListener('click', () => this.printAttendanceCards(this.activeCardPatientId));
+    const bCurCard = document.getElementById('btn-card-print-current'); if (bCurCard) bCurCard.onclick = (e) => { e.preventDefault(); e.stopPropagation(); this.printAttendanceCards(this.activeCardPatientId); };
     document.getElementById('btn-card-save')?.addEventListener('click', () => this.saveAttendanceCardData());
 
     // Event Delegation: Claims Patient Table (checkboxes, inputs, open card)
@@ -312,6 +313,7 @@ export class ClaimsManager {
       selectAllCb.checked = filtered.length > 0 && filtered.every(i => i.isChecked);
     }
 
+    this.setupScrollSync();
     tbody.innerHTML = filtered.map((item, idx) => {
       const p = item.patient;
       const safeId = escapeHTML(p.id);
@@ -351,6 +353,7 @@ export class ClaimsManager {
           </td>
         </tr>
       `;    }).join('');
+    setTimeout(() => this.setupScrollSync(), 50);
   }
 
   togglePatientCheck(patientId, checked) {
@@ -653,4 +656,47 @@ export class ClaimsManager {
     XLSX.writeFile(wb, `مطالبة_${companyName}_${claimDate}.xlsx`);
     this.app.showToast('تم تصدير المطالبة بنجاح إلى ملف Excel');
   }
+
+  // ================= Top & Bottom Horizontal Scroll Synchronization =================
+  setupScrollSync() {
+    const topWrap = document.getElementById('claim-top-scroll-wrap');
+    const container = document.getElementById('claim-table-container');
+    const dummy = document.getElementById('claim-top-scroll-dummy');
+    const table = document.getElementById('claim-patients-table');
+
+    if (!topWrap || !container || !dummy || !table) return;
+
+    const syncMetrics = () => {
+      if (table.scrollWidth > container.clientWidth) {
+        dummy.style.width = table.scrollWidth + 'px';
+        topWrap.style.display = 'block';
+      } else {
+        topWrap.style.display = 'none';
+      }
+    };
+
+    setTimeout(syncMetrics, 60);
+    setTimeout(syncMetrics, 300);
+    window.addEventListener('resize', syncMetrics);
+
+    let isTopScrolling = false;
+    let isTableScrolling = false;
+
+    topWrap.onscroll = () => {
+      if (!isTopScrolling) {
+        isTableScrolling = true;
+        container.scrollLeft = topWrap.scrollLeft;
+      }
+      isTopScrolling = false;
+    };
+
+    container.onscroll = () => {
+      if (!isTableScrolling) {
+        isTopScrolling = true;
+        topWrap.scrollLeft = container.scrollLeft;
+      }
+      isTableScrolling = false;
+    };
+  }
+
 }

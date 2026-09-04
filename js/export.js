@@ -16,9 +16,14 @@ export class ExportManager {
       btnExcel.addEventListener('click', () => this.exportToExcel());
     }
 
-    const btnPrint = document.getElementById('btn-print-report');
+        const btnPrint = document.getElementById('btn-print-report');
     if (btnPrint) {
-      btnPrint.addEventListener('click', () => this.printReport());
+      btnPrint.onclick = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (btnPrint.disabled) return;
+        this.printReport();
+      };
     }
   }
 
