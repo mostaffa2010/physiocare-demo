@@ -759,7 +759,7 @@ export class PatientsManager {
     };
   }
 
-  openPatientSheet(patientId) {
+  async openPatientSheet(patientId) {
     const currentUser = auth.getCurrentUser();
     if (!RolesManager.canAccessClinicalSheet(currentUser)) {
       this.app.showAlert('الدخول على الشيت الطبي متاح للأطباء المعالجين ومدير المركز فقط.', 'صلاحية الأطباء');
@@ -771,6 +771,21 @@ export class PatientsManager {
 
     this.currentSheetPatient = p;
     const sheet = p.clinicalSheet || {};
+
+    // 0. Load Patient Past Sessions
+    try {
+      const allSessions = await db.getSessions();
+      const pSessions = allSessions.filter(s => s.patientId === p.id || s.patientName === p.name);
+      pSessions.sort((a, b) => new Date(b.date) - new Date(a.date));
+      this.currentPatientSessions = pSessions;
+      
+      const sessBadge = document.getElementById('sheet-sessions-badge-count');
+      if (sessBadge) {
+        sessBadge.textContent = `${pSessions.length} جلسة`;
+      }
+    } catch (e) {
+      this.currentPatientSessions = [];
+    }
 
     // 1. Fill Header info
     const nameEl = document.getElementById('sheet-patient-name');
@@ -1055,6 +1070,64 @@ export class PatientsManager {
     this.app.closeModal('modal-add-clinical-option');
     this.app.showToast(`تمت إضافة زر "${name}" بنجاح`);
     await db.logAudit('إضافة زر سريري', `إضافة زر ${name} في قسم ${category}`, auth.getCurrentUser());
+  }
+
+  // ================= Patient Sessions History Modal =================
+  openPatientSessionsModal() {
+    if (!this.currentSheetPatient) return;
+    const p = this.currentSheetPatient;
+    const sessions = this.currentPatientSessions || [];
+
+    const nameEl = document.getElementById('modal-p-sess-patient-name');
+    if (nameEl) nameEl.textContent = p.name;
+    
+    const countEl = document.getElementById('modal-p-sess-total-badge');
+    if (countEl) countEl.textContent = `${sessions.length} جلسة`;
+
+    const tbody = document.getElementById('modal-p-sess-tbody');
+    if (!tbody) return;
+
+    if (sessions.length === 0) {
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="7" style="text-align: center; color: var(--text-muted); padding: 35px 15px;">
+            <i class="fa-solid fa-calendar-xmark" style="font-size: 2.2rem; color: #cbd5e1; margin-bottom: 10px; display: block;"></i>
+            <span style="font-weight: 700; font-size: 0.95rem;">لا توجد جلسات سابقة مسجلة لهذا المريض حتى الآن</span>
+            <p style="font-size: 0.78rem; margin-top: 4px; color: #94a3b8;">يتم تسجيل حضور الجلسات من شاشة "تسجيل الجلسات" اليومية</p>
+          </td>
+        </tr>
+      `;
+    } else {
+      tbody.innerHTML = sessions.map((s, idx) => {
+        let payBadge = '';
+        if (s.payType === 'cash') {
+          payBadge = `<span class="badge badge-cash"><i class="fa-solid fa-money-bill"></i> نقدي (${s.amountPaid || 0} ج.م)</span>`;
+        } else if (s.contractType === 'direct') {
+          payBadge = `<span class="badge badge-direct"><i class="fa-solid fa-file-contract"></i> ${s.insuranceName || 'تأمين'} (مباشر) - ${s.amountPaid || 0} ج.م</span>`;
+        } else {
+          payBadge = `<span class="badge badge-indirect"><i class="fa-solid fa-handshake"></i> ${s.insuranceName || 'تأمين'} (غير مباشر) - ${s.amountPaid || 0} ج.م</span>`;
+        }
+
+        const parts = Array.isArray(s.bodyParts) ? s.bodyParts.join('، ') : (s.bodyParts || 'غير محدد');
+
+        return `
+          <tr>
+            <td style="font-weight: 800; color: var(--primary);">${idx + 1}</td>
+            <td style="font-weight: 700; white-space: nowrap;">
+              <div>${s.date}</div>
+              <small style="color: var(--text-muted); font-size: 0.72rem;">${s.recordedAt || ''}</small>
+            </td>
+            <td><span style="font-weight: 700; color: #1e293b;">${s.doctor}</span></td>
+            <td style="font-size: 0.85rem;">${parts}</td>
+            <td>${payBadge}</td>
+            <td style="font-size: 0.82rem; color: var(--text-muted);">${s.notes || '-'}</td>
+            <td style="font-size: 0.75rem; color: var(--text-muted);">${s.recordedBy || '-'}</td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    this.app.openModal('modal-patient-sessions-history');
   }
 
   printCurrentSheet() {

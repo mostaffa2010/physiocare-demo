@@ -381,9 +381,15 @@
             </div>
           </div>
 
-          <!-- Line 3: Last Update Stamp -->
-          <div style="margin-top: 10px; padding-top: 8px; border-top: 1px dashed var(--border-color); font-size: 0.78rem; color: var(--text-muted); display: flex; justify-content: space-between; align-items: center;">
+          <!-- Line 3: Last Update Stamp & View Sessions History Button -->
+          <div style="margin-top: 12px; padding-top: 10px; border-top: 1px dashed var(--border-color); font-size: 0.78rem; color: var(--text-muted); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
             <span><i class="fa-solid fa-clock-rotate-left"></i> آخر تحديث: <strong id="sheet-last-update-text" style="color: var(--text-main);">-</strong></span>
+            
+            <button type="button" class="btn btn-outline btn-sm" id="btn-view-patient-sessions" onclick="patientsManager.openPatientSessionsModal()" style="display: inline-flex; align-items: center; gap: 6px; border-color: var(--primary); color: var(--primary); font-weight: 800; padding: 5px 12px; border-radius: 8px; background-color: #f0f9ff;">
+              <i class="fa-solid fa-calendar-check" style="font-size: 0.95rem;"></i>
+              <span>سجل الجلسات</span>
+              <span class="badge" id="sheet-sessions-badge-count" style="background-color: var(--primary); color: #ffffff; font-size: 0.76rem; padding: 2px 7px; border-radius: 6px;">0 جلسة</span>
+            </button>
           </div>
         </div>
 
@@ -1887,6 +1893,55 @@
         <button type="button" class="btn btn-primary btn-sm" id="btn-dismiss-onboarding" style="font-weight: 800; padding: 6px 16px;">
           ابدأ التجربة الآن <i class="fa-solid fa-arrow-left"></i>
         </button>
+      </div>
+    </div>
+  </div>
+
+    <!-- Modal: Patient Sessions History (سجل جلسات المريض السابقة) -->
+  <div class="modal-backdrop" id="modal-patient-sessions-history" style="z-index: 230;">
+    <div class="modal-content" style="max-width: 720px; max-height: 85vh; display: flex; flex-direction: column; padding: 0; border-radius: var(--radius-lg); overflow: hidden;">
+      <!-- Modal Header -->
+      <div class="modal-header" style="background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%); border-bottom: 2px solid #0284c7; padding: 14px 18px;">
+        <div>
+          <h3 style="font-size: 1.15rem; font-weight: 800; color: #0369a1; margin: 0; display: flex; align-items: center; gap: 8px;">
+            <i class="fa-solid fa-calendar-days" style="color: var(--primary);"></i>
+            <span>سجل جلسات: <strong id="modal-p-sess-patient-name" style="color: var(--text-main);">-</strong></span>
+          </h3>
+          <p style="margin: 4px 0 0 0; font-size: 0.8rem; color: #64748b; font-weight: 700;">
+            إجمالي الجلسات السابقة: <span class="badge badge-cash" id="modal-p-sess-total-badge" style="font-size: 0.78rem;">0 جلسة</span>
+          </p>
+        </div>
+        <button class="modal-close" onclick="app.closeModal('modal-patient-sessions-history')">&times;</button>
+      </div>
+
+      <!-- Modal Body (Scrollable table) -->
+      <div class="modal-body" style="padding: 14px; overflow-y: auto; flex: 1;" id="modal-p-sess-body">
+        <div class="table-responsive">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th style="width: 50px;">#</th>
+                <th>التاريخ والوقت</th>
+                <th>الطبيب المعالج</th>
+                <th>الأعضاء المعالجة</th>
+                <th>نظام الدفع والمبلغ</th>
+                <th>ملاحظات</th>
+                <th>المسجل</th>
+              </tr>
+            </thead>
+            <tbody id="modal-p-sess-tbody">
+              <!-- Populated dynamically -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Modal Footer -->
+      <div class="modal-footer" style="padding: 10px 16px; background-color: var(--bg-subtle); display: flex; justify-content: space-between; align-items: center;">
+        <span style="font-size: 0.78rem; color: var(--text-muted); font-weight: 600;">
+          <i class="fa-solid fa-info-circle"></i> مرتبة تنازلياً من أحدث جلسة إلى الأقدم
+        </span>
+        <button type="button" class="btn btn-outline btn-sm" onclick="app.closeModal('modal-patient-sessions-history')">إغلاق</button>
       </div>
     </div>
   </div>

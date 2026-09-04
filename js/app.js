@@ -121,6 +121,13 @@ class App {
     // 3. ربط أحداث التنقل والحوارات
     this.bindNavigation();
     this.bindHardwareBackButton();
+    // منع قائمة المتصفح الافتراضية عند الضغط المطول (لإحساس التطبيق الأصلي)
+    window.addEventListener('contextmenu', (e) => {
+      const tag = e.target.tagName;
+      if (tag !== 'INPUT' && tag !== 'TEXTAREA') {
+        e.preventDefault();
+      }
+    });
     this.disablePullToRefresh();
     this.bindGlobalTouchAndSelectionGuards();
     this.disableBrowserContextMenu();
