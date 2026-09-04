@@ -1559,3 +1559,20 @@ input, textarea, [contenteditable="true"] {
   user-select: text !important;
   -webkit-touch-callout: default !important;
 }
+
+
+/* Guaranteed Active/Selected State for Clinical Sheet Chips */
+.chip-choice.selected,
+.chip-choice.sheet-chip.selected {
+  background-color: var(--primary) !important;
+  color: #ffffff !important;
+  border-color: var(--primary) !important;
+  box-shadow: 0 2px 5px rgba(2, 132, 199, 0.3) !important;
+}
+
+.chip-choice.selected i,
+.chip-choice.sheet-chip.selected i,
+.chip-choice.selected span,
+.chip-choice.sheet-chip.selected span {
+  color: #ffffff !important;
+}

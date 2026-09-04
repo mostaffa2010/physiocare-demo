@@ -127,31 +127,6 @@ export class PatientsManager {
       formAddOption.addEventListener('submit', (e) => this.handleSaveNewOption(e));
     }
 
-    // Event Delegation: Clinical Sheet Chips Containers (Modalities, Procedures, Exercises)
-    ['sheet-modalities-container', 'sheet-procedures-container', 'sheet-exercises-container'].forEach(id => {
-      const container = document.getElementById(id);
-      if (container) {
-        container.addEventListener('click', (e) => {
-          const delTag = e.target.closest('[data-action="delete-option"]');
-          if (delTag) {
-            e.stopPropagation();
-            this.deleteOptionDirect(delTag.dataset.category, delTag.dataset.option);
-            return;
-          }
-          const addBtn = e.target.closest('[data-action="add-option"]');
-          if (addBtn) {
-            e.stopPropagation();
-            this.openAddOptionModal(addBtn.dataset.category);
-            return;
-          }
-          const chip = e.target.closest('.chip-choice');
-          if (chip && !chip.classList.contains('in-edit-mode')) {
-            chip.classList.toggle('selected');
-          }
-        });
-      }
-    });
-
     // Form Submission for Patient
     const form = document.getElementById('form-patient');
     if (form) {
@@ -855,7 +830,9 @@ export class PatientsManager {
 
     // Bind selection click listener (only toggles selection in normal mode)
     container.querySelectorAll('.chip-choice').forEach(btn => {
-      btn.addEventListener('click', () => {
+      btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
         if (!this.chipsEditMode[category]) {
           btn.classList.toggle('selected');
         }
