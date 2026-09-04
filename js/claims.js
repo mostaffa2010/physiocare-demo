@@ -513,6 +513,10 @@ export class ClaimsManager {
   }
 
   printAttendanceCards(singlePatientId = null) {
+    if (this._isPrinting) return;
+    this._isPrinting = true;
+    setTimeout(() => { this._isPrinting = false; }, 2500);
+
     let itemsToPrint = [];
     if (singlePatientId) {
       const found = this.claimPatientsData.find(i => i.patient.id === singlePatientId);

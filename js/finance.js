@@ -75,9 +75,7 @@ export class FinanceManager {
     // Add Expense Button
     document.getElementById('btn-add-expense')?.addEventListener('click', () => this.app.openAddExpenseModal());
 
-    // Export & Print Buttons
-    document.getElementById('btn-export-excel')?.addEventListener('click', () => this.app.exportToExcel());
-    document.getElementById('btn-print-report')?.addEventListener('click', () => this.app.printReport());
+    // Export & Print Buttons are handled exclusively in export.js to prevent duplicate events
 
     // Event Delegation: Finance Daily Report Sessions Table
     const reportTbody = document.getElementById('finance-report-tbody');

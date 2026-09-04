@@ -261,7 +261,6 @@ export class ExportManager {
       window.print();
     } catch (err) {
       console.error('Print trigger error:', err);
-      window.print();
     }
   }
 }

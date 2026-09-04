@@ -916,6 +916,10 @@ export class PatientsManager {
   }
 
   printCurrentSheet() {
+    if (this._isPrinting) return;
+    this._isPrinting = true;
+    setTimeout(() => { this._isPrinting = false; }, 2500);
+
     const currentUser = auth.getCurrentUser();
     if (!RolesManager.canPrintSheet(currentUser)) {
       this.app.showAlert('عفواً، طباعة وحفظ الشيت الطبي متاح لإدارة المركز فقط.', 'صلاحية الطباعة');

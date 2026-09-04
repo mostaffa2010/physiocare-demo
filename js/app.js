@@ -1,3 +1,27 @@
+// ================= Global Bulletproof Debounce on window.print =================
+if (typeof window !== 'undefined' && !window.__print_lock_installed) {
+  window.__print_lock_installed = true;
+  const _origPrint = window.print.bind(window);
+  let _printActive = false;
+
+  window.print = function() {
+    if (_printActive) {
+      console.warn('Prevented duplicate window.print() call.');
+      return;
+    }
+    _printActive = true;
+    try {
+      _origPrint();
+    } catch (e) {
+      console.error('Print trigger notice:', e);
+    } finally {
+      setTimeout(() => {
+        _printActive = false;
+      }, 2500);
+    }
+  };
+}
+
 import { escapeHTML } from './utils.js';
 import { ClaimsManager } from './claims.js';
 // ========================================================
