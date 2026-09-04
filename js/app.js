@@ -94,6 +94,7 @@ class App {
     this.exportManager = new ExportManager(this, this.financeManager);
     this.auditManager = new AuditAndAdminManager(this);
     this.claimsManager = new ClaimsManager(this);
+    this.doctorDashboardManager = new DoctorDashboardManager(this);
 
     window.patientsManager = this.patientsManager;
     window.sessionsManager = this.sessionsManager;
@@ -101,6 +102,7 @@ class App {
     window.exportManager = this.exportManager;
     window.auditManager = this.auditManager;
     window.claimsManager = this.claimsManager;
+    window.doctorDashboardManager = this.doctorDashboardManager;
   }
 
   async init() {
@@ -208,12 +210,12 @@ class App {
     const user = auth.getCurrentUser();
     // تقييد صلاحيات التنقل حسب الدور
     if (user?.role === 'doctor') {
-      if (viewName !== 'patients' && viewName !== 'patient-sheet') {
-        viewName = 'patients';
+      if (viewName !== 'dashboard' && viewName !== 'patients' && viewName !== 'patient-sheet') {
+        viewName = 'dashboard';
       }
     } else if (user?.role === 'receptionist') {
       if (viewName === 'admin' || viewName === 'patient-sheet') {
-        viewName = 'patients';
+        viewName = 'dashboard';
       }
     }
 
@@ -245,6 +247,13 @@ class App {
     window.scrollTo({ top: 0, behavior: 'smooth' });
 
     // Refresh specific view data if needed
+    if (viewName === 'dashboard') {
+      if (user?.role === 'doctor') {
+        if (this.doctorDashboardManager) this.doctorDashboardManager.render();
+      } else {
+        if (this.financeManager) this.financeManager.updateDashboardStats();
+      }
+    }
     if (viewName === 'finance') this.financeManager.loadDailyReport();
     if (viewName === 'sessions') this.sessionsManager.loadTodaySessions();
     if (viewName === 'patients') this.patientsManager.loadPatients();
@@ -1051,6 +1060,7 @@ class App {
     if (this.patientsManager) await this.patientsManager.loadPatients();
     if (this.sessionsManager) await this.sessionsManager.loadTodaySessions();
     if (this.financeManager) await this.financeManager.loadDailyReport();
+    if (this.doctorDashboardManager) await this.doctorDashboardManager.render();
     if (this.claimsManager && typeof this.claimsManager.loadClaims === 'function') {
       await this.claimsManager.loadClaims();
     }

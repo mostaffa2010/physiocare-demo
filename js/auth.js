@@ -64,7 +64,7 @@ class DemoAuthService {
     if (window.app) {
       window.app.showToast(`تم تسجيل الدخول بحساب: ${this.currentUser.name} (${RolesManager.getRoleLabel(role)})`);
       if (role === 'doctor') {
-        window.app.switchView('patients');
+        window.app.switchView('dashboard');
       } else if (role === 'receptionist') {
         if (window.app.currentView === 'patient-sheet' || window.app.currentView === 'admin') {
           window.app.switchView('patients');
