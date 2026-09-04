@@ -132,6 +132,7 @@ class App {
       }
     });
     this.disablePullToRefresh();
+    this.disableNativeContextMenu();
     // Prevent long-press text selection / contextmenu on non-inputs for native app feel
     window.addEventListener('contextmenu', (e) => {
       if (e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA') {

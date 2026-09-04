@@ -14,8 +14,8 @@ class DemoDatabaseService {
   }
 
   initDemoStorage(force = false) {
-    if (!localStorage.getItem('pc_demo_v2_init') || force) {
-      localStorage.setItem('pc_demo_v2_init', 'true');
+    if (!localStorage.getItem('pc_demo_v3_september_full') || force) {
+      localStorage.setItem('pc_demo_v3_september_full', 'true');
       localStorage.setItem('pc_demo_patients', JSON.stringify(DEMO_PATIENTS));
       localStorage.setItem('pc_demo_sessions', JSON.stringify(DEMO_SESSIONS));
       localStorage.setItem('pc_demo_expenses', JSON.stringify(DEMO_EXPENSES));
@@ -26,7 +26,7 @@ class DemoDatabaseService {
           userName: 'نظام العرض التجريبي',
           userRole: 'النظام',
           actionType: 'تجهيز العرض التجريبي',
-          description: 'تم تحميل 185 مريض و 635 جلسة ومصروفات شهرين كاملين بنجاح',
+          description: 'تم تحميل 190 مريض و 905 جلسة ومصروفات 3 أشهر كاملة (يوليو، أغسطس، وسبتمبر بالكامل) بنجاح',
           timestamp: new Date().toLocaleString('en-US'),
           timestampRaw: Date.now()
         }
@@ -36,7 +36,7 @@ class DemoDatabaseService {
 
   resetDemo() {
     // 1. إعادة ضبط المجموعات الرئيسية بالكامل لنسخ أصلية جديدة
-    localStorage.setItem('pc_demo_v2_init', 'true');
+    localStorage.setItem('pc_demo_v3_september_full', 'true');
     localStorage.setItem('pc_demo_patients', JSON.stringify(DEMO_PATIENTS));
     localStorage.setItem('pc_demo_sessions', JSON.stringify(DEMO_SESSIONS));
     localStorage.setItem('pc_demo_expenses', JSON.stringify(DEMO_EXPENSES));
@@ -74,7 +74,7 @@ class DemoDatabaseService {
     // 6. مسح أي مفاتيح مؤقتة أخرى خاصة بالنظام مع الإبقاء على تفضيل النافذة التعريفية
     for (let i = localStorage.length - 1; i >= 0; i--) {
       const k = localStorage.key(i);
-      if (k && k.startsWith('pc_') && !['pc_demo_v2_init', 'pc_demo_patients', 'pc_demo_sessions', 'pc_demo_expenses', 'pc_demo_users', 'pc_demo_audit', 'pc_demo_active_user', 'pc_demo_onboarding_seen'].includes(k)) {
+      if (k && k.startsWith('pc_') && !['pc_demo_v3_september_full', 'pc_demo_patients', 'pc_demo_sessions', 'pc_demo_expenses', 'pc_demo_users', 'pc_demo_audit', 'pc_demo_active_user', 'pc_demo_onboarding_seen'].includes(k)) {
         localStorage.removeItem(k);
       }
     }
