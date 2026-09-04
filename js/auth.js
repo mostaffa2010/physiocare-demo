@@ -43,9 +43,9 @@ class DemoAuthService {
 
   async switchRole(role) {
     const roleProfiles = {
-      admin: { name: 'د. مصطفى محمود', role: 'admin', label: '👑 مدير' },
-      doctor: { name: 'د. أحمد خليل', role: 'doctor', label: '🩺 طبيب' },
-      receptionist: { name: 'أ. منار خالد', role: 'receptionist', label: '📋 استقبال' }
+      admin: { name: 'د. مصطفى محمود', role: 'admin' },
+      doctor: { name: 'د. أحمد خليل', role: 'doctor' },
+      receptionist: { name: 'أ. منار خالد', role: 'receptionist' }
     };
 
     const prof = roleProfiles[role] || roleProfiles.admin;
@@ -57,36 +57,12 @@ class DemoAuthService {
     };
 
     localStorage.setItem('pc_demo_active_user', JSON.stringify(this.currentUser));
-    
-    // Sync mobile and desktop dropdown selects and buttons
-    ['demo-role-select', 'demo-role-select-desktop'].forEach(selId => {
-      const sel = document.getElementById(selId);
-      if (sel) sel.value = role;
-      
-      const btn = document.getElementById(`btn-select-${selId}`);
-      if (btn) {
-        const textSpan = btn.querySelector('.btn-text');
-        if (textSpan) {
-          if (selId.includes('desktop')) {
-            const deskLabels = {
-              admin: '👑 مدير المركز (د. مصطفى)',
-              doctor: '🩺 طبيب معالج (د. أحمد)',
-              receptionist: '📋 استقبال العيادة (أ. منار)'
-            };
-            textSpan.textContent = deskLabels[role] || '👑 مدير المركز';
-          } else {
-            textSpan.textContent = prof.label;
-          }
-        }
-      }
-    });
-
     this.hideLoginModal();
     this.updateUI();
-    await db.logAudit('تبديل صلاحية العرض', `تم تبديل واجهة العرض لدور: ${RolesManager.getRoleLabel(role)}`, this.currentUser);
+    await db.logAudit('تبديل صلاحية العرض', `تم تبديل واجهة العرض لدور: ${RolesManager.getRoleLabel(role)} (${this.currentUser.name})`, this.currentUser);
     
-    // توجيه واجهة المستخدم بحسب الصلاحية فوراً
     if (window.app) {
+      window.app.showToast(`تم تسجيل الدخول بحساب: ${this.currentUser.name} (${RolesManager.getRoleLabel(role)})`);
       if (role === 'doctor') {
         window.app.switchView('patients');
       } else if (role === 'receptionist') {
@@ -97,52 +73,6 @@ class DemoAuthService {
     }
 
     if (this.onUserChanged) this.onUserChanged(this.currentUser);
-  }
-
-  async login(email, password) {
-    // التحقق من قائمة المستخدمين المحلية في الديمو
-    const users = await db.getUsers();
-    const cleanEmail = (email || '').trim().toLowerCase();
-    const matchedUser = users.find(u => u.email && u.email.trim().toLowerCase() === cleanEmail);
-
-    if (matchedUser) {
-      this.currentUser = {
-        id: matchedUser.id,
-        name: matchedUser.name,
-        email: matchedUser.email,
-        role: matchedUser.role
-      };
-    } else {
-      // مستخدم افتراضي كمدير للديمو إذا لم يتطابق الإيميل
-      this.currentUser = {
-        id: 'u-demo-admin',
-        name: 'د. مصطفى محمود',
-        email: email || 'admin@physiocare.demo',
-        role: 'admin'
-      };
-    }
-
-    localStorage.setItem('pc_demo_active_user', JSON.stringify(this.currentUser));
-
-    // مزامنة قائمة الأدوار المنسدلة
-    const sel = document.getElementById('demo-role-select');
-    if (sel) sel.value = this.currentUser.role;
-
-    const btn = document.getElementById('btn-select-demo-role-select');
-    if (btn) {
-      const textSpan = btn.querySelector('.btn-text');
-      const labels = { admin: '👑 مدير', doctor: '🩺 طبيب', receptionist: '📋 استقبال' };
-      if (textSpan) textSpan.textContent = labels[this.currentUser.role] || '👑 مدير';
-    }
-
-    this.hideLoginModal();
-    this.updateUI();
-    if (window.app && this.currentUser.role === 'doctor') {
-      window.app.switchView('patients');
-    }
-    await db.logAudit('تسجيل دخول', `تسجيل دخول للمستخدم: ${this.currentUser.name}`, this.currentUser);
-    if (this.onUserChanged) this.onUserChanged(this.currentUser);
-    return { success: true };
   }
 
   logout() {

@@ -74,28 +74,15 @@
       <span>PhysioFlow</span>
     </a>
     <div class="header-actions-group">
-      <!-- Sleek Role Dropdown for Demo -->
-      <div class="custom-select-wrapper" style="width: auto;">
-        <select id="demo-role-select" style="display: none;" >
-          <option value="admin">👑 مدير المركز (د. مصطفى)</option>
-          <option value="doctor">🩺 طبيب معالج (د. أحمد)</option>
-          <option value="receptionist">📋 استقبال العيادة (أ. منار)</option>
-        </select>
-        <button type="button" class="custom-select-btn" id="btn-select-demo-role-select" style="width: auto; padding: 4px 10px; font-size: 0.78rem; font-weight: 700; background-color: var(--primary-light); color: var(--primary); border-color: #bae6fd; white-space: nowrap;" data-open-picker="demo-role-select" data-picker-title="اختر دور المعاينة التجريبية">
-          <span class="btn-text">👑 مدير</span>
-          <i class="fa-solid fa-chevron-down" style="font-size: 0.68rem; margin-right: 4px;"></i>
-        </button>
-      </div>
-
-      <!-- Doctor Name Badge -->
+      <!-- Doctor Name Badge (Prominent, clean, uncompressed) -->
       <div class="user-badge" id="user-status-pill-box" title="المستخدم الحالي">
         <span class="status-dot" id="net-status-dot"></span>
-        <i class="fa-solid fa-user-doctor" style="color: var(--primary); font-size: 0.85rem;"></i>
-        <span id="header-user-display" style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">د. مصطفى محمود</span>
+        <i class="fa-solid fa-user-doctor" style="color: var(--primary); font-size: 0.9rem;"></i>
+        <span id="header-user-display" style="white-space: nowrap;">د. مصطفى محمود</span>
       </div>
 
-      <!-- Logout / Reset -->
-      <button class="btn btn-outline btn-sm" id="btn-logout-mobile" style="border-radius: 10px;" title="تسجيل الخروج">
+      <!-- Logout / Switch Account Button -->
+      <button type="button" class="btn btn-outline btn-sm" id="btn-logout-mobile" style="border-radius: 10px; padding: 6px 10px; font-weight: 700;" title="تسجيل الخروج / تبديل الحساب" onclick="auth.showLoginModal()">
         <i class="fa-solid fa-right-from-bracket"></i>
       </button>
     </div>
@@ -176,18 +163,7 @@
             </button>
           </div>
 
-          <!-- Desktop Role Switcher Dropdown for Demo -->
-          <div class="custom-select-wrapper" style="width: 100%;">
-            <select id="demo-role-select-desktop" style="display: none;">
-              <option value="admin">👑 مدير المركز (د. مصطفى)</option>
-              <option value="doctor">🩺 طبيب معالج (د. أحمد)</option>
-              <option value="receptionist">📋 استقبال العيادة (أ. منار)</option>
-            </select>
-            <button type="button" class="custom-select-btn" id="btn-select-demo-role-select-desktop" style="width: 100%; padding: 6px 10px; font-size: 0.78rem; font-weight: 700; background-color: #ffffff; color: var(--primary); border: 1.5px solid #bae6fd; border-radius: 8px; justify-content: space-between;" data-open-picker="demo-role-select-desktop" data-picker-title="اختر دور المعاينة التجريبية">
-              <span class="btn-text">👑 مدير المركز</span>
-              <i class="fa-solid fa-chevron-down" style="font-size: 0.7rem;"></i>
-            </button>
-          </div>
+
         </div>
       </div>
     </aside>
@@ -1367,45 +1343,83 @@
   </div>
 
   <!-- Modal 3: Authentication / Login -->
-  <div class="modal-backdrop" id="modal-auth">
-    <div class="modal-content" style="max-width: 440px;">
-      <div class="modal-header">
-        <h3><i class="fa-solid fa-lock"></i> تسجيل الدخول للنظام</h3>
+  <div class="modal-backdrop" id="modal-auth" style="z-index: 230;">
+    <div class="modal-content" style="max-width: 440px; border-radius: 12px; overflow: hidden; padding: 0;">
+      <!-- Header -->
+      <div class="modal-header" style="background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%); border-bottom: 1.5px solid #bae6fd; padding: 14px 18px; display: flex; justify-content: space-between; align-items: center;">
+        <h3 style="margin: 0; font-size: 1.1rem; color: var(--primary); font-weight: 800; display: flex; align-items: center; gap: 8px;">
+          <i class="fa-solid fa-users-gear"></i> تسجيل الدخول واختيار الحساب
+        </h3>
+        <button type="button" class="modal-close" onclick="auth.hideLoginModal()" style="font-size: 1.3rem; background: none; border: none; cursor: pointer; color: var(--text-muted);">&times;</button>
       </div>
-      <form id="form-login" novalidate>
-        <div class="modal-body">
-          <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 15px;">
-            قم بتسجيل الدخول بحسابك في نظام PhysioFlow للمتابعة بحسب صلاحياتك.
-          </p>
 
-          <div class="form-group" style="margin-bottom: 12px;">
-            <label>اسم المستخدم أو الإيميل</label>
-            <input type="email" id="login-email" class="form-control" placeholder="admin@ascpt.com" required value="">
+      <!-- Body: 3 Demo Accounts -->
+      <div class="modal-body" style="padding: 16px 18px;">
+        <p style="font-size: 0.84rem; color: var(--text-muted); margin-bottom: 14px; line-height: 1.4;">
+          اختر الحساب الذي ترغب في تجربة نظام <strong>PhysioFlow</strong> من خلاله لمعاينة الصلاحيات والشاشات المخصصة لكل دور:
+        </p>
+
+        <div style="display: flex; flex-direction: column; gap: 10px;">
+          <!-- Account 1: Admin / Clinic Director -->
+          <div class="demo-account-card" onclick="auth.switchRole('admin')" style="background: #ffffff; border: 1.5px solid #bae6fd; border-radius: 10px; padding: 12px; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 12px;">
+            <div style="width: 44px; height: 44px; border-radius: 10px; background: #e0f2fe; color: #0284c7; display: flex; align-items: center; justify-content: center; font-size: 1.25rem; flex-shrink: 0;">
+              <i class="fa-solid fa-crown"></i>
+            </div>
+            <div style="flex: 1; overflow: hidden;">
+              <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 2px;">
+                <strong style="color: #0f172a; font-size: 0.95rem;">د. مصطفى محمود</strong>
+                <span class="badge" style="background: #e0f2fe; color: #0369a1; font-size: 0.72rem; font-weight: 800; padding: 2px 8px; border-radius: 6px;">مدير المركز</span>
+              </div>
+              <div style="font-size: 0.76rem; color: var(--text-muted); line-height: 1.3;">
+                صلاحيات كاملة • التقارير المالية، إحصائيات الأطباء، وتخصيص النظام
+              </div>
+            </div>
+            <i class="fa-solid fa-chevron-left" style="color: var(--primary); font-size: 0.85rem;"></i>
           </div>
 
-          <div class="form-group" style="margin-bottom: 15px;">
-            <label>كلمة المرور</label>
-            <input type="password" id="login-password" class="form-control" placeholder="كلمة المرور الخاصة بحسابك" required value="">
+          <!-- Account 2: Treating Doctor -->
+          <div class="demo-account-card" onclick="auth.switchRole('doctor')" style="background: #ffffff; border: 1.5px solid var(--border-color); border-radius: 10px; padding: 12px; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 12px;">
+            <div style="width: 44px; height: 44px; border-radius: 10px; background: #f1f5f9; color: #475569; display: flex; align-items: center; justify-content: center; font-size: 1.25rem; flex-shrink: 0;">
+              <i class="fa-solid fa-user-doctor"></i>
+            </div>
+            <div style="flex: 1; overflow: hidden;">
+              <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 2px;">
+                <strong style="color: #0f172a; font-size: 0.95rem;">د. أحمد خليل</strong>
+                <span class="badge" style="background: #f1f5f9; color: #334155; font-size: 0.72rem; font-weight: 800; padding: 2px 8px; border-radius: 6px;">طبيب معالج</span>
+              </div>
+              <div style="font-size: 0.76rem; color: var(--text-muted); line-height: 1.3;">
+                متابعة المرضى، شيتات العلاج الطبيعي، وتسجيل الجلسات السريرية
+              </div>
+            </div>
+            <i class="fa-solid fa-chevron-left" style="color: var(--text-muted); font-size: 0.85rem;"></i>
           </div>
 
-                    <div id="login-error-msg" style="color: var(--danger); font-size: 0.82rem; margin-bottom: 10px; display: none;"></div>
-
-          <div style="margin-top: 15px; border-top: 1px dashed var(--border-color); padding-top: 12px; text-align: center;">
-            <button type="button" class="training-pill-btn" style="width: 100%; justify-content: center; padding: 8px 12px;" id="btn-auth-demo-mode">
-              <i class="fa-solid fa-flask-vial"></i> الدخول مباشرة في الوضع التدريبي (تجربة وشرح)
-            </button>
+          <!-- Account 3: Receptionist / Secretary -->
+          <div class="demo-account-card" onclick="auth.switchRole('receptionist')" style="background: #ffffff; border: 1.5px solid var(--border-color); border-radius: 10px; padding: 12px; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 12px;">
+            <div style="width: 44px; height: 44px; border-radius: 10px; background: #fef3c7; color: #d97706; display: flex; align-items: center; justify-content: center; font-size: 1.25rem; flex-shrink: 0;">
+              <i class="fa-solid fa-clipboard-user"></i>
+            </div>
+            <div style="flex: 1; overflow: hidden;">
+              <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 2px;">
+                <strong style="color: #0f172a; font-size: 0.95rem;">أ. منار خالد</strong>
+                <span class="badge" style="background: #fef3c7; color: #92400e; font-size: 0.72rem; font-weight: 800; padding: 2px 8px; border-radius: 6px;">استقبال العيادة</span>
+              </div>
+              <div style="font-size: 0.76rem; color: var(--text-muted); line-height: 1.3;">
+                تسجيل المرضى الجدد، حضور الجلسات، وتحصيل المقبوضات اليومية
+              </div>
+            </div>
+            <i class="fa-solid fa-chevron-left" style="color: var(--text-muted); font-size: 0.85rem;"></i>
           </div>
-
-
         </div>
-        <div class="modal-footer">
-          <button type="submit" class="btn btn-primary" style="width: 100%;">دخول للنظام</button>
-        </div>
-      </form>
+      </div>
+
+      <!-- Footer -->
+      <div class="modal-footer" style="padding: 10px 18px; background: var(--bg-subtle); display: flex; justify-content: flex-end;">
+        <button type="button" class="btn btn-outline btn-sm" onclick="auth.hideLoginModal()" style="border-radius: 8px; font-weight: 700;">إلغاء</button>
+      </div>
     </div>
   </div>
 
-  
   <!-- Modal: Searchable Patient Picker -->
   <div class="modal-backdrop" id="modal-patient-picker">
     <div class="modal-content" style="max-width: 500px;">

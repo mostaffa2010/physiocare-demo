@@ -151,7 +151,7 @@ class App {
     try { await this.auditManager.init(); } catch (e) { console.warn('auditManager init notice:', e); }
 
     // مزامنة أزرار القوائم المخصصة
-    ['demo-role-select', 'claim-company-select', 'patient-filter-type', 'session-doctor-select', 'finance-doctor-filter', 'newuser-role', 'p-doctor'].forEach(id => {
+    ['claim-company-select', 'patient-filter-type', 'session-doctor-select', 'finance-doctor-filter', 'newuser-role', 'p-doctor'].forEach(id => {
       this.updateCustomSelectDisplay(id);
     });
 
@@ -353,7 +353,7 @@ class App {
 
     // Sales Banner, Demo & Training Buttons
     document.getElementById('btn-reset-demo-data')?.addEventListener('click', () => this.resetDemoData());
-    ['demo-role-select', 'demo-role-select-desktop'].forEach(selId => {
+    ['demo-role-select-desktop'].forEach(selId => {
       document.getElementById(selId)?.addEventListener('change', (e) => auth.switchRole(e.target.value));
     });
     document.getElementById('btn-reset-training-data')?.addEventListener('click', () => this.resetTrainingData());
@@ -923,22 +923,8 @@ class App {
 
     const textSpan = btn.querySelector('.btn-text');
     if (textSpan) {
-      if (selectId === 'demo-role-select') {
-        const val = select.value;
-        const labels = { admin: '👑 مدير', doctor: '🩺 طبيب', receptionist: '📋 استقبال' };
-        textSpan.textContent = labels[val] || '👑 مدير';
-      } else if (selectId === 'demo-role-select-desktop') {
-        const val = select.value;
-        const deskLabels = {
-          admin: '👑 مدير المركز (د. مصطفى)',
-          doctor: '🩺 طبيب معالج (د. أحمد)',
-          receptionist: '📋 استقبال العيادة (أ. منار)'
-        };
-        textSpan.textContent = deskLabels[val] || '👑 مدير المركز';
-      } else {
-        const selectedOpt = select.options[select.selectedIndex];
-        textSpan.textContent = selectedOpt ? selectedOpt.text : '-- اختر --';
-      }
+      const selectedOpt = select.options[select.selectedIndex];
+      textSpan.textContent = selectedOpt ? selectedOpt.text : '-- اختر --';
     }
   }
 
