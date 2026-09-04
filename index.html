@@ -410,14 +410,20 @@
 
         <!-- Patient Demographics Header Card (Clean & Responsive) -->
         <div class="card" style="background: #ffffff; border: 1.5px solid var(--border-color); border-radius: var(--radius-lg); padding: 16px; margin-bottom: 16px; box-shadow: var(--shadow-sm);">
-          <!-- Line 1 & 2: Patient Name and Company Badge Below It -->
-          <div style="border-bottom: 1px solid var(--border-color); padding-bottom: 10px; margin-bottom: 12px;">
-            <div style="font-size: 1.25rem; font-weight: 800; color: #0f172a; display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
-              <i class="fa-solid fa-user-injured" style="color: var(--primary); font-size: 1.15rem; flex-shrink: 0;"></i>
-              <span id="sheet-patient-name">اسم المريض</span>
+          <!-- Patient Header Block: Name & Badge on Right, 3 Quick Actions on Left -->
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; border-bottom: 1px solid var(--border-color); padding-bottom: 12px; margin-bottom: 12px; flex-wrap: nowrap;">
+            <div style="flex: 1; min-width: 0;">
+              <div style="font-size: 1.25rem; font-weight: 800; color: #0f172a; display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
+                <i class="fa-solid fa-user-injured" style="color: var(--primary); font-size: 1.15rem; flex-shrink: 0;"></i>
+                <span id="sheet-patient-name" style="word-break: break-word;">اسم المريض</span>
+              </div>
+              <div id="sheet-patient-billing-badge" style="display: flex; align-items: center; flex-wrap: wrap;">
+                <!-- Populated by JS below name -->
+              </div>
             </div>
-            <div id="sheet-patient-billing-badge" style="display: flex; align-items: center;">
-              <!-- Populated by JS below name -->
+            <!-- 3 Quick Action Buttons (WhatsApp, Edit, Delete) -->
+            <div id="sheet-patient-quick-actions" style="display: flex; gap: 6px; align-items: center; flex-shrink: 0; padding-top: 2px;">
+              <!-- Populated dynamically by patientsManager.openPatientSheet -->
             </div>
           </div>
 

@@ -542,6 +542,29 @@ export class PatientsManager {
     this.app.openModal('modal-patient');
   }
 
+  openEditModalFromSheet(patientId) {
+    this.editingFromSheet = true;
+    this.openEditModal(patientId);
+  }
+
+  async confirmDeleteFromSheet(patientId) {
+    const p = this.patients.find(item => item.id === patientId);
+    if (!p) return;
+
+    const confirmed = await this.app.showConfirm(
+      `هل أنت متأكد من حذف ملف المريض (${p.name}) نهائياً من المركز؟`,
+      'حذف المريض'
+    );
+
+    if (confirmed) {
+      await db.deletePatient(patientId);
+      await db.logAudit('حذف مريض', `قام بحذف ملف المريض: ${p.name}`, auth.getCurrentUser());
+      await this.loadPatients();
+      this.app.switchView('patients');
+      this.app.showToast(`تم حذف ملف المريض (${p.name}) بنجاح`);
+    }
+  }
+
   openEditModal(patientId) {
     const p = this.patients.find(item => item.id === patientId);
     if (!p) return;
@@ -803,14 +826,36 @@ export class PatientsManager {
     const docEl = document.getElementById('sheet-patient-doctor');
     if (docEl) docEl.textContent = p.doctor;
 
-    const badgeEl = document.getElementById('sheet-patient-billing-badge');
+        const badgeEl = document.getElementById('sheet-patient-billing-badge');
     if (badgeEl) {
       if (p.billing === 'cash') {
         badgeEl.innerHTML = '<span class="badge badge-cash" style="font-size: 0.82rem; padding: 4px 12px; font-weight: 700; white-space: nowrap; display: inline-flex; align-items: center; gap: 5px;"><i class="fa-solid fa-money-bill-wave"></i> نقدي</span>';
+      } else if (p.contractType === 'direct') {
+        badgeEl.innerHTML = `<span class="badge badge-direct" style="font-size: 0.82rem; padding: 4px 12px; font-weight: 700; white-space: nowrap; display: inline-flex; align-items: center; gap: 5px;"><i class="fa-solid fa-file-contract"></i> ${p.insuranceCompany || 'تأمين'} (مباشر)</span>`;
       } else {
-        const cType = p.contractType === 'direct' ? 'مباشر' : 'غير مباشر';
-        badgeEl.innerHTML = `<span class="badge badge-direct" style="font-size: 0.82rem; padding: 4px 12px; font-weight: 700; white-space: nowrap; display: inline-flex; align-items: center; gap: 5px;"><i class="fa-solid fa-shield-halved"></i> ${escapeHTML(p.insuranceCompany || 'تأمين')} (${cType})</span>`;
+        badgeEl.innerHTML = `<span class="badge badge-indirect" style="font-size: 0.82rem; padding: 4px 12px; font-weight: 700; white-space: nowrap; display: inline-flex; align-items: center; gap: 5px;"><i class="fa-solid fa-handshake"></i> ${p.insuranceCompany || 'تأمين'} (غير مباشر)</span>`;
       }
+    }
+
+    // 1.1 Render 3 Quick Actions inside Patient Sheet (WhatsApp, Edit, Delete)
+    const actionsEl = document.getElementById('sheet-patient-quick-actions');
+    if (actionsEl) {
+      const cleanPhone = (p.phone || '').replace(/[^0-9]/g, '').replace(/^0/, '20');
+      const canDelete = RolesManager.canDelete(currentUser);
+
+      actionsEl.innerHTML = `
+        <a href="https://wa.me/${cleanPhone}" target="_blank" class="btn btn-outline btn-sm" style="color: #10b981; border-color: #10b981; border-radius: 8px; width: 34px; height: 34px; display: inline-flex; align-items: center; justify-content: center; font-size: 1.05rem;" title="محادثة واتساب مع المريض">
+          <i class="fa-brands fa-whatsapp"></i>
+        </a>
+        <button type="button" class="btn btn-outline btn-sm" onclick="patientsManager.openEditModalFromSheet('${p.id}')" style="border-radius: 8px; width: 34px; height: 34px; display: inline-flex; align-items: center; justify-content: center; font-size: 0.95rem; color: var(--primary); border-color: var(--border-color);" title="تعديل بيانات المريض">
+          <i class="fa-solid fa-pen-to-square"></i>
+        </button>
+        ${canDelete ? `
+          <button type="button" class="btn btn-outline btn-sm btn-delete-record" onclick="patientsManager.confirmDeleteFromSheet('${p.id}')" style="border-radius: 8px; width: 34px; height: 34px; display: inline-flex; align-items: center; justify-content: center; font-size: 0.95rem; color: var(--danger); border-color: #fca5a5;" title="حذف المريض">
+            <i class="fa-solid fa-trash"></i>
+          </button>
+        ` : ''}
+      `;
     }
 
     const updateEl = document.getElementById('sheet-last-update-text');
