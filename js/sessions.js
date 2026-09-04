@@ -339,19 +339,8 @@ export class SessionsManager {
     const docSelect = document.getElementById('session-doctor-select');
     if (docSelect) docSelect.value = patient.doctor;
 
-    // Auto-fill Billing & Insurance
-    const payRadios = document.querySelectorAll('input[name="session-pay-type"]');
-    payRadios.forEach(r => { r.checked = (r.value === patient.billing); });
-
-    const insFields = document.getElementById('session-insurance-fields');
-    if (patient.billing === 'insurance') {
-      insFields.style.display = 'block';
-      document.getElementById('session-insurance-name').value = patient.insuranceCompany || '';
-      const cRadios = document.querySelectorAll('input[name="session-contract-type"]');
-      cRadios.forEach(r => { r.checked = (r.value === (patient.contractType || 'direct')); });
-    } else {
-      insFields.style.display = 'none';
-    }
+    // 100% Automated Billing System from Patient Profile
+    this.updateBillingCard(patient);
 
     this.app.closeModal('modal-patient-picker');
   }
@@ -363,6 +352,8 @@ export class SessionsManager {
     const selectedBox = document.getElementById('selected-patient-box');
     if (trigger) trigger.style.display = 'flex';
     if (selectedBox) selectedBox.style.display = 'none';
+    this.updateBillingCard(null);
+    this.updateBillingCard(null);
   }
 
   async handleSaveSession(e) {
@@ -397,13 +388,9 @@ export class SessionsManager {
       return;
     }
 
-    const payType = document.querySelector('input[name="session-pay-type"]:checked')?.value || 'cash';
-    let insuranceName = '';
-    let contractType = '';
-    if (payType === 'insurance') {
-      insuranceName = document.getElementById('session-insurance-name').value.trim();
-      contractType = document.querySelector('input[name="session-contract-type"]:checked')?.value || 'direct';
-    }
+    const payType = document.getElementById('session-pay-type')?.value || 'cash';
+    const insuranceName = document.getElementById('session-insurance-name')?.value || '';
+    const contractType = document.getElementById('session-contract-type')?.value || 'direct';
 
     const amountPaid = parseFloat(document.getElementById('session-amount-paid').value) || 0;
     const notes = document.getElementById('session-notes').value.trim();
@@ -682,19 +669,8 @@ export class SessionsManager {
     });
     this.updateBodyPartsCount();
 
-    // 6. Payment
-    const payRadios = document.querySelectorAll('input[name="session-pay-type"]');
-    payRadios.forEach(r => { r.checked = (r.value === s.payType); });
-
-    const insFields = document.getElementById('session-insurance-fields');
-    if (s.payType === 'insurance') {
-      insFields.style.display = 'block';
-      document.getElementById('session-insurance-name').value = s.insuranceName || '';
-      const cRadios = document.querySelectorAll('input[name="session-contract-type"]');
-      cRadios.forEach(r => { r.checked = (r.value === (s.contractType || 'direct')); });
-    } else {
-      insFields.style.display = 'none';
-    }
+    // 6. Automated Payment Info
+    this.updateBillingCardFromSession(s);
 
     document.getElementById('session-amount-paid').value = s.amountPaid || 0;
     document.getElementById('session-notes').value = s.notes || '';
