@@ -2,7 +2,7 @@
 // Version: 1.3.0 (Cache: physioflow-demo-v11)
 // ========================================================
 
-const CACHE_NAME = 'physioflow-demo-v18';
+const CACHE_NAME = 'physioflow-demo-v19';
 
 const APP_SHELL_ASSETS = [
   './',

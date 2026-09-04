@@ -28,11 +28,27 @@ export class ExportManager {
   }
 
   async exportToExcel() {
-    const meta = this.financeManager.getDataForExport();
-    if (meta.mode === 'monthly') {
-      await this.exportMonthlyExcel(meta.month);
-    } else {
-      await this.exportDailyExcel(meta.date);
+    const btnExcel = document.getElementById('btn-export-excel');
+    try {
+      if (btnExcel) {
+        btnExcel.disabled = true;
+        btnExcel.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> <span>جاري التصدير...</span>';
+      }
+
+      const meta = this.financeManager.getDataForExport();
+      if (meta.mode === 'monthly') {
+        await this.exportMonthlyExcel(meta.month);
+      } else {
+        await this.exportDailyExcel(meta.date);
+      }
+    } catch (err) {
+      console.error('Export excel error:', err);
+      this.app.showAlert('حدث خطأ أثناء تصدير ملف الإكسيل: ' + err.message, 'خطأ');
+    } finally {
+      if (btnExcel) {
+        btnExcel.disabled = false;
+        btnExcel.innerHTML = '<i class="fa-solid fa-file-excel"></i> <span>تصدير Excel</span>';
+      }
     }
   }
 
@@ -234,12 +250,19 @@ export class ExportManager {
     const blob = new Blob([content], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
+    a.style.display = 'none';
     a.href = url;
     a.download = filename;
     document.body.appendChild(a);
     a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+
+    setTimeout(() => {
+      try {
+        if (document.body.contains(a)) document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      } catch (e) {}
+    }, 60000);
+
     this.app.showToast('تم تصدير الملف (Excel CSV) بنجاح');
   }
 
