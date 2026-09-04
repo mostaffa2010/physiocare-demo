@@ -649,7 +649,105 @@ class App {
     container.innerHTML = cellsHtml;
   }
 
-  bindGlobalTouchAndSelectionGuards() {
+  // ================= Custom Month Picker =================
+  openMonthPicker(targetInputId) {
+    this.monthPickerTargetInputId = targetInputId;
+    const input = document.getElementById(targetInputId);
+    let initDate = new Date();
+
+    if (input && input.value) {
+      const parts = input.value.split('-');
+      if (parts.length >= 2) {
+        initDate = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, 1);
+      }
+    }
+
+    this.monthPickerViewingYear = initDate.getFullYear();
+    this.monthPickerSelectedMonth = initDate.getMonth();
+    this.monthPickerSelectedYear = initDate.getFullYear();
+
+    this.renderMonthPicker();
+    this.openModal('modal-custom-month-picker');
+  }
+
+  monthPickerNavigateYear(direction) {
+    this.monthPickerViewingYear += direction;
+    this.renderMonthPicker();
+  }
+
+  monthPickerSelectMonth(m) {
+    this.monthPickerSelectedMonth = m;
+    this.monthPickerSelectedYear = this.monthPickerViewingYear;
+    this.renderMonthPicker();
+  }
+
+  monthPickerSelectQuick(type) {
+    const now = new Date();
+    if (type === 'current') {
+      this.monthPickerSelectedYear = now.getFullYear();
+      this.monthPickerSelectedMonth = now.getMonth();
+    } else if (type === 'last') {
+      now.setMonth(now.getMonth() - 1);
+      this.monthPickerSelectedYear = now.getFullYear();
+      this.monthPickerSelectedMonth = now.getMonth();
+    }
+    this.monthPickerViewingYear = this.monthPickerSelectedYear;
+    this.monthPickerConfirm();
+  }
+
+  monthPickerConfirm() {
+    if (this.monthPickerTargetInputId) {
+      const mm = String(this.monthPickerSelectedMonth + 1).padStart(2, '0');
+      const val = `${this.monthPickerSelectedYear}-${mm}`;
+      const input = document.getElementById(this.monthPickerTargetInputId);
+      if (input) {
+        input.value = val;
+        input.dispatchEvent(new Event('change', { bubbles: true }));
+      }
+    }
+    this.closeModal('modal-custom-month-picker');
+  }
+
+  renderMonthPicker() {
+    const monthNames = [
+      'يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو',
+      'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر'
+    ];
+
+    const yearEl = document.getElementById('month-picker-year');
+    if (yearEl) yearEl.textContent = this.monthPickerViewingYear;
+
+    const subEl = document.getElementById('month-picker-sub');
+    if (subEl) {
+      subEl.textContent = `${monthNames[this.monthPickerSelectedMonth]} ${this.monthPickerSelectedYear}`;
+    }
+
+    const container = document.getElementById('month-picker-months-container');
+    if (!container) return;
+
+    const now = new Date();
+    const curY = now.getFullYear();
+    const curM = now.getMonth();
+
+    container.innerHTML = monthNames.map((name, idx) => {
+      const isSelected = (idx === this.monthPickerSelectedMonth && this.monthPickerViewingYear === this.monthPickerSelectedYear);
+      const isCurrent = (idx === curM && this.monthPickerViewingYear === curY);
+
+      let cls = 'cal-month-cell';
+      if (isSelected) cls += ' selected';
+      if (isCurrent) cls += ' current-month';
+
+      const numStr = String(idx + 1).padStart(2, '0');
+      return `
+        <button type="button" class="${cls}" onclick="app.monthPickerSelectMonth(${idx})">
+          <div style="font-size: 0.95rem;">${name}</div>
+          <div style="font-size: 0.72rem; opacity: 0.75;">(${numStr})</div>
+        </button>
+      `;
+    }).join('');
+  }
+
+    bindGlobalTouchAndSelectionGuards() {
     // Disable text selection and contextmenu toolbar on non-input elements
     window.addEventListener('selectstart', (e) => {
       const tag = e.target.tagName;

@@ -766,7 +766,10 @@
           <div id="filter-group-monthly" style="display: none; gap: 12px; flex-wrap: wrap; align-items: center;">
             <div style="display: flex; align-items: center; gap: 8px;">
               <label style="font-size: 0.85rem; font-weight: bold;">شهر التقرير:</label>
-              <input type="month" id="finance-month-picker" class="form-control" style="width: auto;">
+              <div style="position: relative; display: inline-block;">
+                <input type="text" id="finance-month-picker" readonly class="form-control date-picker-clickable" style="width: 145px; font-weight: 700;" onclick="app.openMonthPicker('finance-month-picker')" placeholder="اختر الشهر...">
+                <i class="fa-solid fa-calendar-days" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--primary); pointer-events: none;"></i>
+              </div>
             </div>
             <span style="font-size: 0.8rem; color: var(--text-muted);">
               (تقرير شامل لإحصائيات الشهر، أداء الأطباء، وجهات التأمين بدون أسماء تفصيلية)
@@ -1942,6 +1945,48 @@
           <i class="fa-solid fa-info-circle"></i> مرتبة تنازلياً من أحدث جلسة إلى الأقدم
         </span>
         <button type="button" class="btn btn-outline btn-sm" onclick="app.closeModal('modal-patient-sessions-history')">إغلاق</button>
+      </div>
+    </div>
+  </div>
+
+    <!-- Modal: Custom Month Picker (النتيجة الشهرية بهوية التطبيق) -->
+  <div class="modal-backdrop" id="modal-custom-month-picker" style="z-index: 220;">
+    <div class="modal-content" style="max-width: 360px; border-radius: 10px; overflow: hidden; padding: 0;">
+      <!-- Header -->
+      <div class="custom-calendar-header">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <button type="button" class="cal-nav-btn" onclick="app.monthPickerNavigateYear(-1)" title="السنة السابقة">
+            <i class="fa-solid fa-chevron-right"></i>
+          </button>
+          <div style="text-align: center;">
+            <h3 id="month-picker-year" style="font-size: 1.25rem; font-weight: 800; color: var(--primary); margin: 0;">2026</h3>
+            <span id="month-picker-sub" style="font-size: 0.8rem; color: var(--text-muted); font-weight: 600;">سبتمبر 2026</span>
+          </div>
+          <button type="button" class="cal-nav-btn" onclick="app.monthPickerNavigateYear(1)" title="السنة التالية">
+            <i class="fa-solid fa-chevron-left"></i>
+          </button>
+        </div>
+
+        <!-- Quick Jump Buttons -->
+        <div style="display: flex; justify-content: center; gap: 8px; margin-top: 10px;">
+          <button type="button" class="btn btn-outline btn-sm cal-quick-btn" onclick="app.monthPickerSelectQuick('current')">هذا الشهر</button>
+          <button type="button" class="btn btn-outline btn-sm cal-quick-btn" onclick="app.monthPickerSelectQuick('last')">الشهر الماضي</button>
+        </div>
+      </div>
+
+      <!-- Month Grid -->
+      <div style="padding: 12px 14px;">
+        <div class="cal-months-grid" id="month-picker-months-container">
+          <!-- Populated dynamically -->
+        </div>
+      </div>
+
+      <!-- Footer Actions -->
+      <div class="modal-footer" style="padding: 10px 14px; background-color: var(--bg-subtle); display: flex; justify-content: space-between; align-items: center;">
+        <button type="button" class="btn btn-outline btn-sm" onclick="app.closeModal('modal-custom-month-picker')">إلغاء</button>
+        <button type="button" class="btn btn-primary btn-sm" onclick="app.monthPickerConfirm()">
+          <i class="fa-solid fa-check"></i> اختيار هذا الشهر
+        </button>
       </div>
     </div>
   </div>
