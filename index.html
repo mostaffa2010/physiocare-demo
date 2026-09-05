@@ -1822,10 +1822,27 @@
         <div class="form-group" style="margin-bottom: 12px;">
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
             <label style="font-weight: 800; margin: 0;">Plan of P.T. Treatment (أزرار خطة العلاج الطبيعي):</label>
-            <button type="button" class="btn btn-outline btn-sm admin-only" id="btn-card-add-treatment" style="padding: 2px 8px; font-size: 0.72rem; border-color: var(--primary); color: var(--primary); font-weight: 700;">
+            <button type="button" class="btn btn-outline btn-sm" id="btn-card-add-treatment" style="padding: 3px 10px; font-size: 0.75rem; border-color: var(--primary); color: var(--primary); font-weight: 700;">
               <i class="fa-solid fa-plus"></i> إضافة وسيلة
             </button>
           </div>
+
+          <!-- Inline New Treatment Input Row -->
+          <div id="card-add-treatment-row" style="display: none; margin-bottom: 10px; background: #f0f9ff; border: 1.5px dashed #0284c7; border-radius: 8px; padding: 10px 12px;">
+            <div style="font-size: 0.8rem; font-weight: 800; color: #0284c7; margin-bottom: 6px;">
+              <i class="fa-solid fa-circle-plus"></i> إضافة وسيلة علاج طبيعي جديدة للخطة:
+            </div>
+            <div style="display: flex; gap: 6px;">
+              <input type="text" id="card-new-treatment-input" class="form-control" style="font-size: 0.85rem; padding: 6px 10px; font-weight: 700;" placeholder="اسم الوسيلة (مثلاً: Shortwave Diathermy أو الشد الفقري)...">
+              <button type="button" class="btn btn-primary btn-sm" id="btn-card-confirm-add-treatment" style="white-space: nowrap; font-size: 0.78rem; padding: 6px 14px; font-weight: 700;">
+                <i class="fa-solid fa-check"></i> إضافة
+              </button>
+              <button type="button" class="btn btn-outline btn-sm" id="btn-card-cancel-add-treatment" style="white-space: nowrap; font-size: 0.78rem; padding: 6px 10px;">
+                إلغاء
+              </button>
+            </div>
+          </div>
+
           <div class="body-parts-chips" id="card-treatment-chips-container" style="gap: 5px; margin-bottom: 8px;">
             <!-- Populated dynamically -->
           </div>

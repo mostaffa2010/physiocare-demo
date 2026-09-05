@@ -1278,3 +1278,28 @@ input, textarea, [contenteditable="true"] {
   user-select: text !important;
   -webkit-touch-callout: default !important;
 }
+
+/* Attendance Card Custom Treatment Chips */
+.card-treatment-chip {
+  position: relative !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+}
+
+.card-chip-delete {
+  margin-right: 4px;
+  color: #ef4444;
+  font-size: 1.1rem;
+  line-height: 1;
+  cursor: pointer;
+  font-weight: 900;
+  padding: 0 4px;
+  border-radius: 50%;
+  transition: transform 0.15s, color 0.15s;
+}
+
+.card-chip-delete:hover {
+  color: #dc2626;
+  transform: scale(1.3);
+}

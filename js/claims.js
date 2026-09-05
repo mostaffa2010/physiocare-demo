@@ -133,7 +133,35 @@ export class ClaimsManager {
     document.getElementById('claim-patient-search-input')?.addEventListener('input', (e) => this.onSearchInput(e.target.value));
 
     // Modal attendance card buttons
-    document.getElementById('btn-card-add-treatment')?.addEventListener('click', () => this.promptAddNewTreatment());
+    document.getElementById('btn-card-add-treatment')?.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      this.promptAddNewTreatment();
+    });
+    document.getElementById('btn-card-confirm-add-treatment')?.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      const input = document.getElementById('card-new-treatment-input');
+      if (input && input.value.trim()) {
+        this.addNewTreatmentOption(input.value.trim());
+      }
+    });
+    document.getElementById('card-new-treatment-input')?.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        e.stopPropagation();
+        const input = document.getElementById('card-new-treatment-input');
+        if (input && input.value.trim()) {
+          this.addNewTreatmentOption(input.value.trim());
+        }
+      }
+    });
+    document.getElementById('btn-card-cancel-add-treatment')?.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      const row = document.getElementById('card-add-treatment-row');
+      if (row) row.style.display = 'none';
+    });
     const bCurCard = document.getElementById('btn-card-print-current'); if (bCurCard) bCurCard.onclick = (e) => { e.preventDefault(); e.stopPropagation(); this.printAttendanceCards(this.activeCardPatientId); };
     document.getElementById('btn-card-save')?.addEventListener('click', () => this.saveAttendanceCardData());
 
@@ -165,6 +193,15 @@ export class ClaimsManager {
     const treatContainer = document.getElementById('card-treatment-chips-container');
     if (treatContainer) {
       treatContainer.addEventListener('click', (e) => {
+        const delBtn = e.target.closest('.card-chip-delete');
+        if (delBtn) {
+          e.preventDefault();
+          e.stopPropagation();
+          const treatName = delBtn.getAttribute('data-del-treatment');
+          if (treatName) this.removeCustomTreatment(treatName);
+          return;
+        }
+
         const chip = e.target.closest('.card-treatment-chip');
         if (chip) {
           chip.classList.toggle('selected');
@@ -421,19 +458,105 @@ export class ClaimsManager {
     const container = document.getElementById('card-treatment-chips-container');
     if (!container) return;
 
-    const customStored = JSON.parse(localStorage.getItem('pc_claim_treatments') || '[]');
+    let customStored = [];
+    try {
+      customStored = JSON.parse(localStorage.getItem('pc_claim_treatments') || '[]');
+    } catch (e) {
+      customStored = [];
+    }
     const allOptions = Array.from(new Set([...this.defaultTreatmentOptions, ...customStored]));
 
     container.innerHTML = allOptions.map(opt => {
       const isSelected = selectedTreatments.includes(opt);
+      const isCustom = !this.defaultTreatmentOptions.includes(opt);
       return `
         <button type="button" class="chip-choice sheet-chip card-treatment-chip ${isSelected ? 'selected' : ''}" data-val="${opt}">
-          <i class="fa-solid fa-bolt"></i> ${opt}
+          <i class="fa-solid fa-bolt"></i> <span>${opt}</span>
+          ${isCustom ? `<span class="card-chip-delete" data-del-treatment="${opt}" title="حذف">&times;</span>` : ''}
         </button>
       `;
     }).join('');
 
     this.updateCardLivePreview();
+  }
+
+  promptAddNewTreatment() {
+    const row = document.getElementById('card-add-treatment-row');
+    const input = document.getElementById('card-new-treatment-input');
+    if (row) {
+      if (row.style.display === 'none' || !row.style.display) {
+        row.style.display = 'block';
+        if (input) {
+          input.value = '';
+          input.focus();
+        }
+      } else {
+        row.style.display = 'none';
+      }
+      return;
+    }
+
+    const name = window.prompt('اكتب اسم وسيلة العلاج الطبيعي الجديدة (مثلاً: Shortwave Diathermy):');
+    if (name && name.trim()) {
+      this.addNewTreatmentOption(name.trim());
+    }
+  }
+
+  addNewTreatmentOption(name) {
+    if (!name) return;
+    const cleanName = name.trim();
+    if (!cleanName) return;
+
+    let customStored = [];
+    try {
+      customStored = JSON.parse(localStorage.getItem('pc_claim_treatments') || '[]');
+    } catch (e) {
+      customStored = [];
+    }
+
+    if (!this.defaultTreatmentOptions.includes(cleanName) && !customStored.includes(cleanName)) {
+      customStored.push(cleanName);
+      localStorage.setItem('pc_claim_treatments', JSON.stringify(customStored));
+    }
+
+    const currentlySelected = Array.from(document.querySelectorAll('#card-treatment-chips-container .sheet-chip.selected'))
+      .map(b => b.getAttribute('data-val'));
+    
+    if (!currentlySelected.includes(cleanName)) {
+      currentlySelected.push(cleanName);
+    }
+
+    this.renderCardTreatmentChips(currentlySelected);
+
+    if (this.app && this.app.showToast) {
+      this.app.showToast(`تمت إضافة وسيلة "${cleanName}" لخطة العلاج بنجاح`);
+    }
+
+    const row = document.getElementById('card-add-treatment-row');
+    if (row) row.style.display = 'none';
+  }
+
+  removeCustomTreatment(name) {
+    if (!name) return;
+    let customStored = [];
+    try {
+      customStored = JSON.parse(localStorage.getItem('pc_claim_treatments') || '[]');
+    } catch (e) {
+      customStored = [];
+    }
+
+    customStored = customStored.filter(item => item !== name);
+    localStorage.setItem('pc_claim_treatments', JSON.stringify(customStored));
+
+    const currentlySelected = Array.from(document.querySelectorAll('#card-treatment-chips-container .sheet-chip.selected'))
+      .map(b => b.getAttribute('data-val'))
+      .filter(item => item !== name);
+
+    this.renderCardTreatmentChips(currentlySelected);
+
+    if (this.app && this.app.showToast) {
+      this.app.showToast(`تم حذف وسيلة "${name}"`);
+    }
   }
 
   updateCardLivePreview() {
