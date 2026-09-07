@@ -1,5 +1,6 @@
+import { escapeHTML, getLocalDateStr } from './utils.js';
 // ========================================================
-// PhysioFlow Demo - Doctor Personal Clinical Dashboard
+// ASCPT - Doctor Personal Clinical Dashboard
 // ========================================================
 
 import { db } from './db.js';
@@ -38,41 +39,53 @@ export class DoctorDashboardManager {
     const docName = user.name;
     const subEl = document.getElementById('doctor-dashboard-sub');
     if (subEl) {
-      subEl.innerHTML = `مرحباً بك يا <strong>${docName}</strong> • متابعة حالاتك الطبية وجلساتك السريرية`;
+      subEl.innerHTML = `مرحباً بك يا <strong>${escapeHTML(docName)}</strong> • متابعة حالاتك الطبية وجلساتك السريرية`;
     }
 
     const allSessions = await db.getSessions();
     const allPatients = await db.getPatients();
 
-    // Filter sessions matching this doctor
-    this.docSessions = allSessions.filter(s => 
-      s.doctor && (s.doctor.includes(docName) || docName.includes(s.doctor))
-    );
+    const docUid = user.uid || user.id;
 
-    // Filter patients assigned to this doctor
-    this.docPatients = allPatients.filter(p => 
-      p.doctor && (p.doctor.includes(docName) || docName.includes(p.doctor))
-    );
+    if (this.app?.appointmentsManager) {
+      this.app.appointmentsManager.renderForDoctor(docUid).catch((e) => console.warn('appointments schedule notice:', e));
+    }
 
-    const todayStr = new Date().toISOString().split('T')[0];
+    // Filter sessions matching this doctor by UID exclusively (with fallback for legacy records)
+    this.docSessions = allSessions.filter(s => {
+      if (s.doctorUid) return s.doctorUid === docUid;
+      return s.doctor && (s.doctor.includes(docName) || docName.includes(s.doctor));
+    });
+
+    // Filter patients assigned to this doctor by UID exclusively (with fallback for legacy records)
+    this.docPatients = allPatients.filter(p => {
+      if (p.doctorUid) return p.doctorUid === docUid;
+      return p.doctor && (p.doctor.includes(docName) || docName.includes(p.doctor));
+    });
+
+    const todayStr = getLocalDateStr();
     const currentMonth = todayStr.substring(0, 7);
 
     // 1. Today's sessions for this doctor
     const todaySessions = this.docSessions.filter(s => s.date === todayStr);
     const todayCountEl = document.getElementById('stat-doc-today-count');
     if (todayCountEl) {
-      todayCountEl.textContent = `${todaySessions.length} ${todaySessions.length === 1 ? 'حالة' : (todaySessions.length <= 10 ? 'حالات' : 'حالة')}`;
+      const todayCredited = todaySessions.reduce((acc, s) => {
+        if (s.entryType === 'examination') return acc + 1;
+        return acc + (s.bodyPartsCount || 1);
+      }, 0);
+      todayCountEl.textContent = `${todaySessions.length} مريض - ${todayCredited} جلسة`;
     }
 
     // 2. This month's sessions
-    let monthSessions = this.docSessions.filter(s => s.date && s.date.startsWith(currentMonth));
-    if (monthSessions.length === 0) {
-      // Fallback to latest active month in demo data (August 2026)
-      monthSessions = this.docSessions.filter(s => s.date && s.date.startsWith('2026-08'));
-    }
+    const monthSessions = this.docSessions.filter(s => s.date && s.date.startsWith(currentMonth));
     const monthCountEl = document.getElementById('stat-doc-month-count');
     if (monthCountEl) {
-      monthCountEl.textContent = `${monthSessions.length} حالة`;
+      const monthCredited = monthSessions.reduce((acc, s) => {
+        if (s.entryType === 'examination') return acc + 1;
+        return acc + (s.bodyPartsCount || 1);
+      }, 0);
+      monthCountEl.textContent = `${monthSessions.length} مريض - ${monthCredited} جلسة`;
     }
 
     // 3. Lifetime patients treated by this doctor
@@ -102,7 +115,7 @@ export class DoctorDashboardManager {
     const tbody = document.getElementById('doctor-personal-tbody');
     if (!tbody) return;
 
-    const todayStr = new Date().toISOString().split('T')[0];
+    const todayStr = getLocalDateStr();
     const currentMonth = todayStr.substring(0, 7);
 
     let displayList = [];
@@ -134,31 +147,40 @@ export class DoctorDashboardManager {
       if (s.payType === 'cash') {
         billingBadge = `<span class="badge badge-cash"><i class="fa-solid fa-money-bill"></i> نقدي</span>`;
       } else if (s.contractType === 'direct') {
-        billingBadge = `<span class="badge badge-direct"><i class="fa-solid fa-file-contract"></i> ${s.insuranceName || 'شركة'} (مباشر)</span>`;
+        billingBadge = `<span class="badge badge-direct"><i class="fa-solid fa-file-contract"></i> ${escapeHTML(s.insuranceName || 'شركة')} (مباشر)</span>`;
       } else {
-        billingBadge = `<span class="badge badge-indirect"><i class="fa-solid fa-handshake"></i> ${s.insuranceName || 'شركة'} (غير مباشر)</span>`;
+        billingBadge = `<span class="badge badge-indirect"><i class="fa-solid fa-handshake"></i> ${escapeHTML(s.insuranceName || 'شركة')} (غير مباشر)</span>`;
       }
 
-      const parts = Array.isArray(s.bodyParts) ? s.bodyParts.join('، ') : (s.bodyParts || '-');
+      const isExam = (s.entryType === 'examination');
+      let partsDisplay = '';
+      if (isExam) {
+        partsDisplay = `<span class="badge" style="background: #f8fafc; color: #0284c7; border: 1px solid #bae6fd; font-weight: 800; font-size: 0.76rem; padding: 3px 8px;"><i class="fa-solid fa-stethoscope"></i> فحص سريري / كشف</span>`;
+      } else {
+        const parts = Array.isArray(s.bodyParts) ? s.bodyParts.join('، ') : (s.bodyParts || '-');
+        partsDisplay = escapeHTML(parts);
+      }
+
       const timeDisplay = s.recordedAt || '';
       const dateDisplay = s.date || '';
+      const safePatientId = escapeHTML(s.patientId || '');
 
       return `
         <tr>
-          <td style="font-weight: 800; color: #0f172a; cursor: pointer;" onclick="patientsManager.openPatientSheet('${s.patientId}')" title="اضغط لفتح الشيت الطبي">
+          <td style="font-weight: 800; color: #0f172a; cursor: pointer;" onclick="patientsManager.openPatientSheet('${safePatientId}')" title="اضغط لفتح الشيت الطبي">
             <i class="fa-solid fa-user-injured" style="color: var(--primary); margin-left: 6px;"></i>
-            ${s.patientName}
+            ${escapeHTML(s.patientName)}
           </td>
           <td>${billingBadge}</td>
-          <td style="font-size: 0.85rem; color: #334155;">${parts}</td>
+          <td style="font-size: 0.85rem; color: #334155;">${partsDisplay}</td>
           <td style="font-size: 0.85rem; color: var(--text-muted); white-space: nowrap;">
-            <bdi dir="ltr">${dateDisplay}</bdi> ${timeDisplay ? `• ${timeDisplay}` : ''}
+            <bdi dir="ltr">${escapeHTML(dateDisplay)}</bdi> ${timeDisplay ? `• ${escapeHTML(timeDisplay)}` : ''}
           </td>
           <td style="font-size: 0.82rem; color: var(--text-muted); max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
-            ${s.notes || '-'}
+            ${escapeHTML(s.notes || '-')}
           </td>
           <td style="text-align: center;">
-            <button type="button" class="btn btn-primary btn-sm" onclick="patientsManager.openPatientSheet('${s.patientId}')" style="padding: 4px 10px; font-weight: 700; white-space: nowrap;">
+            <button type="button" class="btn btn-primary btn-sm" onclick="patientsManager.openPatientSheet('${safePatientId}')" style="padding: 4px 10px; font-weight: 700; white-space: nowrap;">
               <i class="fa-solid fa-file-waveform"></i> الشيت الطبي
             </button>
           </td>

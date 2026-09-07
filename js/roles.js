@@ -33,7 +33,7 @@ export class RolesManager {
     navItems.forEach(item => {
       const view = item.getAttribute('data-view');
       if (role === ROLES.DOCTOR) {
-        item.style.setProperty('display', (view === 'dashboard' || view === 'patients') ? 'flex' : 'none', 'important');
+        item.style.setProperty('display', (view === 'dashboard' || view === 'patients' || view === 'appointments') ? 'flex' : 'none', 'important');
       } else if (role === ROLES.RECEPTIONIST) {
         // السكرتارية ترى الرئيسية، المرضى، الجلسات، الحسابات (وتُحجب لوحة المدير فقط)
         item.style.setProperty('display', view === 'admin' ? 'none' : 'flex', 'important');
@@ -60,7 +60,7 @@ export class RolesManager {
 
     // 3. حماية التنقل: توجيه الطبيب للرئيسية إذا كان يقف على شاشة محجوبة (الحسابات/الجلسات/المدير)
     if (role === ROLES.DOCTOR && window.app) {
-      const allowedViews = ['dashboard', 'patients', 'patient-sheet'];
+      const allowedViews = ['dashboard', 'patients', 'patient-sheet', 'appointments'];
       if (!allowedViews.includes(window.app.currentView)) {
         window.app.switchView('dashboard');
       }

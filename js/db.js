@@ -63,8 +63,12 @@ class DemoDatabaseService {
     localStorage.removeItem('pc_sb_opt_procedure');
     localStorage.removeItem('pc_sb_opt_exercise');
 
-    // 4. إعادة ضبط بنود المطالبات المخصصة
+    // 4. إعادة ضبط بنود المطالبات المخصصة والمواعيد والخطابات
     localStorage.removeItem('pc_claim_treatments');
+    localStorage.removeItem('pc_demo_appointments');
+    localStorage.removeItem('pc_sb_appts');
+    localStorage.removeItem('pc_demo_insurance_letters');
+    localStorage.removeItem('pc_sb_letters');
 
     // 5. إعادة ضبط الحساب التجريبي النشط إلى مدير المركز
     if (DEMO_USERS && DEMO_USERS.length > 0) {
@@ -376,6 +380,61 @@ class DemoDatabaseService {
     const key = (this.isTraining ? 'pc_sb_ins_' : 'pc_ins_') + contractType;
     localStorage.setItem(key, JSON.stringify(list));
     return list;
+  }
+
+  getInsuranceCompaniesList() {
+    return this.getAllInsuranceCompaniesWithTypes();
+  }
+
+  // ================= Appointments Schedule (LocalStorage Demo) =================
+  async getAppointments() {
+    const key = (this.isTraining ? 'pc_sb_appts' : 'pc_demo_appointments');
+    const raw = localStorage.getItem(key);
+    if (raw) return JSON.parse(raw);
+    const initial = [
+      { id: 'appt-1', doctorUid: 'u-demo-admin', doctorName: 'د. مصطفى محمود', timeSlot: '15:30', patientId: 'p-1', patientName: 'أحمد إبراهيم الشناوي', patientPhone: '01012345678', bookedBy: 'استقبال العرض' },
+      { id: 'appt-2', doctorUid: 'u-demo-doctor', doctorName: 'د. أحمد خليل', timeSlot: '16:30', patientId: 'p-2', patientName: 'مريم السيد البدوي', patientPhone: '01123456789', bookedBy: 'استقبال العرض' }
+    ];
+    localStorage.setItem(key, JSON.stringify(initial));
+    return initial;
+  }
+
+  async addAppointment(apptData) {
+    const appts = await this.getAppointments();
+    const id = 'appt-' + Date.now();
+    const newAppt = { ...apptData, id };
+    appts.push(newAppt);
+    const key = (this.isTraining ? 'pc_sb_appts' : 'pc_demo_appointments');
+    localStorage.setItem(key, JSON.stringify(appts));
+    return newAppt;
+  }
+
+  async deleteAppointment(apptId) {
+    let appts = await this.getAppointments();
+    appts = appts.filter(a => a.id !== apptId);
+    const key = (this.isTraining ? 'pc_sb_appts' : 'pc_demo_appointments');
+    localStorage.setItem(key, JSON.stringify(appts));
+    return true;
+  }
+
+  // ================= Insurance Renewal Letters (LocalStorage Demo) =================
+  async addInsuranceLetter(letterData) {
+    const key = (this.isTraining ? 'pc_sb_letters' : 'pc_demo_insurance_letters');
+    const raw = localStorage.getItem(key);
+    const letters = raw ? JSON.parse(raw) : [];
+    const id = 'letter-' + Date.now();
+    const item = { ...letterData, id, createdAt: new Date().toISOString() };
+    letters.push(item);
+    localStorage.setItem(key, JSON.stringify(letters));
+    return item;
+  }
+
+  async getInsuranceLetters(patientId = null) {
+    const key = (this.isTraining ? 'pc_sb_letters' : 'pc_demo_insurance_letters');
+    const raw = localStorage.getItem(key);
+    const letters = raw ? JSON.parse(raw) : [];
+    if (!patientId) return letters;
+    return letters.filter(l => l.patientId === patientId);
   }
 
 }
