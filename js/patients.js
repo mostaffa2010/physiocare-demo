@@ -67,7 +67,7 @@ export class PatientsManager {
     ['p-ins-direct-container', 'p-ins-indirect-container'].forEach(id => {
       const container = document.getElementById(id);
       if (container) {
-        container.addEventListener('click', async (e) => {
+        container.addEventListener('click', (e) => {
           const delTag = e.target.closest('[data-action="delete-insurance"]');
           if (delTag) {
             e.stopPropagation();
@@ -77,14 +77,7 @@ export class PatientsManager {
           const addBtn = e.target.closest('[data-action="add-insurance"]');
           if (addBtn) {
             e.stopPropagation();
-            const contract = addBtn.dataset.contract || this.currentContractType || 'direct';
-            const name = prompt(`اكتب اسم شركة التأمين الجديدة (${contract === 'direct' ? 'تعاقد مباشر' : 'تعاقد غير مباشر'}):`);
-            if (name && name.trim()) {
-              await db.addInsuranceCompany(contract, name.trim());
-              this.renderAllInsuranceChips();
-              this.selectInsuranceCompany(contract, name.trim());
-              this.app.showToast(`تمت إضافة شركة "${name.trim()}" بنجاح`);
-            }
+            this.app.sessionsManager.openAddInsuranceModal(addBtn.dataset.contract, addBtn.dataset.source || 'patient');
             return;
           }
           const chip = e.target.closest('[data-action="select-insurance"]');
@@ -117,12 +110,6 @@ export class PatientsManager {
       };
     }
 
-    document.getElementById('btn-print-insurance-letter')?.addEventListener('click', () => this.openInsuranceLetterModal());
-    document.getElementById('form-insurance-letter')?.addEventListener('submit', (e) => {
-      e.preventDefault();
-      this.submitInsuranceLetter();
-    });
-
     // Patient Sheet Form Submit
     const formSheet = document.getElementById('form-patient-sheet');
     if (formSheet) {
@@ -133,41 +120,6 @@ export class PatientsManager {
     document.getElementById('btn-toggle-chips-modality')?.addEventListener('click', () => this.toggleChipsEditMode('modality'));
     document.getElementById('btn-toggle-chips-procedure')?.addEventListener('click', () => this.toggleChipsEditMode('procedure'));
     document.getElementById('btn-toggle-chips-exercise')?.addEventListener('click', () => this.toggleChipsEditMode('exercise'));
-
-    // Event Delegation: Clinical Sheet Chips Containers (Modality, Procedure, Exercise)
-    [
-      { id: 'sheet-modalities-container', cat: 'modality' },
-      { id: 'sheet-procedures-container', cat: 'procedure' },
-      { id: 'sheet-exercises-container', cat: 'exercise' }
-    ].forEach(({ id, cat }) => {
-      const container = document.getElementById(id);
-      if (container) {
-        container.addEventListener('click', async (e) => {
-          const delTag = e.target.closest('[data-action="delete-option"]');
-          if (delTag) {
-            e.preventDefault();
-            e.stopPropagation();
-            const optName = delTag.dataset.option || delTag.closest('.chip-choice')?.getAttribute('data-val');
-            await this.deleteOptionDirect(delTag.dataset.category || cat, optName);
-            return;
-          }
-
-          const addBtn = e.target.closest('[data-action="add-option"]');
-          if (addBtn) {
-            e.preventDefault();
-            e.stopPropagation();
-            this.openAddOptionModal(addBtn.dataset.category || cat);
-            return;
-          }
-
-          const chip = e.target.closest('.chip-choice');
-          if (chip && !this.chipsEditMode[cat]) {
-            e.preventDefault();
-            chip.classList.toggle('selected');
-          }
-        });
-      }
-    });
 
     // Real-time phone input digits filter
     const phoneInp = document.getElementById('p-phone');
@@ -211,12 +163,6 @@ export class PatientsManager {
           if (pid) this.confirmDelete(pid);
           return;
         }
-        const insLetterBtn = e.target.closest('.btn-insurance-letter-row');
-        if (insLetterBtn) {
-          const pid = insLetterBtn.getAttribute('data-patient-id');
-          if (pid) this.openInsuranceLetterModalForPatient(pid);
-          return;
-        }
       });
     }
   }
@@ -224,6 +170,7 @@ export class PatientsManager {
   async loadPatients() {
     this.patients = await db.getPatients();
     this.renderPatients();
+    this.populateSessionsDropdown();
   }
 
   // ================= Smart Arabic Search & Relevance Ranking =================
@@ -389,11 +336,6 @@ export class PatientsManager {
               <a href="https://wa.me/${cleanWaPhone}" target="_blank" class="btn btn-outline btn-sm" style="color: #10b981; border-color: #10b981;" title="محادثة واتساب">
                 <i class="fa-brands fa-whatsapp"></i>
               </a>
-              ${!isDoctor && p.billing !== 'cash' ? `
-                <button type="button" class="btn btn-outline btn-sm btn-insurance-letter-row" style="color: #0284c7; border-color: #0284c7;" data-patient-id="${safeId}" title="طباعة خطاب تجديد تأمين">
-                  <i class="fa-solid fa-file-shield"></i>
-                </button>
-              ` : ''}
               ${!isDoctor ? `
                 <button type="button" class="btn btn-outline btn-sm btn-edit-patient" data-patient-id="${safeId}" title="تعديل بيانات المريض">
                   <i class="fa-solid fa-pen-to-square"></i>
@@ -427,7 +369,7 @@ export class PatientsManager {
     const icon = contractType === 'direct' ? 'fa-solid fa-file-contract' : 'fa-solid fa-handshake';
 
     let html = companies.map(comp => {
-      const isSelected = (comp === selectedCompany);
+      const isSelected = comp === selectedCompany;
       const safeComp = comp.replace(/'/g, "\\'");
       const editClass = isEdit ? 'in-edit-mode' : '';
       const deleteIconHtml = isEdit
@@ -435,10 +377,8 @@ export class PatientsManager {
         : '';
 
       return `
-        <button type="button" class="insurance-company-card ${isSelected ? 'selected' : ''} ${editClass}" data-action="select-insurance" data-contract="${contractType}" data-company="${safeComp}">
-          <span class="ins-icon-wrap"><i class="${icon}"></i></span>
-          <span style="flex: 1; text-align: right; line-height: 1.25;">${comp}</span>
-          ${isSelected ? '<i class="fa-solid fa-check ins-check-icon"></i>' : ''}
+        <button type="button" class="chip-choice sheet-chip chip-${contractType} ${isSelected ? 'selected' : ''} ${editClass}" data-action="select-insurance" data-contract="${contractType}" data-company="${safeComp}">
+          <i class="${icon}"></i> <span>${comp}</span>
           ${deleteIconHtml}
         </button>
       `;
@@ -446,7 +386,7 @@ export class PatientsManager {
 
     if (isEdit) {
       html += `
-        <button type="button" class="chip-add-new-btn" data-action="add-insurance" data-contract="${contractType}" data-source="patient" style="grid-column: 1 / -1;">
+        <button type="button" class="chip-add-new-btn" data-action="add-insurance" data-contract="${contractType}" data-source="patient">
           <i class="fa-solid fa-plus"></i> <span>إضافة شركة جديدة</span>
         </button>
       `;
@@ -464,19 +404,9 @@ export class PatientsManager {
     const preview = document.getElementById('p-selected-ins-preview');
     if (preview) preview.textContent = `المختارة: ${compName}`;
 
-    document.querySelectorAll('#p-ins-direct-container .insurance-company-card, #p-ins-indirect-container .insurance-company-card').forEach(btn => {
-      const isMatch = (btn.getAttribute('data-company') === compName);
+    document.querySelectorAll('#p-ins-direct-container .sheet-chip, #p-ins-indirect-container .sheet-chip').forEach(btn => {
+      const isMatch = btn.textContent.trim().includes(compName);
       btn.classList.toggle('selected', isMatch);
-      let check = btn.querySelector('.ins-check-icon');
-      if (isMatch) {
-        if (!check) {
-          const checkIcon = document.createElement('i');
-          checkIcon.className = 'fa-solid fa-check ins-check-icon';
-          btn.appendChild(checkIcon);
-        }
-      } else {
-        if (check) check.remove();
-      }
     });
   }
 
@@ -487,19 +417,19 @@ export class PatientsManager {
 
     if (directCont && indirectCont) {
       if (contractType === 'direct') {
-        directCont.style.display = 'grid';
+        directCont.style.display = 'flex';
         indirectCont.style.display = 'none';
       } else {
         directCont.style.display = 'none';
-        indirectCont.style.display = 'grid';
+        indirectCont.style.display = 'flex';
       }
     }
   }
 
   toggleInsuranceEditMode() {
     const user = auth.getCurrentUser();
-    if (!user || user.role === 'doctor') {
-      this.app.showAlert('تعديل وحذف شركات التأمين متاح للإدارة والاستقبال فقط.', 'تنبيه');
+    if (!RolesManager.canManageUsers(user)) {
+      this.app.showAlert('تعديل وحذف شركات التأمين متاح لمدير المركز فقط.', 'صلاحية المدير');
       return;
     }
 
@@ -521,17 +451,20 @@ export class PatientsManager {
   }
 
   async deleteInsuranceDirect(contractType, compName) {
-    const user = auth.getCurrentUser();
-    if (!user || user.role === 'doctor') return;
-
-    const confirmed = await this.app.showConfirm(`هل أنت متأكد من حذف شركة "${compName}" نهائياً؟`, 'حذف شركة تأمين');
-    if (confirmed) {
-      await db.deleteInsuranceCompany(contractType, compName);
-      this.renderAllInsuranceChips();
-      this.app.showToast(`تم حذف شركة "${compName}" بنجاح`);
-    }
+    await this.app.sessionsManager.deleteInsuranceDirect(contractType, compName);
   }
 
+
+  populateSessionsDropdown() {
+    const select = document.getElementById('session-patient-select');
+    if (!select) return;
+
+    select.innerHTML = '<option value="">-- اختر المريض من السجل --</option>' + 
+      this.patients.map(p => {
+        const info = p.billing === 'cash' ? 'نقدي' : `تأمين: ${escapeHTML(p.insuranceCompany || 'شركة')}`;
+        return `<option value="${escapeHTML(p.id)}">${escapeHTML(p.name)} (${escapeHTML(p.doctor)}) - [${info}]</option>`;
+      }).join('');
+  }
 
   validatePhoneLive() {
     const phoneInput = document.getElementById('p-phone');
@@ -597,19 +530,15 @@ export class PatientsManager {
     document.getElementById('form-patient').reset();
     this.clearPhoneValidation();
     document.getElementById('p-id').value = '';
-    this.app.updateCustomSelectDisplay('p-gender');
     const insComp = document.getElementById('p-insurance-company');
     if (insComp) insComp.value = '';
     const insPrev = document.getElementById('p-selected-ins-preview');
     if (insPrev) insPrev.textContent = '';
-    document.querySelectorAll('#p-ins-direct-container .insurance-company-card, #p-ins-indirect-container .insurance-company-card').forEach(btn => {
+    document.querySelectorAll('#p-ins-direct-container .sheet-chip, #p-ins-indirect-container .sheet-chip').forEach(btn => {
       btn.classList.remove('selected');
     });
     document.getElementById('modal-patient-title').innerHTML = '<i class="fa-solid fa-user-plus"></i> تسجيل مريض جديد';
     document.getElementById('p-insurance-details').style.display = 'none';
-    this.onContractTypeChanged('direct');
-    const directRadio = document.querySelector('input[name="p-contract-type"][value="direct"]');
-    if (directRadio) directRadio.checked = true;
     this.app.openModal('modal-patient');
   }
 
@@ -643,12 +572,9 @@ export class PatientsManager {
     document.getElementById('p-id').value = p.id;
     document.getElementById('p-name').value = p.name;
     document.getElementById('p-age').value = p.age;
-    document.getElementById('p-gender').value = p.gender || '';
     document.getElementById('p-phone').value = p.phone;
     document.getElementById('p-address').value = p.address || '';
     document.getElementById('p-doctor').value = p.doctor;
-    this.app.updateCustomSelectDisplay('p-gender');
-    this.app.updateCustomSelectDisplay('p-doctor');
 
     const billingRadios = document.querySelectorAll('input[name="p-billing"]');
     billingRadios.forEach(r => { r.checked = (r.value === p.billing); });
@@ -657,10 +583,8 @@ export class PatientsManager {
     if (p.billing === 'insurance') {
       insBox.style.display = 'block';
       document.getElementById('p-insurance-company').value = p.insuranceCompany || '';
-      const cType = p.contractType || 'direct';
-      const contractRadios = document.querySelectorAll('input[name="p-contract-type"]');
-      contractRadios.forEach(r => { r.checked = (r.value === cType); });
-      this.onContractTypeChanged(cType);
+      const contractRadios = document.querySelectorAll('input[name="p-contract"]');
+      contractRadios.forEach(r => { r.checked = (r.value === p.contractType); });
     } else {
       insBox.style.display = 'none';
     }
@@ -684,13 +608,9 @@ export class PatientsManager {
     const id = document.getElementById('p-id').value;
     const name = document.getElementById('p-name').value.trim();
     const age = parseInt(document.getElementById('p-age').value);
-    const gender = document.getElementById('p-gender').value;
     const phone = document.getElementById('p-phone').value.trim();
     const address = document.getElementById('p-address').value.trim();
-    const docSelectEl = document.getElementById('p-doctor');
-    const doctor = docSelectEl?.value || '';
-    const selectedDoctorOpt = docSelectEl?.options[docSelectEl.selectedIndex];
-    const doctorUid = selectedDoctorOpt?.getAttribute('data-uid') || '';
+    const doctor = document.getElementById('p-doctor').value;
     const billing = document.querySelector('input[name="p-billing"]:checked')?.value || 'cash';
 
     // 1. Name Validation (must be at least 2 words and not contain numbers)
@@ -713,14 +633,6 @@ export class PatientsManager {
       if (saveBtn) { saveBtn.disabled = false; saveBtn.innerHTML = 'حفظ المريض'; }
       await this.app.showAlert('يرجى إدخال سن صحيح للمريض (بين 1 و 120 سنة).', 'خطأ في السن', 'warning');
       document.getElementById('p-age')?.focus();
-      return;
-    }
-
-    // 2.أ. Gender Validation
-    if (gender !== 'male' && gender !== 'female') {
-      if (saveBtn) { saveBtn.disabled = false; saveBtn.innerHTML = 'حفظ المريض'; }
-      await this.app.showAlert('يرجى اختيار نوع المريض (ذكر / أنثى).', 'بيانات ناقصة', 'warning');
-      document.getElementById('p-gender')?.focus();
       return;
     }
 
@@ -792,11 +704,9 @@ export class PatientsManager {
       id: id || null,
       name,
       age,
-      gender,
       phone: normalizedPhone,
       address,
       doctor,
-      doctorUid,
       billing,
       insuranceCompany,
       contractType
@@ -807,12 +717,7 @@ export class PatientsManager {
       ? `تعديل ملف المريض: ${name}`
       : `تسجيل مريض جديد: ${name} (طبيب: ${doctor} - نظام: ${billing})`;
       
-    try { await db.logAudit(id ? 'تعديل مريض' : 'إضافة مريض', auditDesc, currentUser); } catch (_) {}
-
-    if (saveBtn) {
-      saveBtn.disabled = false;
-      saveBtn.innerHTML = 'حفظ المريض';
-    }
+    await db.logAudit(id ? 'تعديل مريض' : 'إضافة مريض', auditDesc, currentUser);
 
     this.app.closeModal('modal-patient');
     this.app.showToast(id ? 'تم تعديل بيانات المريض بنجاح' : 'تم إضافة المريض بنجاح');
@@ -912,11 +817,6 @@ export class PatientsManager {
     const ageEl = document.getElementById('sheet-patient-age');
     if (ageEl) ageEl.textContent = p.age;
 
-    const genderEl = document.getElementById('sheet-patient-gender');
-    if (genderEl) {
-      genderEl.textContent = p.gender === 'male' ? '- ذكر' : (p.gender === 'female' ? '- أنثى' : '');
-    }
-
     const phoneEl = document.getElementById('sheet-patient-phone');
     if (phoneEl) phoneEl.textContent = p.phone;
 
@@ -927,15 +827,13 @@ export class PatientsManager {
     if (docEl) docEl.textContent = p.doctor;
 
         const badgeEl = document.getElementById('sheet-patient-billing-badge');
-    const insLetterBtn = document.getElementById('btn-print-insurance-letter');
-    if (insLetterBtn) insLetterBtn.style.display = (p.billing === 'cash') ? 'none' : 'inline-flex';
     if (badgeEl) {
       if (p.billing === 'cash') {
         badgeEl.innerHTML = '<span class="badge badge-cash" style="font-size: 0.82rem; padding: 4px 12px; font-weight: 700; white-space: nowrap; display: inline-flex; align-items: center; gap: 5px;"><i class="fa-solid fa-money-bill-wave"></i> نقدي</span>';
       } else if (p.contractType === 'direct') {
-        badgeEl.innerHTML = `<span class="badge badge-direct" style="font-size: 0.82rem; padding: 4px 12px; font-weight: 700; white-space: nowrap; display: inline-flex; align-items: center; gap: 5px;"><i class="fa-solid fa-file-contract"></i> ${escapeHTML(p.insuranceCompany || 'تأمين')} (مباشر)</span>`;
+        badgeEl.innerHTML = `<span class="badge badge-direct" style="font-size: 0.82rem; padding: 4px 12px; font-weight: 700; white-space: nowrap; display: inline-flex; align-items: center; gap: 5px;"><i class="fa-solid fa-file-contract"></i> ${p.insuranceCompany || 'تأمين'} (مباشر)</span>`;
       } else {
-        badgeEl.innerHTML = `<span class="badge badge-indirect" style="font-size: 0.82rem; padding: 4px 12px; font-weight: 700; white-space: nowrap; display: inline-flex; align-items: center; gap: 5px;"><i class="fa-solid fa-handshake"></i> ${escapeHTML(p.insuranceCompany || 'تأمين')} (غير مباشر)</span>`;
+        badgeEl.innerHTML = `<span class="badge badge-indirect" style="font-size: 0.82rem; padding: 4px 12px; font-weight: 700; white-space: nowrap; display: inline-flex; align-items: center; gap: 5px;"><i class="fa-solid fa-handshake"></i> ${p.insuranceCompany || 'تأمين'} (غير مباشر)</span>`;
       }
     }
 
@@ -1153,6 +1051,17 @@ export class PatientsManager {
     }
 
     container.innerHTML = html;
+
+    // Bind selection click listener (only toggles selection in normal mode)
+    container.querySelectorAll('.chip-choice').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (!this.chipsEditMode[category]) {
+          btn.classList.toggle('selected');
+        }
+      });
+    });
   }
 
   async deleteOptionDirect(category, optionName) {
@@ -1259,9 +1168,9 @@ export class PatientsManager {
         if (s.payType === 'cash') {
           payBadge = `<span class="badge badge-cash"><i class="fa-solid fa-money-bill"></i> نقدي (${s.amountPaid || 0} ج.م)</span>`;
         } else if (s.contractType === 'direct') {
-          payBadge = `<span class="badge badge-direct"><i class="fa-solid fa-file-contract"></i> ${escapeHTML(s.insuranceName || 'تأمين')} (مباشر) - ${s.amountPaid || 0} ج.م</span>`;
+          payBadge = `<span class="badge badge-direct"><i class="fa-solid fa-file-contract"></i> ${s.insuranceName || 'تأمين'} (مباشر) - ${s.amountPaid || 0} ج.م</span>`;
         } else {
-          payBadge = `<span class="badge badge-indirect"><i class="fa-solid fa-handshake"></i> ${escapeHTML(s.insuranceName || 'تأمين')} (غير مباشر) - ${s.amountPaid || 0} ج.م</span>`;
+          payBadge = `<span class="badge badge-indirect"><i class="fa-solid fa-handshake"></i> ${s.insuranceName || 'تأمين'} (غير مباشر) - ${s.amountPaid || 0} ج.م</span>`;
         }
 
         const parts = Array.isArray(s.bodyParts) ? s.bodyParts.join('، ') : (s.bodyParts || 'غير محدد');
@@ -1273,10 +1182,10 @@ export class PatientsManager {
               <div>${s.date}</div>
               <small style="color: var(--text-muted); font-size: 0.72rem;">${s.recordedAt || ''}</small>
             </td>
-            <td><span style="font-weight: 700; color: #1e293b;">${escapeHTML(s.doctor)}</span></td>
-            <td style="font-size: 0.85rem;">${escapeHTML(parts)}</td>
+            <td><span style="font-weight: 700; color: #1e293b;">${s.doctor}</span></td>
+            <td style="font-size: 0.85rem;">${parts}</td>
             <td>${payBadge}</td>
-            <td style="font-size: 0.82rem; color: var(--text-muted);">${escapeHTML(s.notes || '-')}</td>
+            <td style="font-size: 0.82rem; color: var(--text-muted);">${s.notes || '-'}</td>
             <td style="font-size: 0.75rem; color: var(--text-muted);">${s.recordedBy || '-'}</td>
           </tr>
         `;
@@ -1354,104 +1263,5 @@ export class PatientsManager {
     window.print();
 
     setTimeout(cleanPrintClass, 2000);
-  }
-
-  // ================= Insurance Renewal Letter (A5) =================
-  openInsuranceLetterModalForPatient(patientId) {
-    const p = this.patients.find((item) => item.id === patientId);
-    if (!p) return;
-    this.currentSheetPatient = p;
-    this.openInsuranceLetterModal();
-  }
-
-  openInsuranceLetterModal() {
-    if (!this.currentSheetPatient) return;
-    const p = this.currentSheetPatient;
-    const sheet = p.clinicalSheet || {};
-
-    document.getElementById('ins-letter-company').value = p.insuranceCompany || '';
-    document.getElementById('ins-letter-diagnosis').value = sheet.diagnosis || '';
-    document.getElementById('ins-letter-sessions').value = '';
-
-    this.app.openModal('modal-insurance-letter');
-  }
-
-  async submitInsuranceLetter() {
-    if (this._isPrinting) return;
-
-    const p = this.currentSheetPatient;
-    if (!p) return;
-
-    const diagnosis = document.getElementById('ins-letter-diagnosis')?.value.trim();
-    const sessionsRaw = document.getElementById('ins-letter-sessions')?.value.trim();
-    const sessionCount = parseInt(sessionsRaw, 10);
-
-    if (!diagnosis) {
-      this.app.showAlert('يرجى كتابة التشخيص.', 'بيانات مطلوبة', 'warning');
-      return;
-    }
-    if (!sessionCount || sessionCount <= 0) {
-      this.app.showAlert('يرجى كتابة عدد جلسات صحيح.', 'بيانات مطلوبة', 'warning');
-      return;
-    }
-
-    this._isPrinting = true;
-    setTimeout(() => { this._isPrinting = false; }, 2500);
-
-    const currentUser = auth.getCurrentUser();
-    const todayLabel = new Date().toLocaleDateString('ar-EG-u-nu-latn', { year: 'numeric', month: 'long', day: 'numeric' });
-
-    try {
-      // 1. Save a copy of the letter in the database first
-      await db.addInsuranceLetter({
-        patientId: p.id,
-        patientName: p.name,
-        insuranceCompany: p.insuranceCompany || '',
-        diagnosis,
-        sessionCount,
-        issuedBy: currentUser?.name || '',
-        createdByUid: currentUser?.uid || ''
-      });
-
-      // 2. Fill the printable A5 template
-      document.getElementById('ins-print-company').textContent = p.insuranceCompany || '-';
-      document.getElementById('ins-print-patient-name').textContent = p.name;
-      document.getElementById('ins-print-diagnosis').textContent = diagnosis;
-      document.getElementById('ins-print-sessions').textContent = sessionCount;
-      document.getElementById('ins-print-date').textContent = `تحريراً في: ${todayLabel}`;
-
-      // Gender-correct wording when known; falls back to the neutral
-      // slash form for older patient records saved before this field existed.
-      const honorificEl = document.getElementById('ins-print-honorific');
-      const sufferVerbEl = document.getElementById('ins-print-verb-suffer');
-      const needVerbEl = document.getElementById('ins-print-verb-need');
-      if (p.gender === 'male') {
-        honorificEl.textContent = 'السيد';
-        sufferVerbEl.textContent = 'يعاني';
-        needVerbEl.textContent = 'يحتاج';
-      } else if (p.gender === 'female') {
-        honorificEl.textContent = 'السيدة';
-        sufferVerbEl.textContent = 'تعاني';
-        needVerbEl.textContent = 'تحتاج';
-      } else {
-        honorificEl.textContent = 'السيد/ة';
-        sufferVerbEl.textContent = 'يعاني/تعاني';
-        needVerbEl.textContent = 'يحتاج/تحتاج';
-      }
-
-      this.app.closeModal('modal-insurance-letter');
-
-      // 3. Trigger print
-      document.body.classList.add('printing-insurance-letter');
-      const cleanPrintClass = () => {
-        document.body.classList.remove('printing-insurance-letter');
-        window.removeEventListener('afterprint', cleanPrintClass);
-      };
-      window.addEventListener('afterprint', cleanPrintClass);
-      window.print();
-      setTimeout(cleanPrintClass, 2000);
-    } catch (err) {
-      this.app.showAlert('تعذر حفظ/طباعة الخطاب: ' + err.message, 'خطأ', 'danger');
-    }
   }
 }

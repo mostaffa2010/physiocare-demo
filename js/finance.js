@@ -1,4 +1,4 @@
-import { escapeHTML, getLocalDateStr } from './utils.js';
+import { escapeHTML } from './utils.js';
 // ========================================================
 // ASCPT - Daily & Monthly Financial & Statistical Reports
 // ========================================================
@@ -11,7 +11,7 @@ export class FinanceManager {
   constructor(app) {
     this.app = app;
     this.reportMode = 'daily'; // 'daily' | 'monthly'
-    this.currentDate = getLocalDateStr();
+    this.currentDate = new Date().toISOString().split('T')[0];
     this.currentMonth = this.currentDate.substring(0, 7); // YYYY-MM
     this.selectedDoctor = 'all';
   }
@@ -112,11 +112,11 @@ export class FinanceManager {
 
   setDateQuick(type) {
     if (type === 'today') {
-      this.currentDate = getLocalDateStr();
+      this.currentDate = new Date().toISOString().split('T')[0];
     } else if (type === 'yesterday') {
       const d = new Date();
       d.setDate(d.getDate() - 1);
-      this.currentDate = getLocalDateStr(d);
+      this.currentDate = d.toISOString().split('T')[0];
     }
     const datePicker = document.getElementById('finance-date-picker');
     if (datePicker) datePicker.value = this.currentDate;
@@ -128,10 +128,10 @@ export class FinanceManager {
   syncQuickDateButtons(dateStr) {
     const btnToday = document.getElementById('btn-quick-fin-today');
     const btnYest = document.getElementById('btn-quick-fin-yesterday');
-    const today = getLocalDateStr();
+    const today = new Date().toISOString().split('T')[0];
     const d = new Date();
     d.setDate(d.getDate() - 1);
-    const yesterday = getLocalDateStr(d);
+    const yesterday = d.toISOString().split('T')[0];
 
     if (btnToday) {
       if (dateStr === today) {
@@ -155,26 +155,24 @@ export class FinanceManager {
 
   async handleAddExpense(e) {
     e.preventDefault();
-    const titleInput = document.getElementById('exp-title');
-    const amountInput = document.getElementById('exp-amount');
-    const title = titleInput?.value.trim();
-    const amountStr = amountInput?.value.trim();
+    const title = document.getElementById('expense-title')?.value.trim();
+    const amountStr = document.getElementById('expense-amount')?.value.trim();
     const amount = parseFloat(amountStr);
 
     if (!title) {
       await this.app.showAlert('يرجى إدخال بند أو بيان المصروف.', 'بيانات مطلوبة', 'warning');
-      titleInput?.focus();
+      document.getElementById('expense-title')?.focus();
       return;
     }
 
     if (isNaN(amount) || amount <= 0) {
       await this.app.showAlert('يرجى إدخال مبلغ صحيح للمصروف أكبر من صفر.', 'مبلغ غير صحيح', 'warning');
-      amountInput?.focus();
+      document.getElementById('expense-amount')?.focus();
       return;
     }
 
     const currentUser = auth.getCurrentUser();
-    const todayStr = getLocalDateStr();
+    const todayStr = new Date().toISOString().split('T')[0];
     const expenseData = {
       title,
       amount,
@@ -183,7 +181,7 @@ export class FinanceManager {
     };
 
     await db.saveExpense(expenseData, currentUser);
-    try { await db.logAudit('تسجيل مصروف', `تسجيل مصروف: ${title} بمبلغ ${amount} ج.م`, currentUser); } catch (_) {}
+    await db.logAudit('تسجيل مصروف', `تسجيل مصروف: ${title} بمبلغ ${amount} ج.م`, currentUser);
 
     this.app.closeModal('modal-expense');
     this.app.showToast('تم تسجيل وحفظ المصروف بنجاح');
@@ -197,7 +195,7 @@ export class FinanceManager {
     if (confirmed) {
       const currentUser = auth.getCurrentUser();
       await db.deleteExpense(expenseId);
-      try { await db.logAudit('حذف مصروف', `حذف مصروف برقم ${expenseId}`, currentUser); } catch (_) {}
+      await db.logAudit('حذف مصروف', `حذف مصروف برقم ${expenseId}`, currentUser);
       this.app.showToast('تم حذف المصروف بنجاح');
       await this.loadReport();
       this.app.refreshAll();
@@ -302,8 +300,7 @@ export class FinanceManager {
   async loadDailyReport() {
     const allSessions = await db.getSessions(this.currentDate);
     const allExpenses = await db.getExpenses(this.currentDate);
-    const rawDoctors = await db.getDoctors();
-    const doctors = Array.from(new Set(rawDoctors.map(d => (d || '').trim().replace(/\s+/g, ' ')))).filter(Boolean);
+    const doctors = await db.getDoctors();
 
     let filteredSessions = allSessions;
     if (this.selectedDoctor !== 'all') {
@@ -334,7 +331,7 @@ export class FinanceManager {
     if (docFilter) {
       const currentVal = docFilter.value;
       docFilter.innerHTML = '<option value="all">كل الأطباء</option>' + 
-        doctors.map(d => `<option value="${escapeHTML(d)}">${escapeHTML(d)}</option>`).join('');
+        doctors.map(d => `<option value="${d}">${d}</option>`).join('');
       if (doctors.includes(currentVal) || currentVal === 'all') {
         docFilter.value = currentVal;
       }
@@ -344,19 +341,13 @@ export class FinanceManager {
     const docContainer = document.getElementById('doctors-breakdown-container');
     if (docContainer) {
       docContainer.innerHTML = doctors.map(doc => {
-        const docSessions = allSessions.filter(s => s.doctor === doc);
-        const patientCount = docSessions.length;
-        const creditedSessions = docSessions.reduce((acc, s) => {
-          if (s.entryType === 'examination') return acc + 1;
-          return acc + (s.bodyPartsCount || 1);
-        }, 0);
-
+        const count = docCounts[doc] || 0;
         return `
           <div style="background-color: var(--bg-subtle); border: 1px solid var(--border-color); padding: 10px 16px; border-radius: var(--radius-md); display: flex; align-items: center; gap: 10px;">
             <i class="fa-solid fa-user-doctor" style="color: var(--primary);"></i>
             <div>
-              <div style="font-weight: 700; font-size: 0.9rem;">${escapeHTML(doc)}</div>
-              <div style="font-size: 0.8rem; color: var(--text-muted);">${patientCount} مريض - ${creditedSessions} جلسة</div>
+              <div style="font-weight: 700; font-size: 0.9rem;">${doc}</div>
+              <div style="font-size: 0.8rem; color: var(--text-muted);">${count} مريض اليوم</div>
             </div>
           </div>
         `;
@@ -395,16 +386,9 @@ export class FinanceManager {
             }
           }
 
-          const isExam = (s.entryType === 'examination');
-          let partsCell = '';
-          if (isExam) {
-            partsCell = `<span class="badge" style="background: #f8fafc; color: #0284c7; border: 1px solid #bae6fd; font-weight: 800; font-size: 0.76rem; padding: 3px 8px;"><i class="fa-solid fa-stethoscope"></i> فحص سريري / كشف</span>`;
-          } else {
-            const rawParts = Array.isArray(s.bodyParts) ? s.bodyParts.join('، ') : (s.bodyParts || '');
-            const parts = escapeHTML(rawParts);
-            const count = escapeHTML(s.bodyPartsCount || (Array.isArray(s.bodyParts) ? s.bodyParts.length : 1));
-            partsCell = `<span class="badge badge-role-doctor">${count} أعضاء (${parts})</span>`;
-          }
+          const rawParts = Array.isArray(s.bodyParts) ? s.bodyParts.join('، ') : (s.bodyParts || '');
+          const parts = escapeHTML(rawParts);
+          const count = escapeHTML(s.bodyPartsCount || (Array.isArray(s.bodyParts) ? s.bodyParts.length : 1));
 
           return `
             <tr>
@@ -413,7 +397,7 @@ export class FinanceManager {
               <td>${payBadge}</td>
               <td>${safeIns === 'شركة' && s.payType === 'cash' ? '-' : safeIns}</td>
               <td>${contractLabel}</td>
-              <td>${partsCell}</td>
+              <td><span class="badge badge-role-doctor">${count} أعضاء (${parts})</span></td>
               <td style="font-weight: 700; color: var(--success);">${safeAmount} ج.م</td>
               <td style="font-size: 0.8rem; color: var(--text-muted);">${safeRecBy}</td>
               <td class="no-print">
@@ -446,7 +430,7 @@ export class FinanceManager {
             <td style="font-size: 0.8rem; color: var(--text-muted);">${escapeHTML(e.recordedBy)}</td>
             <td style="font-size: 0.8rem; color: var(--text-muted);">${e.time}</td>
             <td class="no-print">
-              ${RolesManager.canDeleteFinance(auth.getCurrentUser()) ? `
+              ${RolesManager.canDelete(auth.getCurrentUser()) ? `
                 <button type="button" class="btn btn-outline btn-sm btn-delete-record btn-delete-expense" style="color: var(--danger);" data-expense-id="${e.id}" title="حذف">
                   <i class="fa-solid fa-trash"></i>
                 </button>
@@ -507,8 +491,7 @@ export class FinanceManager {
   async loadMonthlyReport() {
     const allSessions = await db.getSessions(this.currentMonth);
     const allExpenses = await db.getExpenses(this.currentMonth);
-    const rawDoctors = await db.getDoctors();
-    const doctors = Array.from(new Set(rawDoctors.map(d => (d || '').trim().replace(/\s+/g, ' ')))).filter(Boolean);
+    const doctors = await db.getDoctors();
 
     const totalPatients = allSessions.length;
     const totalCash = allSessions.reduce((acc, curr) => acc + (parseFloat(curr.amountPaid) || 0), 0);
@@ -530,7 +513,7 @@ export class FinanceManager {
     const docTbody = document.getElementById('monthly-doctors-tbody');
     if (docTbody) {
       if (doctors.length === 0 || totalPatients === 0) {
-        docTbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: var(--text-muted); padding: 20px;">لا توجد بيانات جلسات مسجلة لهذا الشهر.</td></tr>`;
+        docTbody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: var(--text-muted); padding: 20px;">لا توجد بيانات جلسات مسجلة لهذا الشهر.</td></tr>`;
       } else {
         docTbody.innerHTML = doctors.map(doc => {
           const docSessions = allSessions.filter(s => s.doctor === doc);
@@ -539,14 +522,6 @@ export class FinanceManager {
           const total = docSessions.length;
           const pct = totalPatients > 0 ? ((total / totalPatients) * 100).toFixed(1) : 0;
 
-          // Credited sessions rule:
-          // If session: s.bodyPartsCount || 1 (minimum 1)
-          // If examination: exactly 1 always
-          const creditedSessions = docSessions.reduce((acc, s) => {
-            if (s.entryType === 'examination') return acc + 1;
-            return acc + (s.bodyPartsCount || 1);
-          }, 0);
-
           const safeDoc = escapeHTML(doc);
           return `
             <tr>
@@ -554,7 +529,6 @@ export class FinanceManager {
               <td style="color: var(--success); font-weight: 700;">${cashCount} مريض</td>
               <td style="color: var(--primary); font-weight: 700;">${insCount} مريض</td>
               <td style="font-weight: 800; font-size: 0.95rem;">${total} مريض</td>
-              <td style="font-weight: 800; color: var(--primary); font-size: 0.95rem;">${creditedSessions} جلسة</td>
               <td>
                 <div style="display: flex; align-items: center; gap: 8px;">
                   <span style="font-weight: 700; width: 45px;">${pct}%</span>

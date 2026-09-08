@@ -79,7 +79,6 @@ import { FinanceManager } from './finance.js';
 import { DoctorDashboardManager } from './doctor-dashboard.js';
 import { ExportManager } from './export.js';
 import { AuditAndAdminManager } from './audit.js';
-import { AppointmentsManager } from './appointments.js';
 
 class App {
   constructor() {
@@ -96,7 +95,6 @@ class App {
     this.auditManager = new AuditAndAdminManager(this);
     this.claimsManager = new ClaimsManager(this);
     this.doctorDashboardManager = new DoctorDashboardManager(this);
-    this.appointmentsManager = new AppointmentsManager(this);
 
     window.patientsManager = this.patientsManager;
     window.sessionsManager = this.sessionsManager;
@@ -105,7 +103,6 @@ class App {
     window.auditManager = this.auditManager;
     window.claimsManager = this.claimsManager;
     window.doctorDashboardManager = this.doctorDashboardManager;
-    window.appointmentsManager = this.appointmentsManager;
   }
 
   async init() {
@@ -124,10 +121,25 @@ class App {
       });
     }
 
-    // 3. ربط أحداث التنقل والحوارات وتأمين الواجهة
+    // 3. ربط أحداث التنقل والحوارات
     this.bindNavigation();
     this.bindHardwareBackButton();
+    // منع قائمة المتصفح الافتراضية عند الضغط المطول (لإحساس التطبيق الأصلي)
+    window.addEventListener('contextmenu', (e) => {
+      const tag = e.target.tagName;
+      if (tag !== 'INPUT' && tag !== 'TEXTAREA') {
+        e.preventDefault();
+      }
+    });
     this.disablePullToRefresh();
+    this.disableNativeContextMenu();
+    // Prevent long-press text selection / contextmenu on non-inputs for native app feel
+    window.addEventListener('contextmenu', (e) => {
+      if (e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA') {
+        e.preventDefault();
+      }
+    });
+    this.bindGlobalTouchAndSelectionGuards();
     this.disableBrowserContextMenu();
     this.bindModalsAndAuth();
     this.bindCustomDialog();
@@ -147,7 +159,6 @@ class App {
     try { await this.financeManager.init(); } catch (e) { console.warn('financeManager init notice:', e); }
     try { this.exportManager.init(); } catch (e) { console.warn('exportManager init notice:', e); }
     try { await this.auditManager.init(); } catch (e) { console.warn('auditManager init notice:', e); }
-    try { await this.appointmentsManager.init(); } catch (e) { console.warn('appointmentsManager init notice:', e); }
 
     // مزامنة أزرار القوائم المخصصة
     ['claim-company-select', 'patient-filter-type', 'session-doctor-select', 'finance-doctor-filter', 'newuser-role', 'p-doctor'].forEach(id => {
@@ -250,9 +261,6 @@ class App {
     if (viewName === 'admin') {
       this.auditManager.loadUsers();
       this.auditManager.loadAuditLogs();
-    }
-    if (viewName === 'appointments' && this.appointmentsManager) {
-      this.appointmentsManager.render();
     }
   }
 
@@ -756,7 +764,22 @@ class App {
     }).join('');
   }
 
+    bindGlobalTouchAndSelectionGuards() {
+    // Disable text selection and contextmenu toolbar on non-input elements
+    window.addEventListener('selectstart', (e) => {
+      const tag = e.target.tagName;
+      if (tag !== 'INPUT' && tag !== 'TEXTAREA' && !e.target.isContentEditable) {
+        e.preventDefault();
+      }
+    });
 
+    window.addEventListener('contextmenu', (e) => {
+      const tag = e.target.tagName;
+      if (tag !== 'INPUT' && tag !== 'TEXTAREA' && !e.target.isContentEditable) {
+        e.preventDefault();
+      }
+    });
+  }
 
   // ================= Sandbox & Training Mode =================
   updateTrainingModeUI() {
@@ -889,23 +912,10 @@ class App {
 
     container.innerHTML = options.map((opt) => {
       const isSelected = opt.value === currentVal;
-      const contractType = opt.getAttribute('data-contract') || '';
-      let badgeHtml = '';
-      if (contractType === 'direct') {
-        badgeHtml = `<span class="badge" style="font-size: 0.72rem; padding: 2px 8px; font-weight: 800; background: #e0f2fe; color: #0284c7; border: 1px solid #bae6fd; border-radius: 6px; white-space: nowrap;">تعاقد مباشر</span>`;
-      } else if (contractType === 'indirect') {
-        badgeHtml = `<span class="badge" style="font-size: 0.72rem; padding: 2px 8px; font-weight: 800; background: #fef3c7; color: #b45309; border: 1px solid #fde68a; border-radius: 6px; white-space: nowrap;">تعاقد غير مباشر</span>`;
-      }
-
-      const cleanLabel = opt.text.replace(/\s*\((تعاقد مباشر|تعاقد غير مباشر)\)\s*/g, '').trim();
-
       return `
-        <div class="custom-picker-row ${isSelected ? 'active-choice' : ''}" data-select-id="${selectId}" data-select-value="${escapeHTML(opt.value)}" style="display: flex; align-items: center; justify-content: space-between; gap: 8px;">
-          <span style="font-weight: 700; color: var(--text-main);">${escapeHTML(cleanLabel)}</span>
-          <div style="display: flex; align-items: center; gap: 8px;">
-            ${badgeHtml}
-            ${isSelected ? '<i class="fa-solid fa-check check-icon" style="color: var(--primary);"></i>' : ''}
-          </div>
+        <div class="custom-picker-row ${isSelected ? 'active-choice' : ''}" data-select-id="${selectId}" data-select-value="${escapeHTML(opt.value)}">
+          <span>${opt.text}</span>
+          ${isSelected ? '<i class="fa-solid fa-check check-icon"></i>' : ''}
         </div>
       `;
     }).join('');

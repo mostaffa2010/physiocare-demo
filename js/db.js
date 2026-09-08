@@ -14,8 +14,8 @@ class DemoDatabaseService {
   }
 
   initDemoStorage(force = false) {
-    if (!localStorage.getItem('pc_demo_v3_september_full') || force) {
-      localStorage.setItem('pc_demo_v3_september_full', 'true');
+    if (!localStorage.getItem('pc_demo_v2_init') || force) {
+      localStorage.setItem('pc_demo_v2_init', 'true');
       localStorage.setItem('pc_demo_patients', JSON.stringify(DEMO_PATIENTS));
       localStorage.setItem('pc_demo_sessions', JSON.stringify(DEMO_SESSIONS));
       localStorage.setItem('pc_demo_expenses', JSON.stringify(DEMO_EXPENSES));
@@ -26,7 +26,7 @@ class DemoDatabaseService {
           userName: 'نظام العرض التجريبي',
           userRole: 'النظام',
           actionType: 'تجهيز العرض التجريبي',
-          description: 'تم تحميل 190 مريض و 905 جلسة ومصروفات 3 أشهر كاملة (يوليو، أغسطس، وسبتمبر بالكامل) بنجاح',
+          description: 'تم تحميل 185 مريض و 635 جلسة ومصروفات شهرين كاملين بنجاح',
           timestamp: new Date().toLocaleString('en-US'),
           timestampRaw: Date.now()
         }
@@ -36,7 +36,7 @@ class DemoDatabaseService {
 
   resetDemo() {
     // 1. إعادة ضبط المجموعات الرئيسية بالكامل لنسخ أصلية جديدة
-    localStorage.setItem('pc_demo_v3_september_full', 'true');
+    localStorage.setItem('pc_demo_v2_init', 'true');
     localStorage.setItem('pc_demo_patients', JSON.stringify(DEMO_PATIENTS));
     localStorage.setItem('pc_demo_sessions', JSON.stringify(DEMO_SESSIONS));
     localStorage.setItem('pc_demo_expenses', JSON.stringify(DEMO_EXPENSES));
@@ -63,12 +63,8 @@ class DemoDatabaseService {
     localStorage.removeItem('pc_sb_opt_procedure');
     localStorage.removeItem('pc_sb_opt_exercise');
 
-    // 4. إعادة ضبط بنود المطالبات المخصصة والمواعيد والخطابات
+    // 4. إعادة ضبط بنود المطالبات المخصصة
     localStorage.removeItem('pc_claim_treatments');
-    localStorage.removeItem('pc_demo_appointments');
-    localStorage.removeItem('pc_sb_appts');
-    localStorage.removeItem('pc_demo_insurance_letters');
-    localStorage.removeItem('pc_sb_letters');
 
     // 5. إعادة ضبط الحساب التجريبي النشط إلى مدير المركز
     if (DEMO_USERS && DEMO_USERS.length > 0) {
@@ -78,7 +74,7 @@ class DemoDatabaseService {
     // 6. مسح أي مفاتيح مؤقتة أخرى خاصة بالنظام مع الإبقاء على تفضيل النافذة التعريفية
     for (let i = localStorage.length - 1; i >= 0; i--) {
       const k = localStorage.key(i);
-      if (k && k.startsWith('pc_') && !['pc_demo_v3_september_full', 'pc_demo_patients', 'pc_demo_sessions', 'pc_demo_expenses', 'pc_demo_users', 'pc_demo_audit', 'pc_demo_active_user', 'pc_demo_onboarding_seen'].includes(k)) {
+      if (k && k.startsWith('pc_') && !['pc_demo_v2_init', 'pc_demo_patients', 'pc_demo_sessions', 'pc_demo_expenses', 'pc_demo_users', 'pc_demo_audit', 'pc_demo_active_user', 'pc_demo_onboarding_seen'].includes(k)) {
         localStorage.removeItem(k);
       }
     }
@@ -380,77 +376,6 @@ class DemoDatabaseService {
     const key = (this.isTraining ? 'pc_sb_ins_' : 'pc_ins_') + contractType;
     localStorage.setItem(key, JSON.stringify(list));
     return list;
-  }
-
-  getInsuranceCompaniesList() {
-    return this.getAllInsuranceCompaniesWithTypes();
-  }
-
-  // ================= Appointments Schedule (LocalStorage Demo) =================
-  async getAppointments() {
-    const key = (this.isTraining ? 'pc_sb_appts' : 'pc_demo_appointments');
-    const raw = localStorage.getItem(key);
-    if (raw) return JSON.parse(raw);
-    const initial = [
-      { id: 'appt-1', doctorUid: 'u-demo-admin', doctorName: 'د. مصطفى محمود', timeSlot: '15:30', patientId: 'p-1', patientName: 'أحمد إبراهيم الشناوي', patientPhone: '01012345678', bookedBy: 'استقبال العرض' },
-      { id: 'appt-2', doctorUid: 'u-demo-doctor', doctorName: 'د. أحمد خليل', timeSlot: '16:30', patientId: 'p-2', patientName: 'مريم السيد البدوي', patientPhone: '01123456789', bookedBy: 'استقبال العرض' }
-    ];
-    localStorage.setItem(key, JSON.stringify(initial));
-    return initial;
-  }
-
-  async addAppointment(apptData) {
-    const appts = await this.getAppointments();
-    const id = 'appt-' + Date.now();
-    const newAppt = { ...apptData, id };
-    appts.push(newAppt);
-    const key = (this.isTraining ? 'pc_sb_appts' : 'pc_demo_appointments');
-    localStorage.setItem(key, JSON.stringify(appts));
-    return newAppt;
-  }
-
-  async deleteAppointment(apptId) {
-    let appts = await this.getAppointments();
-    appts = appts.filter(a => a.id !== apptId);
-    const key = (this.isTraining ? 'pc_sb_appts' : 'pc_demo_appointments');
-    localStorage.setItem(key, JSON.stringify(appts));
-    return true;
-  }
-
-  // ================= Insurance Renewal Letters (LocalStorage Demo) =================
-  async addInsuranceLetter(letterData) {
-    const key = (this.isTraining ? 'pc_sb_letters' : 'pc_demo_insurance_letters');
-    const raw = localStorage.getItem(key);
-    const letters = raw ? JSON.parse(raw) : [];
-    const id = 'letter-' + Date.now();
-    const item = { ...letterData, id, createdAt: new Date().toISOString() };
-    letters.push(item);
-    localStorage.setItem(key, JSON.stringify(letters));
-    return item;
-  }
-
-  async getInsuranceLetters(patientId = null) {
-    const key = (this.isTraining ? 'pc_sb_letters' : 'pc_demo_insurance_letters');
-    const raw = localStorage.getItem(key);
-    const letters = raw ? JSON.parse(raw) : [];
-    if (!patientId) return letters;
-    return letters.filter(l => l.patientId === patientId);
-  }
-
-  // ================= Sandbox / Training Mode (LocalStorage Demo) =================
-  // Only the newer interactive collections (appointments, insurance letters,
-  // clinical options, insurance companies list) participate in this split -
-  // the core showcase dataset (patients/sessions/expenses/users) intentionally
-  // stays fixed either way, since that's the fixed demo story being presented.
-  setTrainingMode(isTraining) {
-    this.isTraining = !!isTraining;
-  }
-
-  initSandboxData(force = false) {
-    if (!force) return;
-    Object.keys(localStorage)
-      .filter((k) => k.startsWith('pc_sb_'))
-      .forEach((k) => localStorage.removeItem(k));
   }
 
 }

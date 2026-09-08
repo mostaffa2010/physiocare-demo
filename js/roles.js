@@ -60,7 +60,7 @@ export class RolesManager {
 
     // 3. حماية التنقل: توجيه الطبيب للرئيسية إذا كان يقف على شاشة محجوبة (الحسابات/الجلسات/المدير)
     if (role === ROLES.DOCTOR && window.app) {
-      const allowedViews = ['dashboard', 'patients', 'patient-sheet', 'appointments'];
+      const allowedViews = ['dashboard', 'patients', 'patient-sheet'];
       if (!allowedViews.includes(window.app.currentView)) {
         window.app.switchView('dashboard');
       }
