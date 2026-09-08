@@ -437,6 +437,22 @@ class DemoDatabaseService {
     return letters.filter(l => l.patientId === patientId);
   }
 
+  // ================= Sandbox / Training Mode (LocalStorage Demo) =================
+  // Only the newer interactive collections (appointments, insurance letters,
+  // clinical options, insurance companies list) participate in this split -
+  // the core showcase dataset (patients/sessions/expenses/users) intentionally
+  // stays fixed either way, since that's the fixed demo story being presented.
+  setTrainingMode(isTraining) {
+    this.isTraining = !!isTraining;
+  }
+
+  initSandboxData(force = false) {
+    if (!force) return;
+    Object.keys(localStorage)
+      .filter((k) => k.startsWith('pc_sb_'))
+      .forEach((k) => localStorage.removeItem(k));
+  }
+
 }
 
 export const db = new DemoDatabaseService();

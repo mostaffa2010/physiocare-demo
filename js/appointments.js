@@ -1,20 +1,23 @@
 // ========================================================
-// ASCPT - Weekly Appointments Schedule (Fixed Recurring Template)
+// PhysioFlow Demo - Weekly Appointments Schedule
 // ========================================================
-// This is NOT tied to specific calendar dates or specific days of
-// the week. A booking is (doctor + time slot + patient) only -
-// in real clinic life this doctor sees this same patient at this
-// same time on every day he works that week (e.g. Sat/Mon/Wed),
-// so one record covers all of those days at once. A slot keeps
-// showing the same patient every week until someone deletes it
-// and books a different patient in its place.
+// Fixed recurring weekly template (not tied to calendar dates): a
+// booking is (doctor + time slot + patient) only. In real clinic
+// life the same patient sees the same doctor at the same time on
+// every day that doctor works that week, so one record covers all
+// of those days at once. A slot keeps showing the same patient
+// every week until someone deletes it and books someone else in
+// its place.
+//
+// This demo has no real staff UIDs, so the doctor's NAME is used
+// as the stable identifier throughout (matching how doctors are
+// already identified everywhere else in this demo - patients.js,
+// sessions.js, etc. all key by doctor name too).
 
 import { escapeHTML } from './utils.js';
 import { db } from './db.js';
 import { auth } from './auth.js';
 
-// The last slot is intentionally shorter (30 min instead of 60) -
-// the clinic closes a bit earlier on that last appointment.
 export const APPT_SLOTS = [
   { key: '15:30', label: '٣:٣٠' },
   { key: '16:30', label: '٤:٣٠' },
@@ -24,9 +27,8 @@ export const APPT_SLOTS = [
 ];
 
 // Total treatment beds in the clinic. Exceeding this across ALL
-// doctors combined at the same time slot only shows a soft warning -
-// it never blocks adding another patient (matches the paper sheet:
-// the secretary decides, the system just gives her a heads-up).
+// doctors combined at the same time slot only shows a soft warning
+// in the booking modal - it never blocks adding another patient.
 const MAX_BEDS_PER_SLOT = 6;
 
 export class AppointmentsManager {
@@ -35,26 +37,43 @@ export class AppointmentsManager {
     this.appointments = [];
     this.doctors = [];
     this.patients = [];
-    this.pendingDoctorUid = null;
+    this.activeDoctor = null;
     this.pendingDoctorName = null;
     this.pendingTimeSlot = null;
     this.selectedPatientId = null;
     this.selectedPatientName = null;
+    this.selectedPatientPhone = null;
   }
 
   async init() {
-    const grid = document.getElementById('appointments-grid');
-    if (grid) grid.addEventListener('click', (e) => this.handleGridClick(e));
+    document.getElementById('appt-doctor-tabs')?.addEventListener('click', (e) => {
+      const tab = e.target.closest('[data-doctor-tab]');
+      if (tab) {
+        this.activeDoctor = tab.getAttribute('data-doctor-tab');
+        this.renderTabs();
+        this.renderTable();
+      }
+    });
 
-    const myGrid = document.getElementById('my-appointments-grid');
-    if (myGrid) myGrid.addEventListener('click', (e) => this.handleGridClick(e));
+    document.getElementById('appt-table-tbody')?.addEventListener('click', (e) => {
+      const removeBtn = e.target.closest('[data-remove-appt]');
+      if (removeBtn) {
+        this.deleteAppointment(removeBtn.getAttribute('data-remove-appt'));
+        return;
+      }
+      const addBtn = e.target.closest('[data-add-slot]');
+      if (addBtn) {
+        this.openAddModal(this.activeDoctor, addBtn.getAttribute('data-add-slot'));
+      }
+    });
 
-    document.getElementById('modal-appointment-form')?.addEventListener('submit', (e) => {
+    document.getElementById('form-appointment')?.addEventListener('submit', (e) => {
       e.preventDefault();
       this.submitAppointment();
     });
 
-    document.getElementById('appt-patient-picker-trigger')?.addEventListener('click', () => this.openPatientPicker());
+    document.getElementById('appt-picker-trigger')?.addEventListener('click', () => this.openPatientPicker());
+    document.getElementById('btn-change-appt-patient')?.addEventListener('click', () => this.openPatientPicker());
 
     const searchInput = document.getElementById('appt-picker-search-input');
     if (searchInput) searchInput.addEventListener('input', () => this.renderPickerPatients());
@@ -68,135 +87,160 @@ export class AppointmentsManager {
   async loadAll() {
     const [appointments, doctors, patients] = await Promise.all([
       db.getAppointments(),
-      db.getDoctorsList(),
+      db.getDoctors(),
       db.getPatients()
     ]);
     this.appointments = appointments;
     this.doctors = doctors;
     this.patients = patients;
+    if (!this.activeDoctor || !this.doctors.includes(this.activeDoctor)) {
+      this.activeDoctor = this.doctors[0] || null;
+    }
   }
 
-  // Count across ALL doctors at this time slot (beds are shared clinic-wide).
   getSlotTotalCount(timeSlot) {
     return this.appointments.filter((a) => a.timeSlot === timeSlot).length;
   }
 
-  getCellAppointments(doctorUid, timeSlot) {
-    return this.appointments.filter((a) => a.doctorUid === doctorUid && a.timeSlot === timeSlot);
+  getCellAppointments(doctorName, timeSlot) {
+    return this.appointments.filter((a) => a.doctorName === doctorName && a.timeSlot === timeSlot);
   }
 
-  // ================= Full Grid: every active doctor as a column =================
+  // ================= Full Schedule (Admin/Receptionist view) =================
   async render() {
-    const grid = document.getElementById('appointments-grid');
-    if (!grid) return;
+    const tabsEl = document.getElementById('appt-doctor-tabs');
+    const tbody = document.getElementById('appt-table-tbody');
+    if (!tabsEl || !tbody) return;
     try {
       await this.loadAll();
-      grid.innerHTML = this.buildGridHTML(this.doctors);
+      this.renderTabs();
+      this.renderTable();
     } catch (err) {
       console.error('Appointments render error:', err);
-      grid.innerHTML = this.buildErrorHTML(err);
+      tbody.innerHTML = this.buildErrorRow(err);
     }
   }
 
-  // ================= Doctor's Own Single Column (Doctor Dashboard) =================
-  async renderForDoctor(doctorUid) {
+  renderTabs() {
+    const tabsEl = document.getElementById('appt-doctor-tabs');
+    if (!tabsEl) return;
+    if (this.doctors.length === 0) {
+      tabsEl.innerHTML = `<span style="color: var(--text-muted); font-size: 0.85rem;">لا يوجد دكاترة مسجلين حالياً.</span>`;
+      return;
+    }
+    tabsEl.innerHTML = this.doctors.map((docName) => {
+      const isActive = docName === this.activeDoctor;
+      return `
+        <button type="button" data-doctor-tab="${escapeHTML(docName)}" class="btn btn-sm ${isActive ? 'btn-primary' : 'btn-outline'}" style="white-space: nowrap;">
+          <i class="fa-solid fa-user-doctor"></i> ${escapeHTML(docName)}
+        </button>
+      `;
+    }).join('');
+  }
+
+  renderTable() {
+    const tbody = document.getElementById('appt-table-tbody');
+    if (!tbody) return;
+    if (!this.activeDoctor) {
+      tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; padding:20px; color:var(--text-muted);">لا يوجد دكاترة مسجلين حالياً.</td></tr>`;
+      return;
+    }
+
+    const rows = APPT_SLOTS.map((slot) => {
+      const cellAppts = this.getCellAppointments(this.activeDoctor, slot.key);
+      const totalInSlot = this.getSlotTotalCount(slot.key);
+      const overCapacity = totalInSlot > MAX_BEDS_PER_SLOT;
+
+      const existingRows = cellAppts.map((a) => `
+        <tr>
+          <td style="font-weight: 800; color: var(--primary);">
+            ${slot.label}
+            ${overCapacity ? `<div style="font-size: 0.68rem; color: var(--danger); font-weight: 700;"><i class="fa-solid fa-triangle-exclamation"></i> ${totalInSlot}/${MAX_BEDS_PER_SLOT}</div>` : ''}
+          </td>
+          <td>${escapeHTML(a.patientName)}</td>
+          <td><bdi dir="ltr">${escapeHTML(a.patientPhone || '-')}</bdi></td>
+          <td style="text-align:center;">
+            <button type="button" class="btn btn-outline btn-sm" style="color: var(--danger); border-color: var(--danger);" data-remove-appt="${escapeHTML(a.id)}" title="إلغاء الموعد">
+              <i class="fa-solid fa-trash"></i>
+            </button>
+          </td>
+        </tr>
+      `).join('');
+
+      const addRow = `
+        <tr>
+          <td style="font-weight: 800; color: var(--primary);">${cellAppts.length === 0 ? slot.label : ''}</td>
+          <td colspan="3">
+            <button type="button" class="btn btn-outline btn-sm" data-add-slot="${slot.key}" style="width: 100%; border-style: dashed;">
+              <i class="fa-solid fa-plus"></i> حجز مريض في هذا الميعاد
+            </button>
+          </td>
+        </tr>
+      `;
+
+      return existingRows + addRow;
+    }).join('');
+
+    tbody.innerHTML = rows;
+  }
+
+  buildErrorRow(err) {
+    return `<tr><td colspan="4" style="text-align:center; padding:20px; color:var(--danger);">
+      <i class="fa-solid fa-triangle-exclamation"></i> تعذر تحميل جدول المواعيد: ${escapeHTML(err.message || 'خطأ غير معروف')}
+    </td></tr>`;
+  }
+
+  // ================= Doctor's Own Schedule (Doctor Dashboard) =================
+  async renderForDoctor(doctorName) {
     const grid = document.getElementById('my-appointments-grid');
     if (!grid) return;
     try {
       await this.loadAll();
-      const me = this.doctors.find((d) => d.uid === doctorUid);
-      grid.innerHTML = this.buildGridHTML(me ? [me] : []);
-    } catch (err) {
-      console.error('Appointments (doctor) render error:', err);
-      grid.innerHTML = this.buildErrorHTML(err);
-    }
-  }
-
-  buildErrorHTML(err) {
-    return `<div style="padding: 20px; text-align: center; color: var(--danger);">
-      <i class="fa-solid fa-triangle-exclamation"></i> تعذر تحميل جدول المواعيد.<br>
-      <span style="font-size: 0.8rem; color: var(--text-muted);">${escapeHTML(err.message || 'خطأ غير معروف')}</span>
-    </div>`;
-  }
-
-  buildGridHTML(doctorsToShow) {
-    if (!doctorsToShow || doctorsToShow.length === 0) {
-      return `<div style="padding: 20px; text-align: center; color: var(--text-muted);">لا يوجد دكاترة مسجلين حالياً في طاقم العمل.</div>`;
-    }
-
-    const doctorsHeader = doctorsToShow.map((doc) =>
-      `<th style="text-align:center; min-width: 150px;"><i class="fa-solid fa-user-doctor" style="color: var(--primary);"></i> ${escapeHTML(doc.name)}</th>`
-    ).join('');
-
-    const rows = APPT_SLOTS.map((slot) => {
-      const totalInSlot = this.getSlotTotalCount(slot.key);
-      const overCapacity = totalInSlot > MAX_BEDS_PER_SLOT;
-
-      const cells = doctorsToShow.map((doc) => {
-        const cellAppts = this.getCellAppointments(doc.uid, slot.key);
-        const chips = cellAppts.map((a) => `
-          <div class="appt-chip" data-appt-id="${escapeHTML(a.id)}">
-            <span class="appt-chip-patient">${escapeHTML(a.patientName)}</span>
-            <button type="button" class="appt-chip-remove" data-remove-appt="${escapeHTML(a.id)}" title="حذف">&times;</button>
-          </div>
-        `).join('');
-
+      const cellsHtml = APPT_SLOTS.map((slot) => {
+        const appts = this.getCellAppointments(doctorName, slot.key);
+        if (appts.length === 0) return '';
+        const names = appts.map((a) => escapeHTML(a.patientName)).join('، ');
         return `
-          <td class="appt-cell ${overCapacity ? 'appt-cell-over' : ''}">
-            ${chips}
-            <button type="button" class="btn-add-appt" data-add-doctor="${escapeHTML(doc.uid)}" data-add-doctor-name="${escapeHTML(doc.name)}" data-add-slot="${slot.key}">
-              <i class="fa-solid fa-plus"></i> حجز
-            </button>
-          </td>
+          <div style="display:flex; justify-content:space-between; align-items:center; padding:8px 10px; border-bottom:1px solid var(--border-color);">
+            <span style="font-weight:800; color:var(--primary);">${slot.label}</span>
+            <span style="color: var(--text-main);">${names}</span>
+          </div>
         `;
       }).join('');
-
-      return `<tr>
-        <td class="appt-time-label">
-          ${slot.label}
-          ${overCapacity ? `<div class="appt-over-badge" title="عدد الحالات في هذا الموعد (${totalInSlot}) تجاوز عدد الأسرة (${MAX_BEDS_PER_SLOT})"><i class="fa-solid fa-triangle-exclamation"></i> ${totalInSlot}/${MAX_BEDS_PER_SLOT}</div>` : ''}
-        </td>
-        ${cells}
-      </tr>`;
-    }).join('');
-
-    return `
-      <table class="data-table appt-table">
-        <thead><tr><th></th>${doctorsHeader}</tr></thead>
-        <tbody>${rows}</tbody>
-      </table>
-    `;
-  }
-
-  handleGridClick(e) {
-    const removeBtn = e.target.closest('[data-remove-appt]');
-    if (removeBtn) {
-      this.deleteAppointment(removeBtn.getAttribute('data-remove-appt'));
-      return;
-    }
-    const addBtn = e.target.closest('.btn-add-appt');
-    if (addBtn) {
-      this.openAddModal(
-        addBtn.getAttribute('data-add-doctor'),
-        addBtn.getAttribute('data-add-doctor-name'),
-        addBtn.getAttribute('data-add-slot')
-      );
+      grid.innerHTML = cellsHtml || `<div style="padding:16px; text-align:center; color:var(--text-muted); font-size:0.85rem;">لا يوجد مواعيد ثابتة مسجلة لك حالياً.</div>`;
+    } catch (err) {
+      console.error('Appointments (doctor) render error:', err);
+      grid.innerHTML = `<div style="padding:16px; text-align:center; color:var(--danger); font-size:0.85rem;">تعذر تحميل الجدول: ${escapeHTML(err.message || 'خطأ غير معروف')}</div>`;
     }
   }
 
   // ================= Add Appointment Modal =================
-  openAddModal(doctorUid, doctorName, timeSlot) {
-    this.pendingDoctorUid = doctorUid;
+  openAddModal(doctorName, timeSlot) {
     this.pendingDoctorName = doctorName;
     this.pendingTimeSlot = timeSlot;
     this.selectedPatientId = null;
     this.selectedPatientName = null;
+    this.selectedPatientPhone = null;
 
     const slotLabel = APPT_SLOTS.find((s) => s.key === timeSlot)?.label || timeSlot;
-    document.getElementById('appt-modal-title').textContent = `حجز موعد - د. ${doctorName} - الساعة ${slotLabel}`;
+    document.getElementById('appt-info-doctor').textContent = doctorName;
+    document.getElementById('appt-info-slot').textContent = slotLabel;
 
-    const trigger = document.getElementById('appt-patient-picker-trigger');
-    if (trigger) trigger.querySelector('.btn-text').textContent = '-- اختر مريض من السجل --';
+    const totalInSlot = this.getSlotTotalCount(timeSlot);
+    const warningBox = document.getElementById('appt-slot-warning');
+    if (warningBox) {
+      if (totalInSlot >= MAX_BEDS_PER_SLOT) {
+        document.getElementById('appt-slot-occupied-count').textContent = totalInSlot;
+        warningBox.style.display = 'block';
+      } else {
+        warningBox.style.display = 'none';
+      }
+    }
+
+    const placeholder = document.getElementById('appt-picker-placeholder');
+    if (placeholder) placeholder.textContent = 'اضغط هنا للبحث واختيار المريض...';
+    document.getElementById('appt-picker-trigger').style.display = 'flex';
+    document.getElementById('appt-selected-patient-box').style.display = 'none';
 
     this.app.openModal('modal-appointment');
   }
@@ -276,8 +320,14 @@ export class AppointmentsManager {
     if (!patient) return;
     this.selectedPatientId = patient.id;
     this.selectedPatientName = patient.name;
-    const trigger = document.getElementById('appt-patient-picker-trigger');
-    if (trigger) trigger.querySelector('.btn-text').textContent = patient.name;
+    this.selectedPatientPhone = patient.phone;
+
+    document.getElementById('appt-picker-trigger').style.display = 'none';
+    const box = document.getElementById('appt-selected-patient-box');
+    document.getElementById('appt-selected-patient-name').textContent = patient.name;
+    document.getElementById('appt-selected-patient-sub').textContent = patient.phone || '';
+    box.style.display = 'flex';
+
     this.app.closeModal('modal-appt-patient-picker');
   }
 
@@ -289,12 +339,12 @@ export class AppointmentsManager {
 
     try {
       await db.addAppointment({
-        doctorUid: this.pendingDoctorUid,
         doctorName: this.pendingDoctorName,
         timeSlot: this.pendingTimeSlot,
         patientId: this.selectedPatientId,
         patientName: this.selectedPatientName,
-        createdBy: auth.getCurrentUser()?.name || ''
+        patientPhone: this.selectedPatientPhone || '',
+        bookedBy: auth.getCurrentUser()?.name || ''
       });
       this.app.closeModal('modal-appointment');
       this.app.showToast('تم حجز الموعد بنجاح');
@@ -317,11 +367,11 @@ export class AppointmentsManager {
   }
 
   async refreshVisibleGrids() {
-    if (document.getElementById('appointments-grid')) await this.render();
+    if (document.getElementById('appt-doctor-tabs')) await this.render();
     const myGrid = document.getElementById('my-appointments-grid');
     if (myGrid) {
-      const uid = auth.getCurrentUser()?.uid;
-      if (uid) await this.renderForDoctor(uid);
+      const name = auth.getCurrentUser()?.name;
+      if (name) await this.renderForDoctor(name);
     }
   }
 }

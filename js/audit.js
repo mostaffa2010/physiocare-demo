@@ -24,7 +24,7 @@ export class AuditAndAdminManager {
       formAddUser.addEventListener('submit', (e) => this.handleAddUser(e));
     }
 
-    const usersTbody = document.getElementById('users-table-tbody');
+    const usersTbody = document.getElementById('admin-users-tbody');
     if (usersTbody) {
       usersTbody.addEventListener('click', (e) => {
         const btn = e.target.closest('.btn-delete-user');

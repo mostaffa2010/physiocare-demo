@@ -76,7 +76,7 @@ export class ClaimsManager {
     });
 
     select.innerHTML = '<option value="">-- اضغط هنا لاختيار شركة التأمين --</option>' + 
-      companies.map(c => `<option value="${c.name}">${c.label}</option>`).join('');
+      companies.map(c => `<option value="${escapeHTML(c.name)}">${escapeHTML(c.label)}</option>`).join('');
 
     // Keep default empty placeholder
     select.value = '';
