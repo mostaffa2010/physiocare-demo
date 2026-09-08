@@ -33,7 +33,7 @@ export class RolesManager {
     navItems.forEach(item => {
       const view = item.getAttribute('data-view');
       if (role === ROLES.DOCTOR) {
-        item.style.setProperty('display', (view === 'dashboard' || view === 'patients' || view === 'appointments') ? 'flex' : 'none', 'important');
+        item.style.setProperty('display', (view === 'dashboard' || view === 'patients') ? 'flex' : 'none', 'important');
       } else if (role === ROLES.RECEPTIONIST) {
         // السكرتارية ترى الرئيسية، المرضى، الجلسات، الحسابات (وتُحجب لوحة المدير فقط)
         item.style.setProperty('display', view === 'admin' ? 'none' : 'flex', 'important');
