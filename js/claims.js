@@ -18,6 +18,7 @@ export class ClaimsManager {
     this.activeCardPatientId = null;
     this.attendanceCardsStore = {};
     this.searchQuery = '';
+    this.cardTreatmentsEditMode = false;
     this.defaultTreatmentOptions = [
       'pulsed Ultrasound',
       'Heat application',
@@ -76,7 +77,7 @@ export class ClaimsManager {
     });
 
     select.innerHTML = '<option value="">-- اضغط هنا لاختيار شركة التأمين --</option>' + 
-      companies.map(c => `<option value="${c.name}">${c.label}</option>`).join('');
+      companies.map(c => `<option value="${escapeHTML(c.name)}">${escapeHTML(c.label)}</option>`).join('');
 
     // Keep default empty placeholder
     select.value = '';
@@ -133,7 +134,7 @@ export class ClaimsManager {
     document.getElementById('claim-patient-search-input')?.addEventListener('input', (e) => this.onSearchInput(e.target.value));
 
     // Modal attendance card buttons
-    document.getElementById('btn-card-add-treatment')?.addEventListener('click', () => this.promptAddNewTreatment());
+    document.getElementById('btn-card-add-treatment')?.addEventListener('click', () => this.toggleCardTreatmentsEditMode());
     const bCurCard = document.getElementById('btn-card-print-current'); if (bCurCard) bCurCard.onclick = (e) => { e.preventDefault(); e.stopPropagation(); this.printAttendanceCards(this.activeCardPatientId); };
     document.getElementById('btn-card-save')?.addEventListener('click', () => this.saveAttendanceCardData());
 
@@ -164,11 +165,32 @@ export class ClaimsManager {
     // Event Delegation: Attendance Card Treatments Chips
     const treatContainer = document.getElementById('card-treatment-chips-container');
     if (treatContainer) {
-      treatContainer.addEventListener('click', (e) => {
-        const chip = e.target.closest('.card-treatment-chip');
-        if (chip) {
-          chip.classList.toggle('selected');
-          this.updateCardLivePreview();
+      treatContainer.addEventListener('click', async (e) => {
+        const addBtn = e.target.closest('#btn-card-add-new-treatment');
+        if (addBtn) {
+          e.preventDefault();
+          e.stopPropagation();
+          await this.promptAddNewTreatment();
+          return;
+        }
+
+        const delTag = e.target.closest('.chip-delete-tag');
+        if (delTag) {
+          e.preventDefault();
+          e.stopPropagation();
+          const optName = delTag.getAttribute('data-treatment');
+          if (optName) {
+            await this.deleteCardTreatment(optName);
+          }
+          return;
+        }
+
+        if (!this.cardTreatmentsEditMode) {
+          const chip = e.target.closest('.card-treatment-chip');
+          if (chip) {
+            chip.classList.toggle('selected');
+            this.updateCardLivePreview();
+          }
         }
       });
     }
@@ -186,11 +208,7 @@ export class ClaimsManager {
     this.endDate = endInput?.value || this.endDate || '2026-08-31';
 
     if (!this.currentCompany) {
-      if (this.app && this.app.showAlert) {
-        this.app.showAlert('يرجى اختيار شركة التأمين أولاً من القائمة.', 'تنبيه');
-      } else {
-        alert('يرجى اختيار شركة التأمين أولاً.');
-      }
+      await this.app.showAlert('يرجى اختيار شركة التأمين أولاً من القائمة.', 'بيانات ناقصة', 'warning');
       return;
     }
 
@@ -413,6 +431,12 @@ export class ClaimsManager {
     document.getElementById('card-input-diagnosis').value = cardData.diagnosis || '';
     document.getElementById('card-input-eval').value = cardData.evaluation || '';
 
+    this.cardTreatmentsEditMode = false;
+    const editBtn = document.getElementById('btn-card-add-treatment');
+    if (editBtn) {
+      editBtn.className = 'btn-edit-chips';
+      editBtn.innerHTML = '<i class="fa-solid fa-pen-to-square"></i> <span class="edit-text">تعديل الوسائل</span>';
+    }
     this.renderCardTreatmentChips(cardData.treatments || []);
     this.app.openModal('modal-attendance-card');
   }
@@ -421,19 +445,117 @@ export class ClaimsManager {
     const container = document.getElementById('card-treatment-chips-container');
     if (!container) return;
 
-    const customStored = JSON.parse(localStorage.getItem('pc_claim_treatments') || '[]');
-    const allOptions = Array.from(new Set([...this.defaultTreatmentOptions, ...customStored]));
+    const modalities = (typeof db !== 'undefined' && db.getClinicalOptions)
+      ? db.getClinicalOptions('modality')
+      : [];
+    const allOptions = Array.from(new Set([...this.defaultTreatmentOptions, ...modalities]));
+    const isEdit = Boolean(this.cardTreatmentsEditMode);
 
-    container.innerHTML = allOptions.map(opt => {
+    let html = allOptions.map(opt => {
       const isSelected = selectedTreatments.includes(opt);
+      const safeOpt = opt.replace(/'/g, "\\'");
+      const editClass = isEdit ? 'in-edit-mode' : '';
+      const deleteIconHtml = isEdit
+        ? `<span class="chip-delete-tag" data-action="delete-card-treatment" data-treatment="${safeOpt}" title="حذف الوسيلة"><i class="fa-solid fa-circle-xmark"></i></span>`
+        : '';
+
       return `
-        <button type="button" class="chip-choice sheet-chip card-treatment-chip ${isSelected ? 'selected' : ''}" data-val="${opt}">
-          <i class="fa-solid fa-bolt"></i> ${opt}
+        <button type="button" class="chip-choice sheet-chip card-treatment-chip ${isSelected ? 'selected' : ''} ${editClass}" data-val="${opt}">
+          <i class="fa-solid fa-bolt"></i> <span>${escapeHTML(opt)}</span>
+          ${deleteIconHtml}
         </button>
       `;
     }).join('');
 
+    if (isEdit) {
+      html += `
+        <button type="button" class="chip-add-new-btn" id="btn-card-add-new-treatment" data-action="add-card-treatment" style="width: 100%; margin-top: 8px; justify-content: center;">
+          <i class="fa-solid fa-plus"></i> <span>إضافة وسيلة علاجية</span>
+        </button>
+      `;
+    }
+
+    container.innerHTML = html;
     this.updateCardLivePreview();
+  }
+
+  toggleCardTreatmentsEditMode() {
+    const user = auth.getCurrentUser();
+    if (!RolesManager.canManageUsers(user)) {
+      this.app.showAlert('تعديل وحذف الأزرار متاح لمدير المركز فقط.', 'صلاحية المدير');
+      return;
+    }
+
+    this.cardTreatmentsEditMode = !this.cardTreatmentsEditMode;
+    const isEdit = this.cardTreatmentsEditMode;
+
+    const btn = document.getElementById('btn-card-add-treatment');
+    if (btn) {
+      if (isEdit) {
+        btn.className = 'btn-edit-chips active';
+        btn.innerHTML = '<i class="fa-solid fa-check"></i> <span class="edit-text">تم الانتهاء</span>';
+      } else {
+        btn.className = 'btn-edit-chips';
+        btn.innerHTML = '<i class="fa-solid fa-pen-to-square"></i> <span class="edit-text">تعديل الوسائل</span>';
+      }
+    }
+
+    const selected = Array.from(document.querySelectorAll('#card-treatment-chips-container .card-treatment-chip.selected'))
+      .map(b => b.getAttribute('data-val'));
+
+    this.renderCardTreatmentChips(selected);
+  }
+
+  async deleteCardTreatment(optName) {
+    const user = auth.getCurrentUser();
+    if (!RolesManager.canManageUsers(user)) {
+      await this.app.showAlert('حذف وسائل العلاج متاح لمدير المركز فقط.', 'صلاحية المدير');
+      return;
+    }
+
+    const confirmed = await this.app.showConfirm(`هل أنت متأكد من حذف وسيلة العلاج "${optName}"؟`, 'تأكيد الحذف');
+    if (confirmed) {
+      this.defaultTreatmentOptions = this.defaultTreatmentOptions.filter(item => item !== optName);
+
+      if (typeof db !== 'undefined' && db.deleteClinicalOption) {
+        try {
+          await db.deleteClinicalOption('modality', optName);
+        } catch (_) {}
+      }
+
+      const selected = Array.from(document.querySelectorAll('#card-treatment-chips-container .card-treatment-chip.selected'))
+        .map(b => b.getAttribute('data-val'))
+        .filter(v => v !== optName);
+
+      this.renderCardTreatmentChips(selected);
+      this.app.showToast(`تم حذف وسيلة "${optName}" بنجاح`);
+    }
+  }
+
+  async promptAddNewTreatment() {
+    const user = auth.getCurrentUser();
+    if (!RolesManager.canManageUsers(user)) {
+      await this.app.showAlert('إضافة وسائل العلاج متاح لمدير المركز فقط.', 'صلاحية المدير');
+      return;
+    }
+
+    const name = await this.app.showPrompt(
+      'اكتب اسم وسيلة العلاج الطبيعي الجديدة:',
+      'إضافة وسيلة علاجية جديدة',
+      'مثال: Shortwave Diathermy'
+    );
+
+    if (name && typeof name === 'string' && name.trim().length > 0) {
+      const cleanName = name.trim();
+      await db.addClinicalOption('modality', cleanName);
+
+      const selected = Array.from(document.querySelectorAll('#card-treatment-chips-container .sheet-chip.selected'))
+        .map(b => b.getAttribute('data-val'));
+      selected.push(cleanName);
+
+      this.renderCardTreatmentChips(selected);
+      this.app.showToast('تمت إضافة وسيلة ' + cleanName + ' بنجاح');
+    }
   }
 
   updateCardLivePreview() {
@@ -445,7 +567,7 @@ export class ClaimsManager {
       if (selected.length === 0) {
         previewList.innerHTML = '<span style="color: var(--text-muted); font-size: 0.8rem;">اضغط على الأزرار أعلاه لتحديد الخطة العلاجية...</span>';
       } else {
-        previewList.innerHTML = selected.map(t => `<div style="padding: 2px 0; font-weight: 700; color: #1e293b;">- ${t}</div>`).join('');
+        previewList.innerHTML = selected.map(t => `<div style="padding: 2px 0; font-weight: 700; color: #1e293b;">- ${escapeHTML(t)}</div>`).join('');
       }
     }
   }

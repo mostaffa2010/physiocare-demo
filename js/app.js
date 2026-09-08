@@ -64,7 +64,7 @@ if (typeof window !== 'undefined' && !window.__print_lock_installed) {
   };
 }
 
-import { escapeHTML } from './utils.js';
+import { escapeHTML, getLocalDateStr } from './utils.js';
 import { ClaimsManager } from './claims.js';
 // ========================================================
 // ASCPT - Main Application Coordinator
@@ -77,6 +77,7 @@ import { PatientsManager } from './patients.js';
 import { SessionsManager } from './sessions.js';
 import { FinanceManager } from './finance.js';
 import { DoctorDashboardManager } from './doctor-dashboard.js';
+import { AppointmentsManager } from './appointments.js';
 import { ExportManager } from './export.js';
 import { AuditAndAdminManager } from './audit.js';
 
@@ -95,6 +96,7 @@ class App {
     this.auditManager = new AuditAndAdminManager(this);
     this.claimsManager = new ClaimsManager(this);
     this.doctorDashboardManager = new DoctorDashboardManager(this);
+    this.appointmentsManager = new AppointmentsManager(this);
 
     window.patientsManager = this.patientsManager;
     window.sessionsManager = this.sessionsManager;
@@ -103,6 +105,7 @@ class App {
     window.auditManager = this.auditManager;
     window.claimsManager = this.claimsManager;
     window.doctorDashboardManager = this.doctorDashboardManager;
+    window.appointmentsManager = this.appointmentsManager;
   }
 
   async init() {
@@ -159,6 +162,7 @@ class App {
     try { await this.financeManager.init(); } catch (e) { console.warn('financeManager init notice:', e); }
     try { this.exportManager.init(); } catch (e) { console.warn('exportManager init notice:', e); }
     try { await this.auditManager.init(); } catch (e) { console.warn('auditManager init notice:', e); }
+    try { await this.appointmentsManager.init(); } catch (e) { console.warn('appointmentsManager init notice:', e); }
 
     // مزامنة أزرار القوائم المخصصة
     ['claim-company-select', 'patient-filter-type', 'session-doctor-select', 'finance-doctor-filter', 'newuser-role', 'p-doctor'].forEach(id => {
@@ -262,6 +266,7 @@ class App {
       this.auditManager.loadUsers();
       this.auditManager.loadAuditLogs();
     }
+    if (viewName === 'appointments') this.appointmentsManager.render();
   }
 
   bindModalsAndAuth() {
@@ -399,15 +404,32 @@ class App {
 
     if (btnConfirm) {
       btnConfirm.addEventListener('click', () => {
+        const inputEl = document.getElementById('dialog-input');
+        const isPrompt = inputEl && inputEl.style.display !== 'none';
+        const val = isPrompt ? inputEl.value.trim() : true;
+        if (inputEl) inputEl.style.display = 'none';
         this.closeModal('modal-custom-dialog');
-        if (this.dialogResolve) this.dialogResolve(true);
+        if (this.dialogResolve) this.dialogResolve(val);
       });
     }
 
     if (btnCancel) {
       btnCancel.addEventListener('click', () => {
+        const inputEl = document.getElementById('dialog-input');
+        const isPrompt = inputEl && inputEl.style.display !== 'none';
+        if (inputEl) inputEl.style.display = 'none';
         this.closeModal('modal-custom-dialog');
-        if (this.dialogResolve) this.dialogResolve(false);
+        if (this.dialogResolve) this.dialogResolve(isPrompt ? null : false);
+      });
+    }
+
+    const dialogInput = document.getElementById('dialog-input');
+    if (dialogInput) {
+      dialogInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          btnConfirm?.click();
+        }
       });
     }
   }
@@ -443,10 +465,11 @@ class App {
     }
 
     window.addEventListener('popstate', async (event) => {
-      // 1. إذا كانت هناك أي نافذة منبثقة أو قائمة مفتوحة، نغلقها فقط
-      const activeModal = document.querySelector('.modal-backdrop.active:not(#modal-auth)');
-      if (activeModal) {
-        activeModal.classList.remove('active');
+      // 1. إذا كانت هناك أي نافذة منبثقة مفتوحة، نغلق النافذة العلوية الأخيرة فقط
+      const activeModals = Array.from(document.querySelectorAll('.modal-backdrop.active:not(#modal-auth)'));
+      if (activeModals.length > 0) {
+        const topModal = activeModals[activeModals.length - 1];
+        topModal.classList.remove('active');
         return;
       }
 
@@ -538,7 +561,7 @@ class App {
 
     this.calendarViewingYear = initDate.getFullYear();
     this.calendarViewingMonth = initDate.getMonth();
-    this.calendarSelectedDate = input?.value || initDate.toISOString().split('T')[0];
+    this.calendarSelectedDate = input?.value || getLocalDateStr(initDate);
 
     this.renderCalendar();
     this.openModal('modal-custom-calendar');
@@ -566,7 +589,7 @@ class App {
   calendarSelectQuick(type) {
     const today = new Date();
     if (type === 'today') {
-      this.calendarSelectedDate = today.toISOString().split('T')[0];
+      this.calendarSelectedDate = getLocalDateStr(today);
     } else if (type === 'yesterday') {
       const yest = new Date();
       yest.setDate(yest.getDate() - 1);
@@ -885,8 +908,8 @@ class App {
   openAddExpenseModal() {
     const form = document.getElementById('form-expense');
     if (form && typeof form.reset === "function") form.reset();
-    const titleEl = document.getElementById('expense-title');
-    const amountEl = document.getElementById('expense-amount');
+    const titleEl = document.getElementById('exp-title') || document.getElementById('expense-title');
+    const amountEl = document.getElementById('exp-amount') || document.getElementById('expense-amount');
     if (titleEl) titleEl.value = '';
     if (amountEl) amountEl.value = '';
     this.openModal('modal-expense');
@@ -972,6 +995,46 @@ class App {
       }
 
       this.openModal('modal-custom-dialog');
+    });
+  }
+
+  showPrompt(message, title = 'إدخال بيانات', placeholder = '', isPassword = false) {
+    return new Promise((resolve) => {
+      this.dialogResolve = resolve;
+      const titleEl = document.getElementById('dialog-title');
+      const msgEl = document.getElementById('dialog-message');
+      const iconEl = document.getElementById('dialog-icon');
+      const inputEl = document.getElementById('dialog-input');
+      const btnCancel = document.getElementById('dialog-btn-cancel');
+      const btnConfirm = document.getElementById('dialog-btn-confirm');
+
+      if (titleEl) titleEl.textContent = title;
+      if (msgEl) msgEl.textContent = message;
+      if (btnCancel) {
+        btnCancel.style.display = 'inline-flex';
+        btnCancel.textContent = 'إلغاء';
+      }
+      if (btnConfirm) {
+        btnConfirm.textContent = 'تأكيد';
+        btnConfirm.className = 'btn btn-primary';
+      }
+
+      if (inputEl) {
+        inputEl.style.display = 'block';
+        inputEl.value = '';
+        inputEl.placeholder = placeholder;
+        inputEl.style.webkitTextSecurity = isPassword ? 'disc' : 'none';
+      }
+
+      if (iconEl) {
+        iconEl.className = 'custom-dialog-icon info';
+        iconEl.innerHTML = isPassword ? '<i class="fa-solid fa-key"></i>' : '<i class="fa-solid fa-pen-to-square"></i>';
+      }
+
+      this.openModal('modal-custom-dialog');
+      setTimeout(() => {
+        if (inputEl) inputEl.focus();
+      }, 150);
     });
   }
 

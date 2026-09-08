@@ -24,7 +24,7 @@ export class AuditAndAdminManager {
       formAddUser.addEventListener('submit', (e) => this.handleAddUser(e));
     }
 
-    const usersTbody = document.getElementById('users-table-tbody');
+    const usersTbody = document.getElementById('admin-users-tbody');
     if (usersTbody) {
       usersTbody.addEventListener('click', (e) => {
         const btn = e.target.closest('.btn-delete-user');
@@ -127,6 +127,29 @@ export class AuditAndAdminManager {
         </tr>
       `;
     }).join('');
+  }
+
+  async resetUserPassword(userId, userName) {
+    const newPass = await this.app.showPrompt(
+      `أدخل كلمة المرور الجديدة للموظف (${userName}):\n(يجب ألا تقل عن 6 خانات)`,
+      'تعيين كلمة مرور جديدة',
+      '6 أحرف على الأقل',
+      true
+    );
+    if (!newPass) return;
+    if (newPass.length < 6) {
+      await this.app.showAlert('كلمة المرور يجب ألا تقل عن 6 خانات/أحرف.', 'خطأ', 'warning');
+      return;
+    }
+
+    const users = await db.getUsers();
+    const user = users.find(u => u.id === userId);
+    if (user) {
+      user.password = newPass;
+      localStorage.setItem('pc_demo_users', JSON.stringify(users));
+      await db.logAudit('تغيير كلمة المرور', `تم تعيين كلمة مرور جديدة للموظف: ${userName}`, auth.getCurrentUser());
+      this.app.showToast(`تم تغيير كلمة مرور (${userName}) بنجاح.`);
+    }
   }
 
   async deleteUser(userId, userName) {

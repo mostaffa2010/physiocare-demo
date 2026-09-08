@@ -4,6 +4,20 @@
 
 import { db } from './db.js';
 
+/**
+ * Sanitizes a value for safe inclusion inside a quoted CSV field:
+ * escapes embedded double-quotes and neutralizes a leading
+ * =, +, -, or @ so spreadsheet apps (Excel/Sheets) never treat
+ * exported patient/staff-entered text as a formula.
+ */
+function csvSafe(value) {
+  let str = String(value ?? '');
+  if (/^[=+\-@]/.test(str)) {
+    str = `'${str}`;
+  }
+  return str.replace(/"/g, '""');
+}
+
 export class ExportManager {
   constructor(app, financeManager) {
     this.app = app;
@@ -16,14 +30,9 @@ export class ExportManager {
       btnExcel.addEventListener('click', () => this.exportToExcel());
     }
 
-        const btnPrint = document.getElementById('btn-print-report');
+    const btnPrint = document.getElementById('btn-print-report');
     if (btnPrint) {
-      btnPrint.onclick = (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        if (btnPrint.disabled) return;
-        this.printReport();
-      };
+      btnPrint.addEventListener('click', () => this.printReport());
     }
   }
 
@@ -124,7 +133,7 @@ export class ExportManager {
       allSessions.forEach((s, idx) => {
         const parts = Array.isArray(s.bodyParts) ? s.bodyParts.join(' - ') : '';
         const contract = s.contractType === 'direct' ? 'مباشر' : (s.contractType === 'indirect' ? 'غير مباشر' : '-');
-        csv += `${idx + 1},"${s.patientName}","${s.doctor}",${s.payType === 'cash' ? 'نقدي' : 'تأمين'},"${s.insuranceName || '-'}","${contract}","${parts}",${s.amountPaid},"${s.recordedBy}","${s.recordedAt}"\r\n`;
+        csv += `${idx + 1},"${csvSafe(s.patientName)}","${csvSafe(s.doctor)}",${s.payType === 'cash' ? 'نقدي' : 'تأمين'},"${csvSafe(s.insuranceName || '-')}","${csvSafe(contract)}","${csvSafe(parts)}",${s.amountPaid},"${csvSafe(s.recordedBy)}","${csvSafe(s.recordedAt)}"\r\n`;
       });
 
       this.downloadCSV(csv, `تقرير_PhysioFlow_اليومي_${dateStr}.csv`);
@@ -157,12 +166,21 @@ export class ExportManager {
         const total = docSessions.length;
         const pct = totalPatients > 0 ? ((total / totalPatients) * 100).toFixed(1) + '%' : '0%';
 
+        // Credited sessions rule:
+        // If session: s.bodyPartsCount || 1 (minimum 1)
+        // If examination: exactly 1 always
+        const creditedSessions = docSessions.reduce((acc, s) => {
+          if (s.entryType === 'examination') return acc + 1;
+          return acc + (s.bodyPartsCount || 1);
+        }, 0);
+
         return {
           'م': idx + 1,
           'الطبيب المعالج': doc,
           'مرضى نقدي': docCash,
           'مرضى شركات تأمين': docIns,
           'إجمالي الحالات': total,
+          'عدد الجلسات المحتسبة': creditedSessions,
           'النسبة من إجمالي المركز': pct
         };
       });
@@ -230,13 +248,13 @@ export class ExportManager {
       let csv = '\uFEFF';
       csv += `نظام PhysioFlow لإدارة مراكز العلاج الطبيعي - التقرير الشهري: ${monthStr}\r\n\r\n`;
       csv += `إجمالي مرضى الشهر,${totalPatients},نقدي,${cashCount},تأمين,${insCount},إيرادات,${totalCash} ج.م,مصروفات,${totalExp} ج.م,صافي الأرباح,${netCash} ج.م\r\n\r\n`;
-      csv += 'إحصائية الأطباء الشهرية:\r\nم,الطبيب المعالج,مرضى نقدي,مرضى شركات تأمين,إجمالي الحالات,النسبة\r\n';
+      csv += 'إحصائية الأطباء الشهرية:\r\nم,الطبيب المعالج,مرضى نقدي,مرضى شركات تأمين,إجمالي الحالات,عدد الجلسات المحتسبة,النسبة\r\n';
       doctorsData.forEach(d => {
-        csv += `${d['م']},"${d['الطبيب المعالج']}",${d['مرضى نقدي']},${d['مرضى شركات تأمين']},${d['إجمالي الحالات']},${d['النسبة من إجمالي المركز']}\r\n`;
+        csv += `${d['م']},"${csvSafe(d['الطبيب المعالج'])}",${d['مرضى نقدي']},${d['مرضى شركات تأمين']},${d['إجمالي الحالات']},${d['عدد الجلسات المحتسبة']},${d['النسبة من إجمالي المركز']}\r\n`;
       });
       csv += '\r\nتوزيع جهات التأمين والنقدي:\r\nم,الجهة,نوع التعاقد,عدد الحالات,النسبة\r\n';
       insuranceData.forEach(i => {
-        csv += `${i['م']},"${i['جهة السداد / شركة التأمين']}","${i['نوع التعاقد']}",${i['عدد الحالات في الشهر']},${i['النسبة المئوية']}\r\n`;
+        csv += `${i['م']},"${csvSafe(i['جهة السداد / شركة التأمين'])}","${csvSafe(i['نوع التعاقد'])}",${i['عدد الحالات في الشهر']},${i['النسبة المئوية']}\r\n`;
       });
 
       this.downloadCSV(csv, `تقرير_PhysioFlow_الشهري_${monthStr}.csv`);
@@ -250,19 +268,12 @@ export class ExportManager {
     const blob = new Blob([content], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
-    a.style.display = 'none';
     a.href = url;
     a.download = filename;
     document.body.appendChild(a);
     a.click();
-
-    setTimeout(() => {
-      try {
-        if (document.body.contains(a)) document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-      } catch (e) {}
-    }, 60000);
-
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
     this.app.showToast('تم تصدير الملف (Excel CSV) بنجاح');
   }
 
@@ -289,6 +300,7 @@ export class ExportManager {
       window.print();
     } catch (err) {
       console.error('Print trigger error:', err);
+      window.print();
     }
   }
 }

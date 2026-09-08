@@ -1,35 +1,61 @@
 // ========================================================
-// PhysioFlow Demo - Weekly Appointments Schedule
+// PhysioFlow Demo - Weekly Appointments Schedule (Customizable Recurring Template)
 // ========================================================
-// Fixed recurring weekly template (not tied to calendar dates): a
-// booking is (doctor + time slot + patient) only. In real clinic
-// life the same patient sees the same doctor at the same time on
-// every day that doctor works that week, so one record covers all
-// of those days at once. A slot keeps showing the same patient
-// every week until someone deletes it and books someone else in
-// its place.
-//
-// This demo has no real staff UIDs, so the doctor's NAME is used
-// as the stable identifier throughout (matching how doctors are
-// already identified everywhere else in this demo - patients.js,
-// sessions.js, etc. all key by doctor name too).
+// A booking is (doctor + time slot + patient).
+// Time slots represent horizontal rows across all doctors.
+// Slots can now be customized, added, or deleted directly from the UI.
 
 import { escapeHTML } from './utils.js';
 import { db } from './db.js';
 import { auth } from './auth.js';
 
-export const APPT_SLOTS = [
-  { key: '15:30', label: '٣:٣٠' },
-  { key: '16:30', label: '٤:٣٠' },
-  { key: '17:30', label: '٥:٣٠' },
-  { key: '18:30', label: '٦:٣٠' },
-  { key: '19:00', label: '٧:٠٠' }
+export const DEFAULT_APPT_SLOTS = [
+  { key: '15:30', label: '٣:٣٠ م' },
+  { key: '16:30', label: '٤:٣٠ م' },
+  { key: '17:30', label: '٥:٣٠ م' },
+  { key: '18:30', label: '٦:٣٠ م' },
+  { key: '19:00', label: '٧:٠٠ م' }
 ];
 
-// Total treatment beds in the clinic. Exceeding this across ALL
-// doctors combined at the same time slot only shows a soft warning
-// in the booking modal - it never blocks adding another patient.
 const MAX_BEDS_PER_SLOT = 6;
+
+const ARABIC_DIGITS = { '0': '٠', '1': '١', '2': '٢', '3': '٣', '4': '٤', '5': '٥', '6': '٦', '7': '٧', '8': '٨', '9': '٩' };
+
+export function formatTimeSlotLabel(hour, minute, period) {
+  const hStr = String(hour);
+  const mStr = String(minute).padStart(2, '0');
+  const hAr = hStr.split('').map(c => ARABIC_DIGITS[c] || c).join('');
+  const mAr = mStr.split('').map(c => ARABIC_DIGITS[c] || c).join('');
+  const pAr = period === 'PM' ? 'م' : 'ص';
+  return `${hAr}:${mAr} ${pAr}`;
+}
+
+export function buildSlotKey(hour, minute, period) {
+  let h24 = parseInt(hour, 10);
+  if (period === 'PM' && h24 < 12) h24 += 12;
+  if (period === 'AM' && h24 === 12) h24 = 0;
+  return `${String(h24).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
+}
+
+export function parseSlotKey(key) {
+  const parts = (key || '15:30').split(':');
+  let h24 = parseInt(parts[0], 10) || 15;
+  const minute = parts[1] || '30';
+  let period = 'PM';
+  let hour = h24;
+  if (h24 === 0) {
+    hour = 12;
+    period = 'AM';
+  } else if (h24 < 12) {
+    period = 'AM';
+  } else if (h24 === 12) {
+    period = 'PM';
+  } else {
+    hour = h24 - 12;
+    period = 'PM';
+  }
+  return { hour: String(hour), minute, period };
+}
 
 export class AppointmentsManager {
   constructor(app) {
@@ -37,43 +63,31 @@ export class AppointmentsManager {
     this.appointments = [];
     this.doctors = [];
     this.patients = [];
-    this.activeDoctor = null;
+    this.slots = [];
+    this.pendingDoctorUid = null;
     this.pendingDoctorName = null;
     this.pendingTimeSlot = null;
     this.selectedPatientId = null;
     this.selectedPatientName = null;
-    this.selectedPatientPhone = null;
+
+    // Slot Editing State
+    this.slotEditMode = 'edit'; // 'edit' | 'add'
+    this.slotEditOldKey = null;
   }
 
   async init() {
-    document.getElementById('appt-doctor-tabs')?.addEventListener('click', (e) => {
-      const tab = e.target.closest('[data-doctor-tab]');
-      if (tab) {
-        this.activeDoctor = tab.getAttribute('data-doctor-tab');
-        this.renderTabs();
-        this.renderTable();
-      }
-    });
+    const grid = document.getElementById('appointments-grid');
+    if (grid) grid.addEventListener('click', (e) => this.handleGridClick(e));
 
-    document.getElementById('appt-table-tbody')?.addEventListener('click', (e) => {
-      const removeBtn = e.target.closest('[data-remove-appt]');
-      if (removeBtn) {
-        this.deleteAppointment(removeBtn.getAttribute('data-remove-appt'));
-        return;
-      }
-      const addBtn = e.target.closest('[data-add-slot]');
-      if (addBtn) {
-        this.openAddModal(this.activeDoctor, addBtn.getAttribute('data-add-slot'));
-      }
-    });
+    const myGrid = document.getElementById('my-appointments-grid');
+    if (myGrid) myGrid.addEventListener('click', (e) => this.handleGridClick(e));
 
-    document.getElementById('form-appointment')?.addEventListener('submit', (e) => {
+    document.getElementById('modal-appointment-form')?.addEventListener('submit', (e) => {
       e.preventDefault();
       this.submitAppointment();
     });
 
-    document.getElementById('appt-picker-trigger')?.addEventListener('click', () => this.openPatientPicker());
-    document.getElementById('btn-change-appt-patient')?.addEventListener('click', () => this.openPatientPicker());
+    document.getElementById('appt-patient-picker-trigger')?.addEventListener('click', () => this.openPatientPicker());
 
     const searchInput = document.getElementById('appt-picker-search-input');
     if (searchInput) searchInput.addEventListener('input', () => this.renderPickerPatients());
@@ -82,165 +96,196 @@ export class AppointmentsManager {
       const item = e.target.closest('.picker-item');
       if (item) this.selectPatientFromPicker(item.getAttribute('data-patient-id'));
     });
+
+    // Add New Slot Trigger Button in Card Header
+    document.getElementById('btn-add-new-slot')?.addEventListener('click', () => this.openAddSlotModal());
+
+    // Slot Edit Form Controls
+    document.getElementById('form-edit-appointment-slot')?.addEventListener('submit', (e) => {
+      e.preventDefault();
+      this.handleSaveSlotTime();
+    });
+
+    document.getElementById('btn-delete-slot-row')?.addEventListener('click', () => this.handleDeleteSlotRow());
+
+    // Slot Input Changes (update preview live)
+    ['slot-input-hour', 'slot-input-minute', 'slot-input-period'].forEach(id => {
+      document.getElementById(id)?.addEventListener('change', () => this.updateSlotPreview());
+    });
+
+    // Quick Chips delegation in Edit Slot Modal
+    const chipsContainer = document.getElementById('slot-quick-chips');
+    if (chipsContainer) {
+      chipsContainer.addEventListener('click', (e) => {
+        const btn = e.target.closest('.slot-quick-btn');
+        if (btn) {
+          const h = btn.dataset.h;
+          const m = btn.dataset.m;
+          const p = btn.dataset.p;
+          const hSel = document.getElementById('slot-input-hour');
+          const mSel = document.getElementById('slot-input-minute');
+          const pSel = document.getElementById('slot-input-period');
+          if (hSel) hSel.value = h;
+          if (mSel) mSel.value = m;
+          if (pSel) pSel.value = p;
+          this.updateSlotPreview();
+        }
+      });
+    }
+
+    this.renderSlotQuickChips();
   }
 
   async loadAll() {
-    const [appointments, doctors, patients] = await Promise.all([
+    const [appointments, doctors, patients, slots] = await Promise.all([
       db.getAppointments(),
-      db.getDoctors(),
-      db.getPatients()
+      db.getDoctorsList(),
+      db.getPatients(),
+      db.getAppointmentSlots ? db.getAppointmentSlots() : DEFAULT_APPT_SLOTS
     ]);
     this.appointments = appointments;
     this.doctors = doctors;
     this.patients = patients;
-    if (!this.activeDoctor || !this.doctors.includes(this.activeDoctor)) {
-      this.activeDoctor = this.doctors[0] || null;
-    }
+    this.slots = (Array.isArray(slots) && slots.length > 0) ? slots : DEFAULT_APPT_SLOTS;
   }
 
   getSlotTotalCount(timeSlot) {
     return this.appointments.filter((a) => a.timeSlot === timeSlot).length;
   }
 
-  getCellAppointments(doctorName, timeSlot) {
-    return this.appointments.filter((a) => a.doctorName === doctorName && a.timeSlot === timeSlot);
+  getCellAppointments(doctorUid, timeSlot) {
+    return this.appointments.filter((a) => a.doctorUid === doctorUid && a.timeSlot === timeSlot);
   }
 
-  // ================= Full Schedule (Admin/Receptionist view) =================
+  // ================= Full Grid: every active doctor as a column =================
   async render() {
-    const tabsEl = document.getElementById('appt-doctor-tabs');
-    const tbody = document.getElementById('appt-table-tbody');
-    if (!tabsEl || !tbody) return;
+    const grid = document.getElementById('appointments-grid');
+    if (!grid) return;
     try {
       await this.loadAll();
-      this.renderTabs();
-      this.renderTable();
+      grid.innerHTML = this.buildGridHTML(this.doctors);
     } catch (err) {
       console.error('Appointments render error:', err);
-      tbody.innerHTML = this.buildErrorRow(err);
+      grid.innerHTML = this.buildErrorHTML(err);
     }
   }
 
-  renderTabs() {
-    const tabsEl = document.getElementById('appt-doctor-tabs');
-    if (!tabsEl) return;
-    if (this.doctors.length === 0) {
-      tabsEl.innerHTML = `<span style="color: var(--text-muted); font-size: 0.85rem;">لا يوجد دكاترة مسجلين حالياً.</span>`;
-      return;
-    }
-    tabsEl.innerHTML = this.doctors.map((docName) => {
-      const isActive = docName === this.activeDoctor;
-      return `
-        <button type="button" data-doctor-tab="${escapeHTML(docName)}" class="btn btn-sm ${isActive ? 'btn-primary' : 'btn-outline'}" style="white-space: nowrap;">
-          <i class="fa-solid fa-user-doctor"></i> ${escapeHTML(docName)}
-        </button>
-      `;
-    }).join('');
-  }
-
-  renderTable() {
-    const tbody = document.getElementById('appt-table-tbody');
-    if (!tbody) return;
-    if (!this.activeDoctor) {
-      tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; padding:20px; color:var(--text-muted);">لا يوجد دكاترة مسجلين حالياً.</td></tr>`;
-      return;
-    }
-
-    const rows = APPT_SLOTS.map((slot) => {
-      const cellAppts = this.getCellAppointments(this.activeDoctor, slot.key);
-      const totalInSlot = this.getSlotTotalCount(slot.key);
-      const overCapacity = totalInSlot > MAX_BEDS_PER_SLOT;
-
-      const existingRows = cellAppts.map((a) => `
-        <tr>
-          <td style="font-weight: 800; color: var(--primary);">
-            ${slot.label}
-            ${overCapacity ? `<div style="font-size: 0.68rem; color: var(--danger); font-weight: 700;"><i class="fa-solid fa-triangle-exclamation"></i> ${totalInSlot}/${MAX_BEDS_PER_SLOT}</div>` : ''}
-          </td>
-          <td>${escapeHTML(a.patientName)}</td>
-          <td><bdi dir="ltr">${escapeHTML(a.patientPhone || '-')}</bdi></td>
-          <td style="text-align:center;">
-            <button type="button" class="btn btn-outline btn-sm" style="color: var(--danger); border-color: var(--danger);" data-remove-appt="${escapeHTML(a.id)}" title="إلغاء الموعد">
-              <i class="fa-solid fa-trash"></i>
-            </button>
-          </td>
-        </tr>
-      `).join('');
-
-      const addRow = `
-        <tr>
-          <td style="font-weight: 800; color: var(--primary);">${cellAppts.length === 0 ? slot.label : ''}</td>
-          <td colspan="3">
-            <button type="button" class="btn btn-outline btn-sm" data-add-slot="${slot.key}" style="width: 100%; border-style: dashed;">
-              <i class="fa-solid fa-plus"></i> حجز مريض في هذا الميعاد
-            </button>
-          </td>
-        </tr>
-      `;
-
-      return existingRows + addRow;
-    }).join('');
-
-    tbody.innerHTML = rows;
-  }
-
-  buildErrorRow(err) {
-    return `<tr><td colspan="4" style="text-align:center; padding:20px; color:var(--danger);">
-      <i class="fa-solid fa-triangle-exclamation"></i> تعذر تحميل جدول المواعيد: ${escapeHTML(err.message || 'خطأ غير معروف')}
-    </td></tr>`;
-  }
-
-  // ================= Doctor's Own Schedule (Doctor Dashboard) =================
-  async renderForDoctor(doctorName) {
+  // ================= Doctor's Own Single Column (Doctor Dashboard) =================
+  async renderForDoctor(doctorUid) {
     const grid = document.getElementById('my-appointments-grid');
     if (!grid) return;
     try {
       await this.loadAll();
-      const cellsHtml = APPT_SLOTS.map((slot) => {
-        const appts = this.getCellAppointments(doctorName, slot.key);
-        if (appts.length === 0) return '';
-        const names = appts.map((a) => escapeHTML(a.patientName)).join('، ');
-        return `
-          <div style="display:flex; justify-content:space-between; align-items:center; padding:8px 10px; border-bottom:1px solid var(--border-color);">
-            <span style="font-weight:800; color:var(--primary);">${slot.label}</span>
-            <span style="color: var(--text-main);">${names}</span>
-          </div>
-        `;
-      }).join('');
-      grid.innerHTML = cellsHtml || `<div style="padding:16px; text-align:center; color:var(--text-muted); font-size:0.85rem;">لا يوجد مواعيد ثابتة مسجلة لك حالياً.</div>`;
+      const me = this.doctors.find((d) => d.uid === doctorUid);
+      grid.innerHTML = this.buildGridHTML(me ? [me] : []);
     } catch (err) {
       console.error('Appointments (doctor) render error:', err);
-      grid.innerHTML = `<div style="padding:16px; text-align:center; color:var(--danger); font-size:0.85rem;">تعذر تحميل الجدول: ${escapeHTML(err.message || 'خطأ غير معروف')}</div>`;
+      grid.innerHTML = this.buildErrorHTML(err);
+    }
+  }
+
+  buildErrorHTML(err) {
+    return `<div style="padding: 20px; text-align: center; color: var(--danger);">
+      <i class="fa-solid fa-triangle-exclamation"></i> تعذر تحميل جدول المواعيد.<br>
+      <span style="font-size: 0.8rem; color: var(--text-muted);">${escapeHTML(err.message || 'خطأ غير معروف')}</span>
+    </div>`;
+  }
+
+  buildGridHTML(doctorsToShow) {
+    if (!doctorsToShow || doctorsToShow.length === 0) {
+      return `<div style="padding: 20px; text-align: center; color: var(--text-muted);">لا يوجد دكاترة مسجلين حالياً في طاقم العمل.</div>`;
+    }
+
+    const doctorsHeader = doctorsToShow.map((doc) =>
+      `<th style="text-align:center; min-width: 150px;"><i class="fa-solid fa-user-doctor" style="color: var(--primary);"></i> ${escapeHTML(doc.name)}</th>`
+    ).join('');
+
+    const slotsToRender = (this.slots && this.slots.length > 0) ? this.slots : DEFAULT_APPT_SLOTS;
+
+    const rows = slotsToRender.map((slot) => {
+      const totalInSlot = this.getSlotTotalCount(slot.key);
+      const overCapacity = totalInSlot > MAX_BEDS_PER_SLOT;
+
+      const cells = doctorsToShow.map((doc) => {
+        const cellAppts = this.getCellAppointments(doc.uid, slot.key);
+        const chips = cellAppts.map((a) => `
+          <div class="appt-chip" data-appt-id="${escapeHTML(a.id)}">
+            <span class="appt-chip-patient">${escapeHTML(a.patientName)}</span>
+            <button type="button" class="appt-chip-remove" data-remove-appt="${escapeHTML(a.id)}" title="حذف">&times;</button>
+          </div>
+        `).join('');
+
+        return `
+          <td class="appt-cell ${overCapacity ? 'appt-cell-over' : ''}">
+            ${chips}
+            <button type="button" class="btn-add-appt" data-add-doctor="${escapeHTML(doc.uid)}" data-add-doctor-name="${escapeHTML(doc.name)}" data-add-slot="${escapeHTML(slot.key)}">
+              <i class="fa-solid fa-plus"></i> حجز
+            </button>
+          </td>
+        `;
+      }).join('');
+
+      return `<tr>
+        <td class="appt-time-label">
+          <div class="appt-time-box" data-edit-slot="${escapeHTML(slot.key)}" data-slot-label="${escapeHTML(slot.label)}" title="اضغط لتعديل وقت هذا الموعد">
+            <span class="appt-time-text">${escapeHTML(slot.label)}</span>
+            <i class="fa-solid fa-pen-to-square appt-time-edit-icon"></i>
+          </div>
+          ${overCapacity ? `<div class="appt-over-badge" title="عدد الحالات في هذا الموعد (${totalInSlot}) تجاوز عدد الأسرة (${MAX_BEDS_PER_SLOT})"><i class="fa-solid fa-triangle-exclamation"></i> ${totalInSlot}/${MAX_BEDS_PER_SLOT}</div>` : ''}
+        </td>
+        ${cells}
+      </tr>`;
+    }).join('');
+
+    return `
+      <table class="data-table appt-table">
+        <thead><tr><th style="min-width: 100px; text-align: center;"><i class="fa-regular fa-clock" style="color: var(--primary);"></i> الميعاد</th>${doctorsHeader}</tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    `;
+  }
+
+  handleGridClick(e) {
+    // 1. Edit slot row time
+    const editSlotTrigger = e.target.closest('[data-edit-slot]');
+    if (editSlotTrigger) {
+      const slotKey = editSlotTrigger.getAttribute('data-edit-slot');
+      const slotLabel = editSlotTrigger.getAttribute('data-slot-label');
+      this.openEditSlotModal(slotKey, slotLabel);
+      return;
+    }
+
+    // 2. Remove appointment
+    const removeBtn = e.target.closest('[data-remove-appt]');
+    if (removeBtn) {
+      this.deleteAppointment(removeBtn.getAttribute('data-remove-appt'));
+      return;
+    }
+
+    // 3. Add appointment
+    const addBtn = e.target.closest('.btn-add-appt');
+    if (addBtn) {
+      this.openAddModal(
+        addBtn.getAttribute('data-add-doctor'),
+        addBtn.getAttribute('data-add-doctor-name'),
+        addBtn.getAttribute('data-add-slot')
+      );
     }
   }
 
   // ================= Add Appointment Modal =================
-  openAddModal(doctorName, timeSlot) {
+  openAddModal(doctorUid, doctorName, timeSlot) {
+    this.pendingDoctorUid = doctorUid;
     this.pendingDoctorName = doctorName;
     this.pendingTimeSlot = timeSlot;
     this.selectedPatientId = null;
     this.selectedPatientName = null;
-    this.selectedPatientPhone = null;
 
-    const slotLabel = APPT_SLOTS.find((s) => s.key === timeSlot)?.label || timeSlot;
-    document.getElementById('appt-info-doctor').textContent = doctorName;
-    document.getElementById('appt-info-slot').textContent = slotLabel;
+    const slotLabel = (this.slots || []).find((s) => s.key === timeSlot)?.label || timeSlot;
+    document.getElementById('appt-modal-title').textContent = `حجز موعد - د. ${doctorName} - الساعة ${slotLabel}`;
 
-    const totalInSlot = this.getSlotTotalCount(timeSlot);
-    const warningBox = document.getElementById('appt-slot-warning');
-    if (warningBox) {
-      if (totalInSlot >= MAX_BEDS_PER_SLOT) {
-        document.getElementById('appt-slot-occupied-count').textContent = totalInSlot;
-        warningBox.style.display = 'block';
-      } else {
-        warningBox.style.display = 'none';
-      }
-    }
-
-    const placeholder = document.getElementById('appt-picker-placeholder');
-    if (placeholder) placeholder.textContent = 'اضغط هنا للبحث واختيار المريض...';
-    document.getElementById('appt-picker-trigger').style.display = 'flex';
-    document.getElementById('appt-selected-patient-box').style.display = 'none';
+    const trigger = document.getElementById('appt-patient-picker-trigger');
+    if (trigger) trigger.querySelector('.btn-text').textContent = '-- اختر مريض من السجل --';
 
     this.app.openModal('modal-appointment');
   }
@@ -320,14 +365,8 @@ export class AppointmentsManager {
     if (!patient) return;
     this.selectedPatientId = patient.id;
     this.selectedPatientName = patient.name;
-    this.selectedPatientPhone = patient.phone;
-
-    document.getElementById('appt-picker-trigger').style.display = 'none';
-    const box = document.getElementById('appt-selected-patient-box');
-    document.getElementById('appt-selected-patient-name').textContent = patient.name;
-    document.getElementById('appt-selected-patient-sub').textContent = patient.phone || '';
-    box.style.display = 'flex';
-
+    const trigger = document.getElementById('appt-patient-picker-trigger');
+    if (trigger) trigger.querySelector('.btn-text').textContent = patient.name;
     this.app.closeModal('modal-appt-patient-picker');
   }
 
@@ -339,12 +378,12 @@ export class AppointmentsManager {
 
     try {
       await db.addAppointment({
+        doctorUid: this.pendingDoctorUid,
         doctorName: this.pendingDoctorName,
         timeSlot: this.pendingTimeSlot,
         patientId: this.selectedPatientId,
         patientName: this.selectedPatientName,
-        patientPhone: this.selectedPatientPhone || '',
-        bookedBy: auth.getCurrentUser()?.name || ''
+        createdBy: auth.getCurrentUser()?.name || ''
       });
       this.app.closeModal('modal-appointment');
       this.app.showToast('تم حجز الموعد بنجاح');
@@ -366,12 +405,155 @@ export class AppointmentsManager {
     }
   }
 
+  // ================= Slot Management Modals & Handlers =================
+  renderSlotQuickChips() {
+    const container = document.getElementById('slot-quick-chips');
+    if (!container) return;
+    const chips = [
+      { h: '1', m: '00', p: 'PM', label: '١:٠٠ م' },
+      { h: '1', m: '30', p: 'PM', label: '١:٣٠ م' },
+      { h: '2', m: '00', p: 'PM', label: '٢:٠٠ م' },
+      { h: '2', m: '30', p: 'PM', label: '٢:٣٠ م' },
+      { h: '3', m: '00', p: 'PM', label: '٣:٠٠ م' },
+      { h: '3', m: '30', p: 'PM', label: '٣:٣٠ م' },
+      { h: '4', m: '00', p: 'PM', label: '٤:٠٠ م' },
+      { h: '4', m: '30', p: 'PM', label: '٤:٣٠ م' },
+      { h: '5', m: '00', p: 'PM', label: '٥:٠٠ م' },
+      { h: '5', m: '30', p: 'PM', label: '٥:٣٠ م' },
+      { h: '6', m: '00', p: 'PM', label: '٦:٠٠ م' },
+      { h: '6', m: '30', p: 'PM', label: '٦:٣٠ م' },
+      { h: '7', m: '00', p: 'PM', label: '٧:٠٠ م' },
+      { h: '7', m: '30', p: 'PM', label: '٧:٣٠ م' },
+      { h: '8', m: '00', p: 'PM', label: '٨:٠٠ م' }
+    ];
+    container.innerHTML = chips.map(c => `
+      <button type="button" class="btn btn-outline btn-sm slot-quick-btn" data-h="${c.h}" data-m="${c.m}" data-p="${c.p}" style="padding: 3px 8px; font-size: 0.78rem; font-weight: 700; border-radius: 6px;">
+        ${c.label}
+      </button>
+    `).join('');
+  }
+
+  updateSlotPreview() {
+    const hour = document.getElementById('slot-input-hour')?.value || '3';
+    const minute = document.getElementById('slot-input-minute')?.value || '30';
+    const period = document.getElementById('slot-input-period')?.value || 'PM';
+    const label = formatTimeSlotLabel(hour, minute, period);
+    const previewEl = document.getElementById('slot-preview-label');
+    if (previewEl) previewEl.textContent = label;
+  }
+
+  openEditSlotModal(slotKey, slotLabel) {
+    this.slotEditMode = 'edit';
+    this.slotEditOldKey = slotKey;
+
+    const modalTitle = document.getElementById('modal-slot-title');
+    if (modalTitle) modalTitle.innerHTML = '<i class="fa-solid fa-clock" style="color: var(--primary);"></i> تعديل موعد في الجدول';
+
+    const oldKeyInput = document.getElementById('slot-edit-old-key');
+    if (oldKeyInput) oldKeyInput.value = slotKey;
+
+    const modeInput = document.getElementById('slot-edit-mode');
+    if (modeInput) modeInput.value = 'edit';
+
+    const btnDelete = document.getElementById('btn-delete-slot-row');
+    if (btnDelete) btnDelete.style.display = 'inline-flex';
+
+    const submitBtnText = document.querySelector('#btn-save-slot-time span');
+    if (submitBtnText) submitBtnText.textContent = 'حفظ التعديل';
+
+    const parsed = parseSlotKey(slotKey);
+    const hSel = document.getElementById('slot-input-hour');
+    const mSel = document.getElementById('slot-input-minute');
+    const pSel = document.getElementById('slot-input-period');
+    if (hSel) hSel.value = parsed.hour;
+    if (mSel) mSel.value = parsed.minute;
+    if (pSel) pSel.value = parsed.period;
+
+    this.updateSlotPreview();
+    this.app.openModal('modal-edit-appointment-slot');
+  }
+
+  openAddSlotModal() {
+    this.slotEditMode = 'add';
+    this.slotEditOldKey = null;
+
+    const modalTitle = document.getElementById('modal-slot-title');
+    if (modalTitle) modalTitle.innerHTML = '<i class="fa-solid fa-calendar-plus" style="color: var(--primary);"></i> إضافة موعد جديد للجدول';
+
+    const oldKeyInput = document.getElementById('slot-edit-old-key');
+    if (oldKeyInput) oldKeyInput.value = '';
+
+    const modeInput = document.getElementById('slot-edit-mode');
+    if (modeInput) modeInput.value = 'add';
+
+    const btnDelete = document.getElementById('btn-delete-slot-row');
+    if (btnDelete) btnDelete.style.display = 'none';
+
+    const submitBtnText = document.querySelector('#btn-save-slot-time span');
+    if (submitBtnText) submitBtnText.textContent = 'إضافة الموعد';
+
+    const hSel = document.getElementById('slot-input-hour');
+    const mSel = document.getElementById('slot-input-minute');
+    const pSel = document.getElementById('slot-input-period');
+    if (hSel) hSel.value = '8';
+    if (mSel) mSel.value = '00';
+    if (pSel) pSel.value = 'PM';
+
+    this.updateSlotPreview();
+    this.app.openModal('modal-edit-appointment-slot');
+  }
+
+  async handleSaveSlotTime() {
+    const hour = document.getElementById('slot-input-hour')?.value || '3';
+    const minute = document.getElementById('slot-input-minute')?.value || '30';
+    const period = document.getElementById('slot-input-period')?.value || 'PM';
+    const newKey = buildSlotKey(hour, minute, period);
+    const newLabel = formatTimeSlotLabel(hour, minute, period);
+
+    try {
+      if (this.slotEditMode === 'add') {
+        await db.addAppointmentSlot(newKey, newLabel);
+        this.app.showToast(`تمت إضافة موعد (${newLabel}) إلى الجدول بنجاح`);
+      } else {
+        await db.updateAppointmentSlot(this.slotEditOldKey, newKey, newLabel);
+        this.app.showToast(`تم تعديل الموعد إلى (${newLabel}) بنجاح`);
+      }
+      this.app.closeModal('modal-edit-appointment-slot');
+      await this.refreshVisibleGrids();
+    } catch (err) {
+      this.app.showAlert('تعذر حفظ الموعد: ' + err.message, 'خطأ', 'danger');
+    }
+  }
+
+  async handleDeleteSlotRow() {
+    if (!this.slotEditOldKey) return;
+    const keyToDelete = this.slotEditOldKey;
+    const affected = this.appointments.filter(a => a.timeSlot === keyToDelete);
+
+    let confirmMsg = 'هل أنت متأكد من حذف هذا الموعد وصفه بالكامل من الجدول؟';
+    if (affected.length > 0) {
+      confirmMsg = `تنبيه: هذا الموعد يحتوي على (${affected.length}) حجوزات لمرضى مسجلين. حذفه سيؤدي لإلغاء هذه الحجوزات نهائياً. هل أنت متأكد من الحذف؟`;
+    }
+
+    const confirmed = await this.app.showConfirm(confirmMsg, 'تأكيد حذف الموعد');
+    if (!confirmed) return;
+
+    try {
+      await db.deleteAppointmentSlot(keyToDelete);
+      this.app.closeModal('modal-edit-appointment-slot');
+      this.app.showToast('تم حذف الموعد من الجدول');
+      await this.refreshVisibleGrids();
+    } catch (err) {
+      this.app.showAlert('تعذر حذف الموعد: ' + err.message, 'خطأ', 'danger');
+    }
+  }
+
   async refreshVisibleGrids() {
-    if (document.getElementById('appt-doctor-tabs')) await this.render();
+    if (document.getElementById('appointments-grid')) await this.render();
     const myGrid = document.getElementById('my-appointments-grid');
     if (myGrid) {
-      const name = auth.getCurrentUser()?.name;
-      if (name) await this.renderForDoctor(name);
+      const uid = auth.getCurrentUser()?.uid;
+      if (uid) await this.renderForDoctor(uid);
     }
   }
 }
